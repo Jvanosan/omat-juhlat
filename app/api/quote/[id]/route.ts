@@ -4,9 +4,9 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(
   _request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const quoteId = context.params.id;
+  const { id: quoteId } = await context.params;
 
   if (!quoteId) {
     return NextResponse.json(
@@ -30,3 +30,4 @@ export async function GET(
 
   return NextResponse.json(data);
 }
+``
