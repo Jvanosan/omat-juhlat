@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: { id: string } }
 ) {
-  const quoteId = params.id;
+  const quoteId = context.params.id;
 
   if (!quoteId) {
     return NextResponse.json(
