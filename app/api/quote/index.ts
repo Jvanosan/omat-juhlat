@@ -1,13 +1,18 @@
-import { NextResponse } from "next/server";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "@/lib/supabase";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
-export async function POST(req: Request) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
-    const body = await req.json();
-
     const {
       name,
       email,
@@ -18,7 +23,7 @@ export async function POST(req: Request) {
       budget,
       extraInfo,
       services,
-    } = body;
+    } = req.body;
 
     // 1️⃣ Tallenna tarjous
     const { data: quote, error } = await supabase
@@ -41,19 +46,19 @@ export async function POST(req: Request) {
       .single();
 
     if (error || !quote) {
-      return NextResponse.json({ error: "Database error" }, { status: 500 });
+      return res.status(500).json({ error: "Database error" });
     }
 
     // 2️⃣ Automatch
-      const minGuests = Math.floor(Number(guests) * 0.8);
+    const minGuests = Math.floor(Number(guests) * 0.8);
 
-const { data: matchedPartners } = await supabase
-  .from("partners")
-  .select("id, email, services, area, max_guests")
-  .eq("status", "approved") 
-  .overlaps("services", services)          // vähintään yksi sama palvelu
-  .or(`area.ilike.%${location}%,area.ilike.%Suomi%`)
-  .gte("max_guests", minGuests);            // pystyy hoitamaan tapahtuman
+    const { data: matchedPartners } = await supabase
+      .from("partners")
+      .select("id, email, services, area, max_guests")
+      .eq("status", "approved")
+      .overlaps("services", services)
+      .or(`area.ilike.%${location}%,area.ilike.%Suomi%`)
+      .gte("max_guests", minGuests);
 
     // 3️⃣ Partner‑emailit
     if (matchedPartners && matchedPartners.length > 0) {
@@ -110,8 +115,8 @@ const { data: matchedPartners } = await supabase
       `,
     });
 
-    return NextResponse.json({ success: true });
+    return res.status(200).json({ success: true, quoteId: quote.id });
   } catch (err) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return res.status(500).json({ error: "Server error" });
   }
 }
