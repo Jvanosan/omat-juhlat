@@ -3,11 +3,21 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
 const eslintConfig = defineConfig([
+  // Next.js recommended rules (Core Web Vitals)
   ...nextVitals,
+
+  // Next.js + TypeScript rules
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+
+  // 🔧 Workaround for ESLint 9 + react/display-name bug
+  {
+    rules: {
+      "react/display-name": "off",
+    },
+  },
+
+  // Override default ignores of eslint-config-next
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
