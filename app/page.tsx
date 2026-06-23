@@ -1,415 +1,430 @@
 "use client";
+
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
-/* ================= DATA ================= */
+const EVENT_TYPES = [
+  "Syntymäpäivä",
+  "Häät",
+  "Valmistujaiset",
+  "Yritysjuhla",
+  "Ristiäiset",
+  "Muu juhla",
+];
 
-const services = [
+const SERVICES = [
   { id: "juhlatila", label: "Juhlatila" },
   { id: "catering", label: "Catering" },
-  { id: "dj", label: "DJ / Musiikki" },
-  { id: "valokuvaaja", label: "Valokuvaaja" },
-  { id: "koristelu", label: "Koristelu" },
-  { id: "kuljetus", label: "Kuljetus" },
+  { id: "dj", label: "DJ" },
+  { id: "band", label: "Bändi / live-musiikki" },
+  { id: "photographer", label: "Valokuvaaja" },
+  { id: "decor", label: "Somistus / koristelu" },
 ];
 
-const cities = [
-  "Helsinki",
-  "Espoo",
-  "Vantaa",
-  "Koko pääkaupunkiseutu",
-  "Tampere",
-  "Turku",
-  "Oulu",
-  "Koko Suomi",
-];
+export default function HomePage() {
+  const router = useRouter();
 
-/* ================= PAGE ================= */
-
-export default function Page() {
-  /* Date limit */
-  const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 3);
-  const minDateString = minDate.toISOString().split("T")[0];
-
-  /* Quote form */
-  const [quoteForm, setQuoteForm] = useState({
-    name: "",
-    email: "",
+  const [event, setEvent] = useState({
+    date: "",
     eventType: "",
     location: "",
-    date: "",
     guests: "",
-    services: [] as string[],
+    budget: "",
+    email: "",
   });
-  const [quoteDone, setQuoteDone] = useState(false);
 
-  const toggleService = (id: string) => {
-    setQuoteForm(p => ({
-      ...p,
-      services: p.services.includes(id)
-        ? p.services.filter(s => s !== id)
-        : [...p.services, id],
-    }));
-  };
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleQuoteSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  function toggleService(id: string) {
+    setSelectedServices((prev) =>
+      prev.includes(id)
+        ? prev.filter((s) => s !== id)
+        : [...prev, id]
+    );
+  }
+async function submit() {
+console.log("SUBMIT AJETTU");
+    setErrorMsg("");
 
-    await fetch("/api/quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(quoteForm),
-    });
+    // ✅ VALIDOINNIT (EI setStatea renderissä)
+    if (
+      !event.date ||
+      !event.location ||
+      !event.guests ||
+      !event.email ||
+      selectedServices.length === 0
+    ) {
+      setErrorMsg(
+        "Täytä päivämäärä, alue, vierasmäärä, sähköposti ja valitse vähintään yksi palvelu."
+      );
+      return;
+    }
 
-    setQuoteDone(true);
-  };
+    setLoading(true);
 
-  return (
-    <main style={{ fontFamily: "Arial, sans-serif", color: "#111" }}>
+    const { data, error } = await supabase
+      .from("request_quotes")
+      .insert({
+        date: event.date,
+        event_type: event.eventType,
+        location: event.location,
+        guests: Number(event.guests),
+        email: event.email,
+        budget: event.budget ? Number(event.budget) : null,
+        services: selectedServices,
+        status: "avoin",
+      })
+      .select()
+      .single();
+      // ✅ LUODAAN quote_partners-RIVIT KAIKILLE PARTNEREILLE
+const { data: partners } = await supabase
+  .from("partners")
+  .select("id");
 
-      {/* ================= NAV ================= */}
-      <header style={{
-        padding: "16px 40px",
-        borderBottom: "1px solid #eee",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        background: "#fff",
-      }}>
-        <strong>OmatJuhlat</strong>
-        <nav style={{ display: "flex", gap: 24 }}>
-          <a href="#how">Miten toimii</a>
-          <a href="#categories">Palvelut</a>
-          <a href="#quote">Pyydä tarjous</a>
-        </nav>
-      </header>
+if (partners && partners.length > 0) {
+  const rows = partners.map((partner) => ({
+    quote_id: data.id,
+    partner_id: partner.id,
+    service: selectedServices[0], // toistaiseksi yksi palvelu
+    status: "offered",
+  }));
 
-      {/* ================= HERO ================= */}
-      <section style={{
-        padding: "80px 40px",
-        display: "grid",
-        gridTemplateColumns: "1.2fr 1fr",
-        gap: 60,
-        background: "#f7f7f7",
-      }}>
-        <div>
-          <p style={{ color: "#666" }}>
-            📍 Helsinki · Espoo · Vantaa · Koko Suomi
-          </p>
-          <h1 style={{ fontSize: 56, margin: "20px 0" }}>
-            Juhlat ilman <span style={{ color: "#777" }}>stressiä</span>
-          </h1>
-          <p style={{ maxWidth: 520, color: "#444" }}>
-            Täytä yksi lomake ja saat tarjoukset
-            sopivilta juhlapalveluiden ammattilaisilta.
-          </p>
-          <a href="#quote"
-             style={{
-               display: "inline-block",
-               marginTop: 24,
-               padding: "14px 28px",
-               background: "#111",
-               color: "#fff",
-               borderRadius: 6,
-               textDecoration: "none",
-               fontWeight: 600,
-             }}>
-            Pyydä tarjoukset
-          </a>
-        </div>
+  await supabase.from("quote_partners").insert(rows);
+}
+// 2️⃣ luo quote_partners-rivit
+if (partners) {
+  const rows = [];
 
-        <div style={{
-          height: 280,
-          background: "#eaeaea",
-          borderRadius: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#888",
-        }}>
-          (Tähän kuva juhlista)
-        </div>
-      </section>
+  for (const partner of partners) {
+    // varmista että partnerServices on AINA array
+let partnerServices: string[] = [];
 
-      {/* ================= CATEGORIES ================= */}
-      <section id="categories" style={{ padding: "80px 40px" }}>
-        <h2>Palvelukategoriat</h2>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: 20,
-          marginTop: 24,
-        }}>
-          {services.map(s => (
-            <div key={s.id}
-                 style={{
-                   padding: 24,
-                   border: "1px solid #eee",
-                   borderRadius: 12,
-                 }}>
-              <strong>{s.label}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================= HOW ================= */}
-      <section id="how" style={{ padding: "80px 40px", background: "#f7f7f7" }}>
-        <h2>Miten se toimii?</h2>
-        <ol>
-          <li>Täytä lomake</li>
-          <li>Saat tarjoukset</li>
-          <li>Valitse paras</li>
-        </ol>
-      </section>
-
-      {/* ================= QUOTE FORM ================= */}
-      <section id="quote" style={{ padding: "80px 40px" }}>
-        <h2>Pyydä tarjous</h2>
-
-        {quoteDone ? (
-          <p>✅ Tarjouspyyntö lähetetty! Tarkista sähköpostisi.</p>
-        ) : (
-          <form onSubmit={handleQuoteSubmit}
-                style={{
-                  maxWidth: 600,
-                  marginTop: 24,
-                }}>
-
-            <input required placeholder="Nimi"
-              value={quoteForm.name}
-              onChange={e => setQuoteForm(p => ({ ...p, name: e.target.value }))}
-              style={inputStyle} />
-
-            <input required type="email" placeholder="Email"
-              value={quoteForm.email}
-              onChange={e => setQuoteForm(p => ({ ...p, email: e.target.value }))}
-              style={inputStyle} />
-
-            <input required placeholder="Tapahtumatyyppi (esim. Häät)"
-              value={quoteForm.eventType}
-              onChange={e => setQuoteForm(p => ({ ...p, eventType: e.target.value }))}
-              style={inputStyle} />
-
-            <select required
-              value={quoteForm.location}
-              onChange={e => setQuoteForm(p => ({ ...p, location: e.target.value }))}
-              style={inputStyle}>
-              <option value="">Paikkakunta</option>
-{cities.map(city => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-
-            <input
-              required
-              type="date"
-              min={minDateString}
-              value={quoteForm.date}
-              onChange={e =>
-                setQuoteForm(p => ({ ...p, date: e.target.value }))
-              }
-              style={inputStyle}
-            />
-
-            <input
-              required
-              type="number"
-              placeholder="Vierasmäärä"
-              value={quoteForm.guests}
-              onChange={e =>
-                setQuoteForm(p => ({ ...p, guests: e.target.value }))
-              }
-              style={inputStyle}
-            />
-
-            <p>Palvelut:</p>
-            {services.map(s => (
-              <label key={s.id} style={{ display: "block" }}>
-                <input
-                  type="checkbox"
-                  checked={quoteForm.services.includes(s.id)}
-                  onChange={() => toggleService(s.id)}
-                />{" "}
-                {s.label}
-              </label>
-            ))}
-
-            <button
-              type="submit"
-              style={{
-                marginTop: 20,
-                padding: "14px",
-                width: "100%",
-                background: "#111",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 700,
-              }}
-            >
-              Lähetä tarjouspyyntö
-            </button>
-          </form>
-        )}
-      </section>
-
-      {/* ================= PARTNER-OSIO ================= */}
-      <section id="partner" style={{ padding: "80px 40px", background: "#fff" }}>
-        <h2>Liity kumppaniksi</h2>
-        <p>
-          Saat uusia asiakkaita ilman omaa markkinointia.
-        </p>
-        <a
-          href="/login"
-          style={{
-            display: "inline-block",
-            marginTop: 16,
-            padding: "12px 24px",
-            background: "#111",
-            color: "#fff",
-            borderRadius: 6,
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          Kirjaudu / hae kumppaniksi
-        </a>
-      </section>
-
-      <footer style={{ padding: 40, borderTop: "1px solid #eee" }}>
-        © OmatJuhlat
-      </footer>
-    </main>
-  );
+if (Array.isArray(partner.services)) {
+  partnerServices = partner.services;
+} else if (typeof partner.services === "string") {
+  // jos esim "catering,dj"
+  partnerServices = partner.services
+    .split(",")
+    .map((s) => s.trim());
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: 12,
-  marginBottom: 12,
-  borderRadius: 6,
-  border: "1px solid #ddd",
-};
+await fetch("/api/notify-partners", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ quoteId: data.id }),
+});
+// tarkista osuuko asiakkaan valintoihin
+const match = partnerServices.some((s) =>
+  selectedServices.includes(s)
+);
 
-{/* ================= FAQ ================= */}
-<section
-  id="faq"
+    if (match) {
+      rows.push({
+        quote_id: data.id,
+        partner_id: partner.id,
+        service: partnerServices.find((s) =>
+          selectedServices.includes(s)
+        ),
+        status: "offered",
+      });
+    }
+  }
+
+  if (rows.length > 0) {
+    await supabase.from("quote_partners").insert(rows);
+  }
+}
+
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+      return;
+    }
+
+    router.push(`/quote/${data.id}`);
+  }
+return (
+  <main
   style={{
-    padding: "100px 40px",
-    background: "#f7f7f7",
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    backgroundImage:
+      "linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('/juhlat.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundAttachment: "fixed",
   }}
 >
-  <div style={{ maxWidth: 900, margin: "0 auto" }}>
-    <h2 style={{ fontSize: 36, marginBottom: 40 }}>
-      Usein kysytyt kysymykset
-    </h2>
+    <div style={{ width: "100%", maxWidth: 720, padding: 40 }}>
+      {/* 🎉 HERO – JUHLATUNNELMA */}
+<div
+  style={{
+    background: "rgba(0, 0, 0, 0.65)",
+    backdropFilter: "blur(6px)",
+    borderRadius: 24,
+    padding: "60px 30px",
+    marginBottom: 40,
+    textAlign: "center",
+    boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
+  }}
+>
+   <h1
+  style={{
+    color: "#ffffff",
+    fontSize: 44,
+    fontWeight: "bold",
+    textShadow: "0 2px 6px rgba(0,0,0,0.6)",
+    marginBottom: 16,
+  }}
+>
+   Järjestä juhlat helposti 
+</h1>
 
-    {[
-      {
-        q: "Onko palvelun käyttö asiakkaalle ilmaista?",
-        a: "Kyllä. Tarjouspyynnön tekeminen ja tarjousten vastaanottaminen on täysin ilmaista asiakkaalle.",
-      },
-      {
-        q: "Kuinka nopeasti saan tarjoukset?",
-        a: "Yleensä saat tarjoukset sähköpostiisi 24 tunnin sisällä tarjouspyynnön lähettämisestä.",
-      },
-      {
-        q: "Miten kumppanit valitaan?",
-        a: "Kaikki kumppanit tarkistetaan ennen hyväksyntää. Välitämme tarjouspyynnöt vain sopiville toimijoille.",
-      },
-      {
-        q: "Voinko pyytää tarjouksen useasta palvelusta kerralla?",
-        a: "Kyllä. Yhdellä lomakkeella voit pyytää tarjouksia useista palveluista samanaikaisesti.",
-      },
-      {
-        q: "Sitoudunko mihinkään pyytäessäni tarjouksen?",
-        a: "Et. Tarjouspyyntö on täysin sitoumukseton.",
-      },
-    ].map((item, i) => (
+  <p
+  style={{
+    fontSize: 20,
+    color: "#e5e7eb",
+    lineHeight: 1.6,
+    maxWidth: 600,
+    margin: "0 auto 30px",
+  }}
+>
+    Täytä juhlan tiedot, saat tarjoukset luotettavilta
+    juhlapalveluilta ja valitset parhaan – rauhassa ja
+    ilman sitoumuksia.
+  </p>
+
+  <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+  {/* ✅ Massatarjous */}
+  <a
+    href="#lomake"
+    style={{
+      display: "inline-block",
+      padding: "14px 28px",
+      borderRadius: 999,
+      background: "linear-gradient(90deg, #10b981, #34d399)",
+      color: "#fff",
+      fontSize: 18,
+      fontWeight: "bold",
+      textDecoration: "none",
+      boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+    }}
+  >
+    🎊 Pyydä tarjouksia
+  </a>
+
+  {/* ✅ UUSI: suora selaus */}
+  <a
+    href="/browse"
+    style={{
+      display: "inline-block",
+      padding: "14px 28px",
+      borderRadius: 999,
+      background: "rgba(255,255,255,0.15)",
+      color: "#ffffff",
+      fontSize: 18,
+      fontWeight: "bold",
+      textDecoration: "none",
+      border: "1px solid rgba(255,255,255,0.4)",
+      backdropFilter: "blur(6px)",
+    }}
+  >
+    ✨ Ota yhteyttä suoraan palveluntarjoajan
+  </a>
+</div>
+</div>
       <div
-        key={i}
         style={{
-          background: "#fff",
-          border: "1px solid #eee",
+          background: "#ecfeff",
+          border: "1px solid #67e8f9",
           borderRadius: 12,
-          padding: 24,
-          marginBottom: 16,
+          padding: 16,
+          marginBottom: 24,
         }}
       >
-        <strong style={{ display: "block", marginBottom: 8 }}>
-          {item.q}
-        </strong>
-        <p style={{ color: "#555", margin: 0 }}>{item.a}</p>
+        <strong>🔍 Mitä tapahtuu seuraavaksi?</strong>
+        <ol style={{ marginTop: 8 }}>
+          <li>Täytät tapahtuman tiedot</li>
+          <li>Valitset tarvitsemasi palvelut</li>
+          <li>Saat tarjoukset partnereilta</li>
+          <li>Valitset parhaan ja vahvistat</li>
+        </ol>
       </div>
-    ))}
-  </div>
-</section>
 
-{/* ================= FOOTER ================= */}
-<footer
+      {errorMsg && (
+        <div
+          style={{
+            background: "#fee2e2",
+            color: "#991b1b",
+            padding: 12,
+            borderRadius: 8,
+            marginBottom: 12,
+            fontWeight: "bold",
+          }}
+        >
+          {errorMsg}
+        </div>
+      )}
+
+<h2
+  id="lomake"
   style={{
-    padding: "60px 40px",
-    borderTop: "1px solid #eee",
-    background: "#ffffff",
+    color: "#ffffff",
+    fontSize: 26,
+    fontWeight: "bold",
+    marginTop: 32,
+    marginBottom: 16,
+    textShadow: "0 2px 6px rgba(0,0,0,0.6)",
   }}
 >
-  <div
-    style={{
-      maxWidth: 1200,
-      margin: "0 auto",
-      display: "grid",
-      gridTemplateColumns: "2fr 1fr 1fr",
-      gap: 40,
-    }}
-  >
-    <div>
-      <strong style={{ fontSize: 20 }}>OmatJuhlat</strong>
-      <p style={{ color: "#555", marginTop: 12, maxWidth: 320 }}>
-        Suomen juhlapalveluiden markkinapaikka.
-        Löydä kaikki juhliin tarvittava yhdestä paikasta.
-      </p>
-    </div>
+  Tapahtuman tiedot
+</h2>
+      <div
+        style={{
+          background: "#fff",
+          padding: 20,
+          borderRadius: 16,
+          marginBottom: 24,
+          boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+          display: "grid",
+          gap: 12,
+        }}
+      >
+        <label>
+          Päivämäärä *
+          <input
+            type="date"
+            value={event.date}
+            onChange={(e) =>
+              setEvent({ ...event, date: e.target.value })
+            }
+          />
+        </label>
 
-    <div>
-      <strong>Palvelut</strong>
-      <ul style={{ listStyle: "none", padding: 0, marginTop: 12 }}>
-        {services.map(s => (
-          <li key={s.id} style={{ marginBottom: 8 }}>
-            {s.label}
-          </li>
-        ))}
-      </ul>
-    </div>
+        <label>
+          Tapahtuman tyyppi *
+          <select
+            value={event.eventType}
+            onChange={(e) =>
+              setEvent({ ...event, eventType: e.target.value })
+            }
+          >
+            <option value="">Valitse tapahtuman tyyppi</option>
+            {EVENT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
 
-    <div>
-      <strong>Yritys</strong>
-      <ul style={{ listStyle: "none", padding: 0, marginTop: 12 }}>
-        <li style={{ marginBottom: 8 }}>
-          <a href="#partner">Liity kumppaniksi</a>
-        </li>
-        <li style={{ marginBottom: 8 }}>
-          <a href="#faq">UKK</a>
-        </li>
-        <li style={{ marginBottom: 8 }}>
-          <a href="/login">Kirjaudu</a>
-        </li>
-      </ul>
-    </div>
-  </div>
+        <label>
+          Paikkakunta *
+          <input
+            value={event.location}
+            onChange={(e) =>
+              setEvent({ ...event, location: e.target.value })
+            }
+          />
+        </label>
 
-  <div
-    style={{
-      marginTop: 40,
-      paddingTop: 20,
-      borderTop: "1px solid #eee",
-      textAlign: "center",
-      fontSize: 13,
-      color: "#777",
-    }}
-  >
-    © {new Date().getFullYear()} OmatJuhlat. Kaikki oikeudet pidätetään.
-  </div>
-</footer>
+        <label>
+          Vierasmäärä *
+          <input
+            type="number"
+            value={event.guests}
+            onChange={(e) =>
+              setEvent({ ...event, guests: e.target.value })
+            }
+          />
+        </label>
+
+        <label>
+          Sähköposti *
+          <input
+            type="email"
+            value={event.email}
+            onChange={(e) =>
+              setEvent({ ...event, email: e.target.value })
+            }
+          />
+        </label>
+
+        <label>
+          Budjetti (valinnainen)
+          <input
+            type="number"
+            value={event.budget}
+            onChange={(e) =>
+              setEvent({ ...event, budget: e.target.value })
+            }
+          />
+        </label>
+      </div>
+
+<h2
+  style={{
+    color: "#ffffff",
+    fontSize: 26,
+    fontWeight: "bold",
+    marginTop: 32,
+    marginBottom: 16,
+    textShadow: "0 2px 6px rgba(0,0,0,0.6)",
+  }}
+>
+  Valitse palvelut *
+</h2>
+      <div style={{ display: "grid", gap: 12 }}>
+        {SERVICES.map((s) => {
+          const selected = selectedServices.includes(s.id);
+
+          return (
+            <div
+              key={s.id}
+              onClick={() => toggleService(s.id)}
+              style={{
+                cursor: "pointer",
+                padding: 16,
+                borderRadius: 12,
+                border: selected
+                  ? "2px solid #10b981"
+                  : "1px solid #ddd",
+                background: selected ? "#ecfdf5" : "#fff",
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <span>{s.label}</span>
+              <input type="checkbox" checked={selected} readOnly />
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={submit}
+        disabled={loading}
+        style={{
+          marginTop: 24,
+          width: "100%",
+          padding: "14px 20px",
+          fontSize: 18,
+          fontWeight: "bold",
+          borderRadius: 12,
+          border: "none",
+          background: loading
+            ? "#9ca3af"
+            : "linear-gradient(90deg, #10b981, #34d399)",
+          color: "white",
+        }}
+      >
+        {loading ? "Lähetetään…" : " Pyydä tarjoukset"}
+      </button>
+    </div>
+  </main>
+);
+}

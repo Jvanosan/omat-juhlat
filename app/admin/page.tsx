@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { supabase } from "@/lib/supabase";
 type Partner = {
   id: string;
   company: string;
@@ -17,16 +17,55 @@ export default function AdminPage() {
   const [authorized, setAuthorized] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requests, setRequests] = useState<any[]>([]);
 
   // 🔐 Tarkistetaan admin‑oikeus
-  useEffect(() => {
-    const isAdmin = localStorage.getItem("isAdmin");
-    if (!isAdmin) {
+
+useEffect(() => {
+  const checkAdmin = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || user.email !== "jvanosan2003@gmail.com") {
       router.push("/login");
-    } else {
-      setAuthorized(true);
+      return;
     }
-  }, [router]);
+
+    setAuthorized(true);
+  };
+
+  checkAdmin();
+}, [router]);
+ // 📬 Haetaan tarjouspyynnöt admin‑näkymään
+useEffect(() => {
+  if (!authorized) return;
+
+  const fetchRequests = async () => {
+    // kaikki tarjouspyynnöt
+    const { data: quotes } = await supabase
+      .from("request_quotes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!quotes) return;
+
+    // lasketaan tarjousten määrä
+    const { data: offers } = await supabase
+      .from("quote_partners")
+      .select("quote_id");
+
+    const withCounts = quotes.map((q) => ({
+      ...q,
+      offerCount:
+        offers?.filter((o) => o.quote_id === q.id).length || 0,
+    }));
+
+    setRequests(withCounts);
+  };
+
+  fetchRequests();
+}, [authorized]);
 
   // 📥 Haetaan kumppanit
   useEffect(() => {
@@ -61,7 +100,24 @@ export default function AdminPage() {
       )
     );
   };
+// ✅ Päivitetään tarjouspyynnön tila (D5)
+const updateQuoteStatus = async (
+  quoteId: string,
+  status: "avoin" | "käsittelyssä" | "suljettu"
+) => {
+  await fetch("/api/admin/quotes/status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quoteId, status }),
+  });
 
+  // päivitetään näkymä heti
+  setRequests((prev) =>
+    prev.map((q) =>
+      q.id === quoteId ? { ...q, status } : q
+    )
+  );
+};
   if (loading) {
     return <p style={{ padding: 40 }}>Ladataan kumppaneita…</p>;
   }
@@ -69,7 +125,87 @@ export default function AdminPage() {
   return (
     <main style={{ padding: 40, fontFamily: "Arial" }}>
       <h1>🛠️ Admin – OmatJuhlat</h1>
+      <h2 style={{ marginTop: 40 }}>📨 Tarjouspyynnöt</h2>
 
+{requests.length === 0 ? (
+  <p>Ei tarjouspyyntöjä.</p>
+) : (
+  <table style={tableStyle}>
+    <thead>
+  <tr>
+    <th>Päivä</th>
+    <th>Alue</th>
+    <th>Vieraita</th>
+    <th>Tila</th>
+    <th>Tarjouksia</th>
+    <th>Linkki</th>
+    <th>Toiminnot</th>
+  </tr>
+</thead>
+    <tbody>
+      {requests.map((r) => (
+        <tr key={r.id}>
+          <td>{r.date}</td>
+          <td>{r.location}</td>
+          <td>{r.guests}</td>
+          <td>{r.status || "avoin"}</td>
+          <td>{r.offerCount}</td>
+
+         <td>
+            <a
+              href={`/quote/${r.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Avaa
+            </a>
+          </td>
+          <td>
+  {r.status === "avoin" && (
+    <button
+      onClick={() =>
+        updateQuoteStatus(r.id, "käsittelyssä")
+      }
+      style={{
+        padding: "6px 12px",
+        borderRadius: 6,
+        border: "none",
+        background: "#fde68a",
+        cursor: "pointer",
+      }}
+    >
+      Merkitse käsittelyyn
+    </button>
+  )}
+
+  {r.status === "käsittelyssä" && (
+    <button
+      onClick={() =>
+        updateQuoteStatus(r.id, "suljettu")
+      }
+      style={{
+        padding: "6px 12px",
+        borderRadius: 6,
+        border: "none",
+        background: "#bbf7d0",
+        cursor: "pointer",
+      }}
+    >
+      Sulje pyyntö
+    </button>
+  )}
+
+  {r.status === "suljettu" && (
+    <span style={{ color: "#6b7280" }}>
+      Ei toimintoja
+    </span>
+  )}
+</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
       <h2 style={{ marginTop: 40 }}>🤝 Kumppanit</h2>
 
       {partners.length === 0 ? (

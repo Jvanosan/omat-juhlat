@@ -4,14 +4,14 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function PartnerLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function login() {
+    setError("");
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -19,10 +19,11 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError("Virheellinen sähköposti tai salasana");
-    } else {
-      router.push("/admin/quotes");
+      setError(error.message);
+      return;
     }
+
+    router.push("/partner");
   }
 
   return (
@@ -32,30 +33,31 @@ export default function LoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#f8f8f8",
+        background: "linear-gradient(180deg, #f9fafb, #eef2f3)",
       }}
     >
-      <form
-        onSubmit={handleLogin}
+      <div
         style={{
-          background: "#fff",
-          padding: 40,
+          background: "white",
+          padding: 32,
           borderRadius: 16,
-          width: 360,
-          border: "1px solid #eaeaea",
+          width: "100%",
+          maxWidth: 400,
+          boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
         }}
       >
-        <h1>🔐 Admin kirjautuminen</h1>
+        <h1>🔐 Partner login</h1>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && (
+          <p style={{ color: "red", marginBottom: 12 }}>{error}</p>
+        )}
 
         <input
           type="email"
           placeholder="Sähköposti"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
-          style={inputStyle}
+          style={{ width: "100%", padding: 10, marginBottom: 10 }}
         />
 
         <input
@@ -63,32 +65,26 @@ export default function LoginPage() {
           placeholder="Salasana"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
-          style={inputStyle}
+          style={{ width: "100%", padding: 10, marginBottom: 20 }}
         />
 
-        <button type="submit" style={buttonStyle}>
+        <button
+          onClick={login}
+          style={{
+            width: "100%",
+            padding: 12,
+            borderRadius: 10,
+            border: "none",
+            background:
+              "linear-gradient(90deg, #10b981, #34d399)",
+            color: "white",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+        >
           Kirjaudu sisään
         </button>
-      </form>
+      </div>
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: 12,
-  marginBottom: 12,
-  borderRadius: 8,
-  border: "1px solid #ddd",
-};
-
-const buttonStyle: React.CSSProperties = {
-  width: "100%",
-  padding: 14,
-  background: "#111",
-  color: "#fff",
-  border: "none",
-  borderRadius: 8,
-  fontWeight: 700,
-};
