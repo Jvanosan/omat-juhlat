@@ -78,12 +78,18 @@ const [serviceFilter, setServiceFilter] = useState("Kaikki");
   // ✅ HAETAAN PARTNERIT AUTOMAATTISESTI
   useEffect(() => {
     const fetchPartners = async () => {
-      const { data } = await supabase
-        .from("partners")
-        .select("id, company, area, services")
-        .eq("status", "approved");
+      const { data, error } = await supabase
+  .from("partners")
+  .select("id, company, area, services")
+  .eq("status", "approved");
 
-      setPartners(data || []);
+if (error) {
+  console.error("SUPABASE PARTNERS ERROR:", error);
+}
+
+console.log("PARTNERS DATA:", data);
+
+setPartners(data || []);
     };
 
     fetchPartners();
