@@ -125,16 +125,16 @@ const groupedPartners = partners.reduce((acc: any, company: any) => {
 }, {});
 return (
     <main
-      style={{
-        minHeight: "100vh",
-        backgroundImage:
-          "linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('/juhlat.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-        padding: 40,
-      }}
-    >
+  style={{
+    minHeight: "100vh",
+    backgroundImage:
+      "linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('/juhlat.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundAttachment: "fixed",
+    padding: 40,
+  }}
+>
       <div
         style={{
           maxWidth: 1000,
