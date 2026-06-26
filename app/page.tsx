@@ -302,7 +302,12 @@ return (
             onChange={(e) =>
               setEvent({ ...event, date: e.target.value })
             }
-            style={{8    padding: 10,9    borderRadius: 8,10    border: "1px solid #ccc",11    color: "#111"12  }}
+            style={{
+  padding: 10,
+  borderRadius: 8,
+  border: "1px solid #ccc",
+  color: "#111"
+}}
           />
         </label>
 
