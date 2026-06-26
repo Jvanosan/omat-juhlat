@@ -139,7 +139,7 @@ return (
         style={{
           maxWidth: 1000,
           margin: "0 auto",
-          background: "#ffffff",
+          background: "rgba(255,255,255,0.95)",
           borderRadius: 24,
           padding: 40,
           boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
@@ -149,7 +149,7 @@ return (
           ✨ Ota yhteyttä suoraan palveluntarjoajaan
         </h1>
 
-        <p style={{ color: "#555", marginBottom: 32 }}>
+         <p style={{ color: "#1f2937", marginBottom: 32 }}>
           Valitse itse ne palveluntarjoajat, joihin haluat olla yhteydessä.
           Tämä tarjouspyyntö lähetetään vain valituille yrityksille – ei kaikille.
         </p>
@@ -162,17 +162,23 @@ return (
     flexWrap: "wrap",
   }}
 >
-  <select
-    value={areaFilter}
-    onChange={(e) => setAreaFilter(e.target.value)}
-    style={{ padding: 8, borderRadius: 8 }}
-  >
-    {areas.map((area) => (
-      <option key={area} value={area}>
-        {area}
-      </option>
-    ))}
-  </select>
+   <select
+  value={areaFilter}
+  onChange={(e) => setAreaFilter(e.target.value)}
+  style={{
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    color: "#111",
+    backgroundColor: "#fff"
+  }}
+>
+  {areas.map((area) => (
+    <option key={area} value={area}>
+      {area}
+    </option>
+  ))}
+</select>
 
   <select
     value={serviceFilter}
@@ -200,9 +206,9 @@ return (
 
     {Object.entries(areas).map(([area, companies]: any) => (
       <div key={area} style={{ marginBottom: 24, paddingLeft: 12 }}>
-        <h3 style={{ fontSize: 18, marginBottom: 8, color: "#555" }}>
-          {area}
-        </h3>
+        <h3 style={{ fontSize: 18, marginBottom: 8, color: "#111" }}>
+  {area}
+</h3>
 
         <div style={{ display: "grid", gap: 12 }}>
           {companies.map((company: any) => {
@@ -266,24 +272,43 @@ return (
         ) : (
           <div style={{ display: "grid", gap: 12, maxWidth: 400 }}>
             <input
-              type="email"
-              placeholder="Sähköpostiosoite"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+  type="email"
+  placeholder="Sähköpostiosoite"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  style={{
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    color: "#111"
+  }}
+/>
+
 
             <input
-              type="date"
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-            />
+  type="date"
+  value={eventDate}
+  onChange={(e) => setEventDate(e.target.value)}
+  style={{
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    color: "#111"
+  }}
+/>
 
             <input
-              type="number"
-              placeholder="Arvioitu vierasmäärä"
-              value={guests}
-              onChange={(e) => setGuests(e.target.value)}
-            />
+  type="number"
+  placeholder="Arvioitu vierasmäärä"
+  value={guests}
+  onChange={(e) => setGuests(e.target.value)}
+  style={{
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    color: "#111"
+  }}
+/>
 
             <button
               disabled={sending}
