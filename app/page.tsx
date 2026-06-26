@@ -187,7 +187,7 @@ return (
   <p
   style={{
     fontSize: 20,
-    color: "#e5e7eb",
+    color:"#ffffff",
     lineHeight: 1.6,
     maxWidth: 600,
     margin: "0 auto 30px",
@@ -302,17 +302,25 @@ return (
             onChange={(e) =>
               setEvent({ ...event, date: e.target.value })
             }
+            style={{8    padding: 10,9    borderRadius: 8,10    border: "1px solid #ccc",11    color: "#111"12  }}
           />
         </label>
 
         <label>
           Tapahtuman tyyppi *
           <select
-            value={event.eventType}
-            onChange={(e) =>
-              setEvent({ ...event, eventType: e.target.value })
-            }
-          >
+  value={event.eventType}
+  onChange={(e) =>
+    setEvent({ ...event, eventType: e.target.value })
+  }
+  style={{
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    color: "#111",
+    backgroundColor: "#fff"
+  }}
+>
             <option value="">Valitse tapahtuman tyyppi</option>
             {EVENT_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -329,6 +337,7 @@ return (
             onChange={(e) =>
               setEvent({ ...event, location: e.target.value })
             }
+            style={{8    padding: 10,9    borderRadius: 8,10    border: "1px solid #ccc",11    color: "#111"12  }}
           />
         </label>
 
@@ -340,6 +349,7 @@ return (
             onChange={(e) =>
               setEvent({ ...event, guests: e.target.value })
             }
+            style={{8    padding: 10,9    borderRadius: 8,10    border: "1px solid #ccc",11    color: "#111"12  }}
           />
         </label>
 
@@ -351,6 +361,7 @@ return (
             onChange={(e) =>
               setEvent({ ...event, email: e.target.value })
             }
+            style={{8    padding: 10,9    borderRadius: 8,10    border: "1px solid #ccc",11    color: "#111"12  }}
           />
         </label>
 
@@ -362,6 +373,7 @@ return (
             onChange={(e) =>
               setEvent({ ...event, budget: e.target.value })
             }
+            style={{8    padding: 10,9    borderRadius: 8,10    border: "1px solid #ccc",11    color: "#111"12  }}
           />
         </label>
       </div>

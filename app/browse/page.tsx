@@ -241,7 +241,9 @@ return (
                     );
                   }}
                 />
-                <span>{company.company}</span>
+<span style={{ color: "#111", fontWeight: "500" }}>
+  {company.company}
+</span>
               </label>
             );
           })}
