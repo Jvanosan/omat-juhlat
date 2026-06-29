@@ -1,4 +1,3 @@
-```tsx
 "use client";
 
 import { useState } from "react";
@@ -93,29 +92,32 @@ export default function HomePage() {
       const rows = [];
 
       for (const partner of partners) {
-        let partnerServices: string[] = [];
+  let partnerServices: string[] = [];
 
-        if (Array.isArray(partner.services)) {
-          partnerServices = partner.services;
-        } else if (typeof partner.services === "string") {
-          partnerServices = partner.services
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-        }
+  if (Array.isArray(partner.services)) {
+    partnerServices = partner.services;
+  } else if (typeof partner.services === "string") {
+    partnerServices = partner.services
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+  }
 
-        const match = partnerServices.some((s) => selectedServices.includes(s.toLowerCase()) );
+  const match = partnerServices.some((s) =>
+    selectedServices.includes(s)
+  );
 
-        if (match) {
-          rows.push({
-            quote_id: data.id,
-            partner_id: partner.id,
-            service: partnerServices.find((s) => selectedServices.includes(s.toLowerCase()) ),
-            status: "offered",
-          });
-        }
-      }
-
+  if (match) {
+    rows.push({
+      quote_id: data.id,
+      partner_id: partner.id,
+      service: partnerServices.find((s) =>
+        selectedServices.includes(s)
+      ),
+      status: "offered",
+    });
+  }
+}
       if (rows.length > 0) {
         await supabase.from("quote_partners").insert(rows);
       }
@@ -569,39 +571,6 @@ export default function HomePage() {
         </div>
 
         {/* SUBMIT BUTTON */}
-        <button
-          onClick={submit}
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: "16px",
-            fontSize: "18px",
-            fontWeight: "bold",
-            borderRadius: "12px",
-            border: "none",
-            background: loading
-              ? "#9ca3af"
-              : "linear-gradient(90deg, #10b981, #34d399)",
-            color: "white",
-            cursor: loading ? "not-allowed" : "pointer",
-            boxShadow: loading
-              ? "none"
-              : "0 8px 20px rgba(16, 185, 129, 0.3)",
-            transition: "all 0.2s ease",
-          }}
-          onMouseOver={(e) => {
-            if (!loading) {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 10px 25px rgba(16, 185, 129, 0.35)";
-            }
-          }}
-          onMouseOut={(e) => {
-            if (!loading) {
-              e.currentTarget.style.transform = "";
-              e.currentTarget.style.boxShadow = "0 8px 20px rgba(16, 185, 129, 0.3)";
-            }
-          }}
-        >
 <button
   onClick={submit}
   disabled={loading}
