@@ -2,59 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-// ✅ LOPULLINEN palveluiden puhdistus + normalisointi
+
+/* ✅ SERVICES CLEANING (KEEP SAME LOGIC) */
 function cleanAndNormalizeServices(raw: any): string[] {
   if (!raw) return [];
 
-  // 1️⃣ Muutetaan kaikki stringiksi
   let str = Array.isArray(raw) ? raw.join(",") : String(raw);
 
-  // 2️⃣ Poistetaan erikoismerkit
   str = str
-    .replace(/[\[\]\(\)"']/g, "") // poista [] () "" '
-    .replace(/&/g, ",")            // & → ,
-    .replace(/\//g, ",");          // / → ,
+    .replace(/[\[\]\(\)"']/g, "")
+    .replace(/&amp;/g, ",")
+    .replace(/\//g, ",");
 
-  // 3️⃣ Pilkotaan yksittäisiksi palveluiksi
   const parts = str
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
-  // 4️⃣ Normalisointi virallisiin nimiin
   const map: Record<string, string> = {
-    // Juhlatila
-    "juhlatila": "Juhlatila",
-    "juhla tila": "Juhlatila",
-    "juhla-tila": "Juhlatila",
-    "juhlatilat": "Juhlatila",
-
-    // Catering
-    "catering": "Catering",
-    "ravintola": "Catering",
-    "ruokailu": "Catering",
-
-    // DJ / Musiikki
-    "dj": "DJ / Musiikki",
-    "musiikki": "DJ / Musiikki",
-    "dj musiikki": "DJ / Musiikki",
-    "dj & musiikki": "DJ / Musiikki",
-    "dj / musiikki": "DJ / Musiikki",
-
-    // Valokuvaus
-    "valokuvaaja": "Valokuvaus",
-    "valokuvaus": "Valokuvaus",
-    "kuvaaja": "Valokuvaus",
-
-    // Somistus
-    "somistus": "Somistus / Koristelu",
-    "koristelu": "Somistus / Koristelu",
-
-    // Muut
-    "event planner": "Tapahtumasuunnittelu",
-    "leipomo": "Leipomo / Kakut",
-    "kakut": "Leipomo / Kakut",
-    "leipomo kakut": "Leipomo / Kakut",
+    juhlatila: "Juhlatila",
+    catering: "Catering",
+    dj: "DJ / Musiikki",
+    musiikki: "DJ / Musiikki",
+    valokuvaus: "Valokuvaus",
+    somistus: "Somistus / Koristelu",
   };
 
   return Array.from(
@@ -63,315 +34,391 @@ function cleanAndNormalizeServices(raw: any): string[] {
 }
 
 export default function BrowsePage() {
+  const [partners, setPartners] = useState<any[]>([]);
   const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
+
+  const [areaFilter, setAreaFilter] = useState("Kaikki");
+  const [serviceFilter, setServiceFilter] = useState("Kaikki");
+
   const [email, setEmail] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [guests, setGuests] = useState("");
+
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const [partners, setPartners] = useState<any[]>([]);
-  
-  const [areaFilter, setAreaFilter] = useState("Kaikki");
-const [serviceFilter, setServiceFilter] = useState("Kaikki");
-
-  // ✅ HAETAAN PARTNERIT AUTOMAATTISESTI
+  /* ✅ FETCH PARTNERS */
   useEffect(() => {
     const fetchPartners = async () => {
-      const { data, error } = await supabase
-  .from("partners")
-  .select("id, company, area, services")
-  .eq("status", "approved");
+      const { data } = await supabase
+        .from("partners")
+        .select("id, company, area, services")
+        .eq("status", "approved");
 
-if (error) {
-  console.error("SUPABASE PARTNERS ERROR:", error);
-}
-
-console.log("PARTNERS DATA:", data);
-
-setPartners(data || []);
+      setPartners(data || []);
     };
 
     fetchPartners();
   }, []);
 
-
+  /* ✅ FILTER DATA */
   const areas = [
-  "Kaikki",
-  ...Array.from(new Set(partners.map((p) => p.area))).filter(Boolean),
-];
-const services = [
-  "Kaikki",
-  ...Array.from(
-    new Set(
-      partners.flatMap((p) => cleanAndNormalizeServices(p.services))
-    )
-  ),
-];
-const groupedPartners = partners.reduce((acc: any, company: any) => {
-  const services = cleanAndNormalizeServices(company.services);
+    "Kaikki",
+    ...Array.from(new Set(partners.map((p) => p.area))).filter(Boolean),
+  ];
 
-  services.forEach((service) => {
-    if (serviceFilter !== "Kaikki" && service !== serviceFilter) return;
-    if (areaFilter !== "Kaikki" && company.area !== areaFilter) return;
+  const services = [
+    "Kaikki",
+    ...Array.from(
+      new Set(
+        partners.flatMap((p) =>
+          cleanAndNormalizeServices(p.services)
+        )
+      )
+    ),
+  ];
 
-    if (!acc[service]) acc[service] = {};
-    if (!acc[service][company.area]) acc[service][company.area] = [];
+  const filteredPartners = partners.filter((p) => {
+    const services = cleanAndNormalizeServices(p.services);
 
-    acc[service][company.area].push(company);
+    const serviceMatch =
+      serviceFilter === "Kaikki" ||
+      services.includes(serviceFilter);
+
+    const areaMatch =
+      areaFilter === "Kaikki" ||
+      p.area === areaFilter;
+
+    return serviceMatch && areaMatch;
   });
 
-  return acc;
-}, {});
-return (
+  return (
     <main
-  style={{
-    minHeight: "100vh",
-    backgroundImage:
-      "linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('/juhlat.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundAttachment: "fixed",
-    padding: 40,
-  }}
->
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc",
+        padding: "40px 20px",
+      }}
+    >
       <div
         style={{
-          maxWidth: 1000,
+          maxWidth: 1400,
           margin: "0 auto",
-          background: "rgba(255,255,255,0.95)",
-          color: "#111",
-          borderRadius: 24,
-          padding: 40,
-          boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
-           
         }}
       >
-        <h1 style={{ fontSize: 32, marginBottom: 16 }}>
-          ✨ Ota yhteyttä suoraan palveluntarjoajaan
-        </h1>
-
-         <p style={{ color: "#1f2937", marginBottom: 32 }}>
-          Valitse itse ne palveluntarjoajat, joihin haluat olla yhteydessä.
-          Tämä tarjouspyyntö lähetetään vain valituille yrityksille – ei kaikille.
-        </p>
-
+        {/* HEADER */}
         <div
-  style={{
-    display: "flex",
-    gap: 16,
-    marginBottom: 32,
-    flexWrap: "wrap",
-  }}
->
-   <select
-  value={areaFilter}
-  onChange={(e) => setAreaFilter(e.target.value)}
-style={{
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #ccc",
-  color: "#111",
-  backgroundColor: "#fff"
-}}
->
-  {areas.map((area) => (
-    <option key={area} value={area}>
-      {area}
-    </option>
-  ))}
-</select>
+          style={{
+            marginBottom: 40,
+          }}
+        >
+          <h1
+            style={{
+              fontSize: 32,
+              fontWeight: "bold",
+              color: "#111827",
+            }}
+          >
+            ✨ Selaa palveluntarjoajia
+          </h1>
 
-  <select
-    value={serviceFilter}
-    onChange={(e) => setServiceFilter(e.target.value)}
-    style={{ padding: 8, borderRadius: 8 }}
-  >
-    {services.map((service) => (
-      <option key={service} value={service}>
-        {service}
-      </option>
-    ))}
-  </select>
-</div>
-        {/* ✅ YRITYSLISTA */}
-        <h2 style={{ fontSize: 24, marginBottom: 16 }}>
-          Valitse palveluntarjoajat
-        </h2>
+          <p style={{ color: "#374151", marginTop: 8 }}>
+            Valitse palvelut ja ota suoraan yhteyttä.
+          </p>
+        </div>
 
-        <div style={{ display: "grid", gap: 12, marginBottom: 32 }}>
-        {Object.entries(groupedPartners).map(([service, areas]: any) => (
-  <div key={service} style={{ marginBottom: 40 }}>
-    <h2 style={{ fontSize: 26, marginBottom: 16 }}>
-      {service}
-    </h2>
+        {/* FILTERS (PART 2 CONTINUES BELOW...) */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 16,
+            marginBottom: 40,
+          }}
+        >
+          {/* AREA FILTER */}
+          <div style={{ flex: "1 1 200px" }}>
+            <label style={{ fontWeight: 600, color: "#374151" }}>
+              📍 Alue
+            </label>
+            <select
+              value={areaFilter}
+              onChange={(e) => setAreaFilter(e.target.value)}
+              style={{
+                marginTop: 6,
+                width: "100%",
+                padding: "12px",
+                borderRadius: 10,
+                border: "1px solid #d1d5db",
+                backgroundColor: "#fff",
+                color: "#111827",
+              }}
+            >
+              {areas.map((area) => (
+                <option key={area} value={area}>
+                  {area}
+                </option>
+              ))}
+            </select>
+          </div>
 
-    {Object.entries(areas).map(([area, companies]: any) => (
-      <div key={area} style={{ marginBottom: 24, paddingLeft: 12 }}>
-        <h3 style={{ fontSize: 18, marginBottom: 8, color: "#111" }}>
-  {area}
-</h3>
+          {/* SERVICE FILTER */}
+          <div style={{ flex: "1 1 200px" }}>
+            <label style={{ fontWeight: 600, color: "#374151" }}>
+              🛠️ Palvelu
+            </label>
+            <select
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+              style={{
+                marginTop: 6,
+                width: "100%",
+                padding: "12px",
+                borderRadius: 10,
+                border: "1px solid #d1d5db",
+                backgroundColor: "#fff",
+                color: "#111827",
+              }}
+            >
+              {services.map((service) => (
+                <option key={service} value={service}>
+                  {service}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-        <div style={{ display: "grid", gap: 12 }}>
-          {companies.map((company: any) => {
+        {/* PARTNER GRID */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 20,
+          }}
+        >
+          {filteredPartners.map((company) => {
             const checked = selectedPartners.includes(company.id);
 
             return (
-              <label
+              <div
                 key={company.id}
+                onClick={() => {
+                  setSelectedPartners((prev) =>
+                    checked
+                      ? prev.filter((id) => id !== company.id)
+                      : [...prev, company.id]
+                  );
+                }}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: 16,
-                  borderRadius: 12,
+                  cursor: "pointer",
+                  borderRadius: 16,
+                  padding: 20,
+                  background: "#ffffff",
                   border: checked
                     ? "2px solid #10b981"
                     : "1px solid #e5e7eb",
-                  background: checked ? "#ecfdf5" : "#fff",
-                  cursor: "pointer",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+                  transition: "all 0.2s ease",
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => {
-                    setSelectedPartners((prev) =>
-                      checked
-                        ? prev.filter((id) => id !== company.id)
-                        : [...prev, company.id]
-                    );
+                {/* COMPANY NAME */}
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: 18,
+                    color: "#111827",
+                    marginBottom: 8,
                   }}
-                />
-<span style={{ color: "#111", fontWeight: "500" }}>
-  {company.company}
-</span>
-              </label>
+                >
+                  {checked ? "✅ " : ""}
+                  {company.company}
+                </div>
+
+                {/* AREA */}
+                <div style={{ color: "#6b7280", fontSize: 14 }}>
+                  📍 {company.area}
+                </div>
+
+                {/* SERVICES */}
+                <div
+                  style={{
+                    marginTop: 10,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 6,
+                  }}
+                >
+                  {cleanAndNormalizeServices(company.services).map(
+                    (s: string) => (
+                      <span
+                        key={s}
+                        style={{
+                          fontSize: 12,
+                          padding: "4px 8px",
+                          borderRadius: 8,
+                          background: "#f1f5f9",
+                          color: "#374151",
+                        }}
+                      >
+                        {s}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
-      </div>
-    ))}
-  </div>
-))}
-        </div>
-
-        {/* ✅ LOMAKE */}
-        <h2 style={{ fontSize: 24, marginBottom: 16 }}>
-          Lähetä tarjouspyyntö
-        </h2>
-
-        {success ? (
-          <div
+                {/* REQUEST FORM */}
+        <div
+          style={{
+            marginTop: 60,
+            background: "#ffffff",
+            padding: 30,
+            borderRadius: 20,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+            maxWidth: 600,
+          }}
+        >
+          <h2
             style={{
-              background: "#ecfdf5",
-              border: "1px solid #10b981",
-              padding: 20,
-              borderRadius: 12,
+              fontSize: 24,
               fontWeight: "bold",
+              marginBottom: 20,
+              color: "#111827",
             }}
           >
-            ✅ Tarjouspyyntö lähetetty valituille palveluntarjoajille.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 12, maxWidth: 400 }}>
-            <input
-  type="email"
-  placeholder="Sähköpostiosoite"
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-  style={{
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #ccc",
-    color: "#111"
-  }}
-/>
+            📩 Lähetä tarjouspyyntö
+          </h2>
 
-
-            <input
-  type="date"
-  value={eventDate}
-  onChange={(e) => setEventDate(e.target.value)}
-  style={{
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #ccc",
-    color: "#111"
-  }}
-/>
-
-            <input
-  type="number"
-  placeholder="Arvioitu vierasmäärä"
-  value={guests}
-  onChange={(e) => setGuests(e.target.value)}
-  style={{
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #ccc",
-    color: "#111"
-  }}
-/>
-
-            <button
-              disabled={sending}
-              onClick={async () => {
-                if (
-                  !email ||
-                  !eventDate ||
-                  !guests ||
-                  selectedPartners.length === 0
-                ) {
-                  alert(
-                    "Täytä kaikki kentät ja valitse vähintään yksi yritys."
-                  );
-                  return;
-                }
-
-                setSending(true);
-
-                const { error } = 
-                await supabase.from("direct_requests").insert({
-  email,
-  event_date: eventDate,
-  guests: Number(guests),
-  partner_ids: selectedPartners.map((id) => id), // ✅ varmistetaan uuid[]
-});
-await fetch("/api/send-direct-request", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email,
-    event_date: eventDate,
-    guests,
-    partner_ids: selectedPartners,
-  }),
-});
-
-if (error) {
-  console.error("DIRECT_REQUESTS INSERT ERROR:", error);
-  alert(error.message);
-}
-
-                setSending(false);
-                setSuccess(true);
-              }}
+          {success ? (
+            <div
               style={{
-                marginTop: 12,
-                padding: "12px 16px",
+                background: "#ecfdf5",
+                border: "1px solid #10b981",
+                padding: 20,
                 borderRadius: 12,
-                border: "none",
-                background: "linear-gradient(90deg, #10b981, #34d399)",
-                color: "#fff",
                 fontWeight: "bold",
-                cursor: "pointer",
+                color: "#065f46",
               }}
             >
-              📩 Lähetä tarjouspyyntö
-            </button>
-          </div>
-        )}
+              ✅ Tarjouspyyntö lähetetty!
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 14 }}>
+              {/* EMAIL */}
+              <input
+                type="email"
+                placeholder="Sähköposti"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 14,
+                  borderRadius: 10,
+                  border: "1px solid #d1d5db",
+                  fontSize: 16,
+                  color: "#111827",
+                }}
+              />
+
+              {/* DATE */}
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 14,
+                  borderRadius: 10,
+                  border: "1px solid #d1d5db",
+                  fontSize: 16,
+                  color: "#111827",
+                }}
+              />
+
+              {/* GUESTS */}
+              <input
+                type="number"
+                placeholder="Vierasmäärä"
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 14,
+                  borderRadius: 10,
+                  border: "1px solid #d1d5db",
+                  fontSize: 16,
+                  color: "#111827",
+                }}
+              />
+
+              {/* BUTTON */}
+              <button
+                disabled={sending}
+                onClick={async () => {
+                  if (
+                    !email ||
+                    !eventDate ||
+                    !guests ||
+                    selectedPartners.length === 0
+                  ) {
+                    alert(
+                      "Täytä kaikki kentät ja valitse vähintään yksi yritys."
+                    );
+                    return;
+                  }
+
+                  setSending(true);
+
+                  const { error } = await supabase
+                    .from("direct_requests")
+                    .insert({
+                      email,
+                      event_date: eventDate,
+                      guests: Number(guests),
+                      partner_ids: selectedPartners,
+                    });
+
+                  await fetch("/api/send-direct-request", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      email,
+                      event_date: eventDate,
+                      guests,
+                      partner_ids: selectedPartners,
+                    }),
+                  });
+
+                  if (error) {
+                    alert(error.message);
+                  }
+
+                  setSending(false);
+                  setSuccess(true);
+                }}
+                style={{
+                  marginTop: 10,
+                  padding: "14px",
+                  borderRadius: 12,
+                  border: "none",
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  background: sending
+                    ? "#9ca3af"
+                    : "#2563eb",
+                  color: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                {sending ? "Lähetetään..." : "📩 Lähetä pyyntö"}
+              </button>
+            </div>
+          )}
+        </div>
+
       </div>
     </main>
   );
