@@ -605,10 +605,38 @@ export default function HomePage() {
 <button
   onClick={submit}
   disabled={loading}
+  style={{
+    width: "100%",
+    padding: "16px",
+    fontSize: "18px",
+    fontWeight: "bold",
+    borderRadius: "12px",
+    border: "none",
+    background: loading
+      ? "#9ca3af"
+      : "linear-gradient(90deg, #10b981, #34d399)",
+    color: "white",
+    cursor: loading ? "not-allowed" : "pointer",
+    boxShadow: loading
+      ? "none"
+      : "0 8px 20px rgba(16, 185, 129, 0.3)",
+    transition: "all 0.2s ease",
+  }}
+  onMouseOver={(e) => {
+    if (!loading) {
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = "0 10px 25px rgba(16, 185, 129, 0.35)";
+    }
+  }}
+  onMouseOut={(e) => {
+    if (!loading) {
+      e.currentTarget.style.transform = "";
+      e.currentTarget.style.boxShadow = "0 8px 20px rgba(16, 185, 129, 0.3)";
+    }
+  }}
 >
-  {loading ? "Lähetetään..." : "🎊 Pyydä tarjoukset nyt"}
+  {loading ? "⏳ Lähetetään..." : "🎊 Pyydä tarjoukset nyt"}
 </button>
-        </button>
       </div>
     </main>
   );
