@@ -140,9 +140,11 @@ return (
           maxWidth: 1000,
           margin: "0 auto",
           background: "rgba(255,255,255,0.95)",
+          color: "#111",
           borderRadius: 24,
           padding: 40,
           boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+           
         }}
       >
         <h1 style={{ fontSize: 32, marginBottom: 16 }}>
@@ -165,13 +167,13 @@ return (
    <select
   value={areaFilter}
   onChange={(e) => setAreaFilter(e.target.value)}
-  style={{
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #ccc",
-    color: "#111",
-    backgroundColor: "#fff"
-  }}
+style={{
+  padding: 10,
+  borderRadius: 8,
+  border: "1px solid #ccc",
+  color: "#111",
+  backgroundColor: "#fff"
+}}
 >
   {areas.map((area) => (
     <option key={area} value={area}>

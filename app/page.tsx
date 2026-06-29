@@ -284,18 +284,17 @@ return (
   Tapahtuman tiedot
 </h2>
       <div
-        style={{
-          background: "#fff",
-          padding: 20,
-          borderRadius: 16,
-          marginBottom: 24,
-          boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-          display: "grid",
-          gap: 12,
-        }}
-      >
-        <label>
-          Päivämäärä *
+  style={{
+    background: "#ffffff",
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+    color: "#111",
+  }}
+>
+        <label style={{ color: "#111", fontWeight: "600" }}>
+  Päivämäärä *
           <input
             type="date"
             value={event.date}
@@ -307,11 +306,12 @@ return (
   borderRadius: 8,
   border: "1px solid #ccc",
   color: "#111"
+   backgroundColor: "#fff"
 }}
           />
         </label>
 
-        <label>
+        <label style={{ color: "#111", fontWeight: "600" }}>2
           Tapahtuman tyyppi *
           <select
   value={event.eventType}
@@ -335,7 +335,7 @@ return (
           </select>
         </label>
 
-        <label>
+        <label style={{ color: "#111", fontWeight: "600" }}>2
           Paikkakunta *
           <input
             value={event.location}
@@ -347,10 +347,11 @@ style={{
   borderRadius: 8,
   border: "1px solid #ccc",
   color: "#111"
+   backgroundColor: "#fff"
 }}          />
         </label>
 
-        <label>
+        <label style={{ color: "#111", fontWeight: "600" }}>2
           Vierasmäärä *
           <input
             type="number"
@@ -363,10 +364,11 @@ style={{
   borderRadius: 8,
   border: "1px solid #ccc",
   color: "#111"
+   backgroundColor: "#fff"
 }}          />
         </label>
 
-        <label>
+        <label> style={{ color: "#111", fontWeight: "600" }}>
           Sähköposti *
           <input
             type="email"
@@ -379,10 +381,11 @@ style={{
   borderRadius: 8,
   border: "1px solid #ccc",
   color: "#111"
+   backgroundColor: "#fff"
 }}          />
         </label>
 
-        <label>
+        <label>style={{ color: "#111", fontWeight: "600" }}>
           Budjetti (valinnainen)
           <input
             type="number"
@@ -395,6 +398,7 @@ style={{
   borderRadius: 8,
   border: "1px solid #ccc",
   color: "#111"
+   backgroundColor: "#fff"
 }}          />
         </label>
       </div>
