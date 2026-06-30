@@ -32,6 +32,7 @@ export default function HomePage() {
     guests: "",
     budget: "",
     email: "",
+    notes: "",
   });
 
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -88,48 +89,60 @@ export default function HomePage() {
 
     const { data: partners } = await supabase.from("partners").select("id, services");
 
-    if (partners && partners.length > 0) {
-      const rows = [];
+    let rows: any[] = [];
 
-      for (const partner of partners) {
-  let partnerServices: string[] = [];
+if (partners && partners.length > 0) {
+  for (const partner of partners) {
+    let partnerServices: string[] = [];
 
-  if (Array.isArray(partner.services)) {
-    partnerServices = partner.services;
-  } else if (typeof partner.services === "string") {
-    partnerServices = partner.services
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean);
-  }
+    if (Array.isArray(partner.services)) {
+      partnerServices = partner.services;
+    } else if (typeof partner.services === "string") {
+      partnerServices = partner.services
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+    }
 
-  const match = partnerServices.some((s) =>
-    selectedServices.includes(s)
-  );
+    const matchedService = partnerServices.find((s) =>
+      selectedServices.includes(s)
+    );
 
-  if (match) {
+    if (!matchedService) continue;
+
     rows.push({
       quote_id: data.id,
       partner_id: partner.id,
-      service: partnerServices.find((s) =>
-        selectedServices.includes(s)
-      ),
+      partner_name: partner.company,
+      service: matchedService,
       status: "offered",
     });
   }
 }
-      if (rows.length > 0) {
-        await supabase.from("quote_partners").insert(rows);
-      }
+
+if (rows.length > 0) {
+  await supabase.from("quote_partners").insert(rows);
+}
 
       await fetch("/api/notify-partners", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quoteId: data.id }),
       });
-    }
+    
 
+    await fetch("/api/confirm-request", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: event.email,
+    quoteId: data.id,
+    eventType: event.eventType,
+    date: event.date,
+  }),
+});
     setLoading(false);
+
     router.push(`/quote/${data.id}`);
   }
 
@@ -462,6 +475,37 @@ export default function HomePage() {
                 }}
               />
             </div>
+            <div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: "6px",
+      fontWeight: "600",
+      color: "#111",
+      fontSize: "15px",
+    }}
+  >
+    Lisätiedot (valinnainen)
+  </label>
+
+  <textarea
+    value={event.notes}
+    onChange={(e) =>
+      setEvent({ ...event, notes: e.target.value })
+    }
+    placeholder="Esim. juhlan teema, erityistoiveet..."
+    style={{
+      width: "100%",
+      padding: "12px",
+      borderRadius: "8px",
+      border: "1px solid #d1d5db",
+      backgroundColor: "#fff",
+      fontSize: "16px",
+      color: "#111",
+      minHeight: "100px",
+    }}
+  />
+</div>
 
             <div>
               <label

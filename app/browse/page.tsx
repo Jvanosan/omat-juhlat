@@ -59,12 +59,12 @@ export default function BrowsePage() {
   const [partners, setPartners] = useState<any[]>([]);
   const [areaFilter, setAreaFilter] = useState("Kaikki");
   const [serviceFilter, setServiceFilter] = useState("Kaikki");
-
+ const [notes, setNotes] = useState("");
   useEffect(() => {
     const fetchPartners = async () => {
       const { data, error } = await supabase
         .from("partners")
-        .select("id, company, area, services")
+        .select("id, company, area, services,images")
         .eq("status", "approved");
 
       if (error) {
@@ -118,6 +118,7 @@ export default function BrowsePage() {
       event_date: eventDate,
       guests: Number(guests),
       partner_ids: selectedPartners,
+      notes, 
     });
 
     if (error) {
@@ -135,6 +136,7 @@ export default function BrowsePage() {
         event_date: eventDate,
         guests,
         partner_ids: selectedPartners,
+         notes,
       }),
     });
 
@@ -230,28 +232,56 @@ export default function BrowsePage() {
 
                       return (
                         <label
-                          key={company.id}
-                          className={`flex items-center gap-3 rounded-2xl border p-4 cursor-pointer transition-all
+  key={company.id}
+  className={`relative rounded-2xl border overflow-hidden cursor-pointer transition-all
   ${
     checked
-      ? "border-emerald-600 bg-emerald-950/30"
-      : "border-zinc-800 hover:border-zinc-700 bg-zinc-900"
+      ? "border-emerald-500 bg-emerald-950/40 scale-[1.02] shadow-lg"
+      : "border-zinc-800 hover:border-zinc-700 bg-zinc-900 hover:scale-[1.01]"
   }`}
-                        >
+>
 
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              setSelectedPartners((prev) =>
-                                checked
-                                  ? prev.filter((id) => id !== company.id)
-                                  : [...prev, company.id]
-                              );
-                            }}
-                            className="accent-emerald-500 scale-110"
-                          />
-                          <span className="font-medium text-white">{company.company}</span>
+  {/* ✅ TÄHÄN LISÄÄ */}
+  {checked && (
+    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs px-3 py-1 rounded-full">
+      Valittu
+    </div>
+  )}
+
+
+                          <div className="absolute top-3 right-3">
+  <input
+    type="checkbox"
+    checked={checked}
+    onChange={() => {
+      setSelectedPartners((prev) =>
+        checked
+          ? prev.filter((id) => id !== company.id)
+          : [...prev, company.id]
+      );
+    }}
+    className="accent-emerald-500 scale-125"
+  />
+</div>
+
+{company.images && (
+  <div className="flex gap-2 overflow-x-auto p-2">
+    {company.images.split(",").map((img: string, i: number) => (
+      <img
+        key={i}
+        src={img.trim()}
+        alt={company.company}
+        className="h-24 w-32 object-cover rounded-lg"
+      />
+    ))}
+  </div>
+)}
+
+<div className="p-4 pt-0">
+  <span className="font-medium text-white block">
+    {company.company}
+  </span>
+</div>
                         </label>
                       );
                     })}
@@ -300,6 +330,12 @@ export default function BrowsePage() {
                   className="rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-700"
                 />
               </div>
+              <textarea
+  placeholder="Lisätiedot (valinnainen)"
+  value={notes}
+  onChange={(e) => setNotes(e.target.value)}
+  className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-700"
+/>
 
               <button
                 onClick={handleSubmit}
