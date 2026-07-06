@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import PageContainer from "../components/PageContainer"
 
 export default function PartnerPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -9,8 +10,14 @@ export default function PartnerPage() {
   const [messages, setMessages] = useState<Record<string, string>>({});
 
   useEffect(() => {
+  loadData();
+
+  const interval = setInterval(() => {
     loadData();
-  }, []);
+  }, 30000);
+
+  return () => clearInterval(interval);
+}, []);
 
   async function loadData() {
     const {
@@ -54,6 +61,7 @@ export default function PartnerPage() {
 
     setItems(combined);
   }
+  
   async function submitOffer(item: any) {
   const price = prices[item.id];
   const message = messages[item.id];
@@ -81,6 +89,7 @@ export default function PartnerPage() {
   alert("✅ Tarjous lähetetty");
   loadData();
 }
+
   async function cancelOffer(item: any) {
     if (!confirm("Haluatko varmasti perua tämän tarjouksen?")) return;
 
@@ -94,15 +103,23 @@ export default function PartnerPage() {
   }
 
   return (
+    <PageContainer>
     <main
-      style={{
-        minHeight: "100vh",
-        padding: 40,
-        background: "linear-gradient(180deg, #f9fafb, #eef2f3)",
-      }}
-    >
-      <h1 style={{ fontSize: 28, marginBottom: 20 }}>
-        📥 Saapuneet tarjouspyynnöt
+  style={{
+    minHeight: "100vh",
+    padding: 16,
+    background: "linear-gradient(180deg, #f9fafb, #eef2f3)",
+  }}
+>
+<h1
+  style={{
+    fontSize: 32,
+    marginBottom: 24,
+    fontWeight: "bold",
+    wordBreak: "break-word",
+  }}
+>     
+📥 Saapuneet tarjouspyynnöt
       </h1>
 
       {items.length === 0 && (
@@ -111,71 +128,151 @@ export default function PartnerPage() {
 
       {items.map((item) => (
         <div
-          key={item.id}
-          style={{
-            background: "white",
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 20,
-            boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-          }}
-        >
+  key={item.id}
+  style={{
+    background: "white",
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+    border: "1px solid #e5e7eb",
+  }}
+>
           {/* TILA */}
           {item.status === "peruttu" && (
-            <p style={{ color: "#991b1b", fontWeight: "bold" }}>
-              ❌ Tarjous peruttu
-            </p>
-          )}
+  <div
+    style={{
+      background: "#fee2e2",
+      color: "#991b1b",
+      padding: "10px 14px",
+      borderRadius: 10,
+      marginBottom: 12,
+      fontWeight: "bold",
+      display: "inline-block",
+    }}
+  >
+    ❌ Tarjous peruttu
+  </div>
+)}
 
           {item.status === "valittu" && (
-            <p style={{ color: "#047857", fontWeight: "bold" }}>
-              🏆 Asiakas valitsi tämän tarjouksen
-            </p>
-          )}
+  <div
+    style={{
+      background: "#dcfce7",
+      color: "#166534",
+      padding: "14px",
+      borderRadius: 10,
+      marginBottom: 12,
+      border: "1px solid #86efac",
+    }}
+  >
+    <div style={{ fontWeight: "bold", marginBottom: 10 }}>
+      🏆 Asiakas valitsi tämän tarjouksen
+    </div>
+
+    <div>👤 {item.quote?.name}</div>
+    <div>📧 {item.quote?.email}</div>
+    <div>📞 {item.quote?.phone}</div>
+
+    {item.quote?.extraInfo && (
+      <div style={{ marginTop: 10 }}>
+        💬 {item.quote.extraInfo}
+      </div>
+    )}
+  </div>
+)}
 
           {item.status === "hävitty" && (
-            <p style={{ color: "#991b1b", fontWeight: "bold" }}>
-              ❌ Asiakas valitsi toisen tarjouksen
-            </p>
-          )}
+  <div
+    style={{
+      background: "#fee2e2",
+      color: "#991b1b",
+      padding: "10px 14px",
+      borderRadius: 10,
+      marginBottom: 12,
+      fontWeight: "bold",
+      display: "inline-block",
+    }}
+  >
+    ❌ Asiakas valitsi toisen tarjouksen
+  </div>
+)}
 
           {item.status === "offered" && !item.offer_price && (
             <p style={{ color: "#92400e", fontWeight: "bold" }}>
               🕒 Odottaa vastaustasi
             </p>
           )}
-
-          {item.status === "offered" && item.offer_price && (
-            <p style={{ color: "#047857", fontWeight: "bold" }}>
-              ✅ Tarjous lähetetty – odottaa asiakkaan päätöstä
-            </p>
-          )}
-
-          <h3 style={{ marginBottom: 8 }}>
-            📦 Palvelu: {item.service}
+{item.status === "offered" && item.offer_price && (
+  <div
+    style={{
+      background: "#dcfce7",
+      color: "#166534",
+      padding: "10px 14px",
+      borderRadius: 10,
+      marginBottom: 12,
+      fontWeight: "bold",
+      display: "inline-block",
+    }}
+  >
+    ✅ Tarjous lähetetty – odottaa asiakkaan päätöstä
+  </div>
+)}
+<h3
+  style={{
+    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: 700,
+    wordBreak: "break-word",
+  }}
+>         📦 Palvelu: {item.service}
           </h3>
 
-          <p style={{ color: "#555" }}>
-            📅 {item.quote?.date} <br />
+<p
+  style={{
+    color: "#555",
+    fontSize: 16,
+    lineHeight: 1.6,
+  }}
+>            📅 {item.quote?.date} <br />
             📍 {item.quote?.location} <br />
             👥 {item.quote?.guests} vierasta
           </p>
+          {item.quote?.extraInfo && (
+  <div
+    style={{
+      marginTop: 12,
+      padding: 12,
+      background: "#f9fafb",
+      borderRadius: 10,
+      border: "1px solid #e5e7eb",
+    }}
+  >
+    <strong>Lisätiedot:</strong>
+    <br />
+    {item.quote.extraInfo}
+  </div>
+)}
 
           {!item.offer_price && item.status === "offered" ? (
             <>
               <input
-                type="number"
-                placeholder="Hinta (€)"
-                value={prices[item.id] || ""}
-                onChange={(e) =>
-                  setPrices({ ...prices, [item.id]: e.target.value })
-                }
-                style={{
-                  width: "100%",
-                  padding: 10,
-                  marginBottom: 8,
-                }}
-              />
+  type="number"
+  placeholder="Hinta (€)"
+  value={prices[item.id] || ""}
+  onChange={(e) =>
+    setPrices({ ...prices, [item.id]: e.target.value })
+  }
+  style={{
+    width: "100%",
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    fontSize: 16,
+    boxSizing: "border-box",
+  }}
+/>
 
               <textarea
                 placeholder="Viesti asiakkaalle (valinnainen)"
@@ -184,10 +281,14 @@ export default function PartnerPage() {
                   setMessages({ ...messages, [item.id]: e.target.value })
                 }
                 style={{
-                  width: "100%",
-                  padding: 10,
-                  marginBottom: 12,
-                }}
+  width: "100%",
+  padding: 12,
+  marginBottom: 12,
+  borderRadius: 10,
+  border: "1px solid #d1d5db",
+  fontSize: 16,
+  boxSizing: "border-box",
+}}
               />
 
               <button
@@ -209,14 +310,15 @@ export default function PartnerPage() {
             </>
           ) : item.offer_price ? (
             <div
-              style={{
-                background: "#ecfdf5",
-                padding: 12,
-                borderRadius: 8,
-                color: "#065f46",
-                marginTop: 10,
-              }}
-            >
+  style={{
+    background: "#ecfdf5",
+    padding: 16,
+    borderRadius: 12,
+    color: "#065f46",
+    marginTop: 12,
+    border: "1px solid #a7f3d0",
+  }}
+>
               <p><strong>Lähettämäsi tarjous:</strong></p>
               <p>💰 {item.offer_price} €</p>
               {item.offer_message && <p>💬 {item.offer_message}</p>}
@@ -242,5 +344,6 @@ export default function PartnerPage() {
         </div>
       ))}
     </main>
-  );
+  </PageContainer>
+);
 }
