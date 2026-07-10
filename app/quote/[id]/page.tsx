@@ -112,7 +112,7 @@ export default function QuotePage() {
         </h1>
 <p
   style={{
-    color: "#666",
+    color: "#111827",
     marginBottom: 20,
     fontSize: 18,
     lineHeight: 1.6,

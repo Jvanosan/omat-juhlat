@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageContainer from "../components/PageContainer"
 
 export default function PartnerPage() {
+  const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
@@ -24,7 +26,10 @@ export default function PartnerPage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.email) return;
+    if (!user?.email) {
+  router.push("/login");
+  return;
+}
 
     const { data: partner } = await supabase
       .from("partners")
@@ -230,7 +235,7 @@ export default function PartnerPage() {
 
 <p
   style={{
-    color: "#555",
+    color: "#1f2937",
     fontSize: 16,
     lineHeight: 1.6,
   }}

@@ -18,7 +18,8 @@ export default function AdminPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<any[]>([]);
-
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processingQuoteId, setProcessingQuoteId] = useState<string | null>(null);
   // 🔐 Tarkistetaan admin‑oikeus
 
 useEffect(() => {
@@ -82,50 +83,114 @@ useEffect(() => {
   }, [authorized]);
 
   if (!authorized) {
-    return <p style={{ padding: 40 }}>Tarkistetaan oikeuksia…</p>;
-  }
+  return (
+    <p
+      style={{
+        padding: 40,
+        color: "#111827",
+        fontSize: 18,
+        fontWeight: 600,
+      }}
+    >
+      Tarkistetaan oikeuksia...
+    </p>
+  );
+}
  const updatePartnerStatus = async (
-    partnerId: string,
-    status: "approved" | "rejected"
-  ) => {
-    await fetch("/api/admin/partners/status", {
+  partnerId: string,
+  status: "approved" | "rejected"
+) => {
+  try {
+    setProcessingId(partnerId);
+
+    const res = await fetch("/api/admin/partners/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ partnerId, status }),
     });
+
+    if (!res.ok) {
+      alert("Virhe tallennuksessa");
+      return;
+    }
 
     setPartners(prev =>
       prev.map(p =>
         p.id === partnerId ? { ...p, status } : p
       )
     );
-  };
-// ✅ Päivitetään tarjouspyynnön tila (D5)
+  } catch (error) {
+    console.error(error);
+    alert("Jotain meni pieleen");
+  } finally {
+    setProcessingId(null);
+  }
+};
 const updateQuoteStatus = async (
   quoteId: string,
   status: "avoin" | "käsittelyssä" | "suljettu"
 ) => {
-  await fetch("/api/admin/quotes/status", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ quoteId, status }),
-  });
+  try {
+    setProcessingQuoteId(quoteId);
 
-  // päivitetään näkymä heti
-  setRequests((prev) =>
-    prev.map((q) =>
-      q.id === quoteId ? { ...q, status } : q
-    )
-  );
+    const res = await fetch("/api/admin/quotes/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quoteId, status }),
+    });
+
+    if (!res.ok) {
+      alert("Virhe tallennuksessa");
+      return;
+    }
+
+    setRequests((prev) =>
+      prev.map((q) =>
+        q.id === quoteId ? { ...q, status } : q
+      )
+    );
+  } catch (error) {
+    console.error(error);
+    alert("Jotain meni pieleen");
+  } finally {
+    setProcessingQuoteId(null);
+  }
 };
   if (loading) {
-    return <p style={{ padding: 40 }}>Ladataan kumppaneita…</p>;
-  }
+  return (
+    <p
+      style={{
+        padding: 40,
+        color: "#111827",
+        fontSize: 18,
+        fontWeight: 600,
+      }}
+    >
+      Ladataan kumppaneita...
+    </p>
+  );
+}
 
   return (
     <main style={{ padding: 40, fontFamily: "Arial" }}>
-      <h1>🛠️ Admin – OmatJuhlat</h1>
-      <h2 style={{ marginTop: 40 }}>📨 Tarjouspyynnöt</h2>
+<h1
+  style={{
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 20,
+  }}
+>
+  🛠️ Admin – OmatJuhlat
+</h1>      <h2
+  style={{
+    marginTop: 40,
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#111827",
+  }}
+>
+  📨 Tarjouspyynnöt</h2>
 
 {requests.length === 0 ? (
   <p>Ei tarjouspyyntöjä.</p>
@@ -162,39 +227,44 @@ const updateQuoteStatus = async (
           </td>
           <td>
   {r.status === "avoin" && (
-    <button
-      onClick={() =>
-        updateQuoteStatus(r.id, "käsittelyssä")
-      }
-      style={{
-        padding: "6px 12px",
-        borderRadius: 6,
-        border: "none",
-        background: "#fde68a",
-        cursor: "pointer",
-      }}
-    >
-      Merkitse käsittelyyn
-    </button>
-  )}
+  <button
+    onClick={() =>
+      updateQuoteStatus(r.id, "käsittelyssä")
+    }
+    disabled={processingQuoteId === r.id}
+    style={{
+      padding: "6px 12px",
+      borderRadius: 6,
+      border: "none",
+      background: "#fde68a",
+      cursor: "pointer",
+    }}
+  >
+    {processingQuoteId === r.id
+      ? "Tallennetaan..."
+      : "Merkitse käsittelyyn"}
+  </button>
+)}
 
-  {r.status === "käsittelyssä" && (
-    <button
-      onClick={() =>
-        updateQuoteStatus(r.id, "suljettu")
-      }
-      style={{
-        padding: "6px 12px",
-        borderRadius: 6,
-        border: "none",
-        background: "#bbf7d0",
-        cursor: "pointer",
-      }}
-    >
-      Sulje pyyntö
-    </button>
-  )}
-
+{r.status === "käsittelyssä" && (
+  <button
+    onClick={() =>
+      updateQuoteStatus(r.id, "suljettu")
+    }
+    disabled={processingQuoteId === r.id}
+    style={{
+      padding: "6px 12px",
+      borderRadius: 6,
+      border: "none",
+      background: "#bbf7d0",
+      cursor: "pointer",
+    }}
+  >
+    {processingQuoteId === r.id
+      ? "Tallennetaan..."
+      : "Sulje pyyntö"}
+  </button>
+)}
   {r.status === "suljettu" && (
     <span style={{ color: "#6b7280" }}>
       Ei toimintoja
@@ -234,17 +304,23 @@ const updateQuoteStatus = async (
         {p.status === "pending" && (
           <>
             <button
-              onClick={() => updatePartnerStatus(p.id, "approved")}
-              style={approveBtn}
-            >
-              Hyväksy
-            </button>
+  onClick={() => updatePartnerStatus(p.id, "approved")}
+  disabled={processingId === p.id}
+  style={approveBtn}
+>
+  {processingId === p.id
+    ? "Tallennetaan..."
+    : "Hyväksy"}
+</button>
             <button
-              onClick={() => updatePartnerStatus(p.id, "rejected")}
-              style={rejectBtn}
-            >
-              Hylkää
-            </button>
+  onClick={() => updatePartnerStatus(p.id, "rejected")}
+  disabled={processingId === p.id}
+  style={rejectBtn}
+>
+  {processingId === p.id
+    ? "Tallennetaan..."
+    : "Hylkää"}
+</button>
           </>
         )}
       </td>

@@ -281,6 +281,13 @@ export default function BrowsePage() {
   <span className="font-medium text-white block">
     {company.company}
   </span>
+  <p className="text-sm text-zinc-400 mt-1">
+  📍 {company.area}
+</p>
+
+<p className="text-sm text-zinc-500">
+  {cleanAndNormalizeServices(company.services).join(", ")}
+</p>
 </div>
                         </label>
                       );
@@ -291,6 +298,28 @@ export default function BrowsePage() {
             </div>
           ))}
         </div>
+        {selectedPartners.length > 0 && (
+  <div className="mb-10 rounded-2xl border border-emerald-800 bg-emerald-950/30 p-5">
+    <h3 className="text-xl font-semibold text-emerald-400 mb-3">
+      📋 Valitsemasi palveluntarjoajat ({selectedPartners.length})
+    </h3>
+
+    <div className="flex flex-wrap gap-2">
+      {partners
+        .filter((partner) =>
+          selectedPartners.includes(partner.id)
+        )
+        .map((partner) => (
+          <div
+            key={partner.id}
+            className="rounded-full bg-emerald-600 px-3 py-1 text-sm text-white"
+          >
+            ✅ {partner.company}
+          </div>
+        ))}
+    </div>
+  </div>
+)}
 
 {/* Request Form */}
         <div className="mt-16 max-w-xl">
@@ -346,10 +375,10 @@ export default function BrowsePage() {
               </button>
 
               {selectedPartners.length > 0 && (
-                <p className="text-center text-sm text-zinc-500">
-                  Valittu {selectedPartners.length} palveluntarjoajaa
-                </p>
-              )}
+  <p className="text-center text-sm text-emerald-400">
+    Tarjouspyyntö lähetetään {selectedPartners.length} valitulle palveluntarjoajalle.
+  </p>
+)}
             </div>
           )}
         </div>
