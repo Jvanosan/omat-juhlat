@@ -103,6 +103,7 @@ export default function QuotePage() {
 <h1
   style={{
     fontSize: 32,
+    color: "#111827",
     marginBottom: 16,
     fontWeight: "bold",
     wordBreak: "break-word",
@@ -165,6 +166,7 @@ export default function QuotePage() {
     marginBottom: 20,
     fontSize: 28,
     fontWeight: "bold",
+    color: "#111827",
   }}
 >
               {service}</h2>
@@ -237,6 +239,7 @@ export default function QuotePage() {
     marginBottom: 8,
     fontSize: 22,
     fontWeight: "bold",
+    color: "#111827",
     wordBreak: "break-word",
   }}
 >

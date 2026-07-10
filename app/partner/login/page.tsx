@@ -46,8 +46,17 @@ export default function PartnerLoginPage() {
           boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
         }}
       >
-        <h1>🔐 Partner login</h1>
-
+<h1
+  style={{
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 20,
+    textAlign: "center",
+  }}
+>
+  🔐 Partner Login
+</h1>
         {error && (
           <p style={{ color: "red", marginBottom: 12 }}>{error}</p>
         )}
@@ -57,8 +66,25 @@ export default function PartnerLoginPage() {
           placeholder="Sähköposti"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 10 }}
-        />
+style={{
+  width: "100%",
+  padding: 12,
+  marginBottom: 12,
+  borderRadius: 10,
+  border: "1px solid #d1d5db",
+  fontSize: 16,
+  boxSizing: "border-box",
+}}        />
+<p
+  style={{
+    color: "#111827",
+    textAlign: "center",
+    marginBottom: 20,
+    lineHeight: 1.5,
+  }}
+>
+  Kirjaudu sisään hallinnoidaksesi tarjouksiasi.
+</p>
 
         <input
           type="password"
@@ -72,7 +98,7 @@ export default function PartnerLoginPage() {
           onClick={login}
           style={{
             width: "100%",
-            padding: 12,
+            padding: 14,
             borderRadius: 10,
             border: "none",
             background:
@@ -80,6 +106,7 @@ export default function PartnerLoginPage() {
             color: "white",
             fontWeight: "bold",
             cursor: "pointer",
+            fontSize: 16,
           }}
         >
           Kirjaudu sisään

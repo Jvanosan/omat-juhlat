@@ -27,7 +27,7 @@ export default function PartnerPage() {
     } = await supabase.auth.getUser();
 
     if (!user?.email) {
-  router.push("/login");
+  router.push("/partner/login");
   return;
 }
 
@@ -37,8 +37,10 @@ export default function PartnerPage() {
       .eq("email", user.email)
       .single();
 
-    if (!partner) return;
-
+if (!partner) {
+  router.push("/partner/login");
+  return;
+}
     const { data: qp } = await supabase
       .from("quote_partners")
       .select("*")

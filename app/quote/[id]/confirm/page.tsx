@@ -89,8 +89,10 @@ export default function ConfirmPage() {
           </div>
 
           <h1
-            style={{
-              fontSize: 28,
+  style={{
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#111827",
               marginBottom: 16,
               wordBreak: "break-word",
             }}
@@ -101,7 +103,7 @@ export default function ConfirmPage() {
           <p
             style={{
               fontSize: 18,
-              color: "#555",
+              color: "#1f2937",
               marginBottom: 40,
               lineHeight: 1.6,
             }}
@@ -120,16 +122,23 @@ export default function ConfirmPage() {
               marginBottom: 40,
             }}
           >
-            <h3 style={{ marginBottom: 12 }}>
-              📨 Mitä tapahtuu seuraavaksi?
-            </h3>
+            <h3
+  style={{
+    marginBottom: 12,
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#111827",
+  }}
+>
+  📨 Mitä tapahtuu seuraavaksi?
+</h3>
 
             <ul
               style={{
                 listStyle: "none",
                 padding: 0,
                 margin: 0,
-                color: "#444",
+                color: "#111827",
                 lineHeight: 1.8,
                 textAlign: "left",
               }}
@@ -150,9 +159,16 @@ export default function ConfirmPage() {
               textAlign: "left",
             }}
           >
-            <h3 style={{ marginBottom: 16 }}>
-              🎉 Valitsemasi palvelut
-            </h3>
+            <h3
+  style={{
+    marginBottom: 16,
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#111827",
+  }}
+>
+  🎉 Valitsemasi palvelut
+</h3>
 
             {items.map((item) => (
               <div
@@ -238,7 +254,7 @@ export default function ConfirmPage() {
           <p
             style={{
               fontSize: 14,
-              color: "#777",
+              color: "#1f2937",
             }}
           >
             OmatJuhlat yhdistää asiakkaat luotettaviin
