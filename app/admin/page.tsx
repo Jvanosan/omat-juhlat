@@ -172,8 +172,14 @@ const updateQuoteStatus = async (
 }
 
   return (
-    <main style={{ padding: 40, fontFamily: "Arial" }}>
-<h1
+<main
+  style={{
+    padding: 40,
+    fontFamily: "Arial",
+    color: "#111827",
+  }}
+>
+  <h1
   style={{
     fontSize: 36,
     fontWeight: "bold",

@@ -74,6 +74,8 @@ style={{
   border: "1px solid #d1d5db",
   fontSize: 16,
   boxSizing: "border-box",
+  color: "#111827",
+background: "#ffffff",
 }}        />
 <p
   style={{

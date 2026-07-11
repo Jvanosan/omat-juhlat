@@ -181,28 +181,32 @@ export default function ConfirmPage() {
     border: "1px solid #e5e7eb",
   }}
 >
-               
-                  {item.partner.images
-  .split(",")
-  .map((img: string, i: number) => (
-    <img
-      key={i}
-      src={img.trim()}
-      alt={item.partner?.company}
-      style={{
-        height: 60,
-        width: 90,
-        objectFit: "cover",
-        borderRadius: 8,
-      }}
-    />
-  ))}
+         {item.partner?.images &&
+  item.partner.images
+    .split(",")
+    .map((img: string, i: number) => (
+      <img
+  key={i}
+  src={img.trim()}
+  alt={item.partner?.company}
+  style={{
+    width: 120,
+    height: 90,
+    objectFit: "cover",
+    borderRadius: 8,
+    marginRight: 8,
+  }}
+      />
+    ))}
+        
                 <div
-                  style={{
-                    fontWeight: "bold",
-                    wordBreak: "break-word",
-                  }}
-                >
+  style={{
+    fontWeight: "bold",
+fontSize: 32,
+color: "#111827",
+    wordBreak: "break-word",
+  }}
+>
                   {item.partner?.company}
                 </div>
 
@@ -220,16 +224,17 @@ export default function ConfirmPage() {
             ))}
 
             <div
-              style={{
-                fontSize: 22,
-                fontWeight: "bold",
-                marginTop: 30,
-                marginBottom: 20,
-                textAlign: "center",
-              }}
-            >
-              💰 Yhteensä: {total} €
-            </div>
+  style={{
+    fontSize: 32,
+    color: "#111827",
+    fontWeight: "bold",
+    marginTop: 30,
+    marginBottom: 20,
+    textAlign: "center",
+  }}
+>
+  💰 Yhteensä: {total} €
+</div>
 
             <button
               onClick={approveFinally}
