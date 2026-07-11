@@ -156,6 +156,10 @@ const updateQuoteStatus = async (
     setProcessingQuoteId(null);
   }
 };
+async function handleLogout() {
+  await supabase.auth.signOut();
+  router.push("/login");
+}
   if (loading) {
   return (
     <p
@@ -190,16 +194,40 @@ const updateQuoteStatus = async (
   }}
 >
 
-  <h1
+  <div
   style={{
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#111827",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   }}
 >
-  🛠️ Admin – OmatJuhlat
-</h1>      
+  <h1
+    style={{
+      fontSize: 36,
+      fontWeight: "bold",
+      color: "#111827",
+      margin: 0,
+    }}
+  >
+    🛠️ Admin – OmatJuhlat
+  </h1>
+
+  <button
+    onClick={handleLogout}
+    style={{
+      background: "#ef4444",
+      color: "#fff",
+      border: "none",
+      padding: "10px 16px",
+      borderRadius: 8,
+      cursor: "pointer",
+      fontWeight: "bold",
+    }}
+  >
+    Kirjaudu ulos
+  </button>
+</div>    
 <h2
   style={{
     marginTop: 40,

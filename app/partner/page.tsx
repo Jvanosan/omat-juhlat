@@ -108,7 +108,10 @@ if (!partner) {
     alert("Tarjous peruttu");
     loadData();
   }
-
+async function handleLogout() {
+  await supabase.auth.signOut();
+  router.push("/partner/login");
+}
   return (
     <PageContainer>
     <main
@@ -119,18 +122,42 @@ if (!partner) {
   }}
 >
 
-<h1
+<div
   style={{
-    fontSize: 32,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 24,
-    fontWeight: "bold",
-    wordBreak: "break-word",
-    color: "#111827",
-    lineHeight: 1.3,
+    gap: 12,
+    flexWrap: "wrap",
   }}
->   
-📥 Saapuneet tarjouspyynnöt
-      </h1>
+>
+  <h1
+    style={{
+      fontSize: 32,
+      fontWeight: "bold",
+      color: "#111827",
+      margin: 0,
+    }}
+  >
+    📥 Saapuneet tarjouspyynnöt
+  </h1>
+
+  <button
+    onClick={handleLogout}
+    style={{
+      background: "#ef4444",
+      color: "#fff",
+      border: "none",
+      padding: "10px 16px",
+      borderRadius: 8,
+      cursor: "pointer",
+      fontWeight: "bold",
+    }}
+  >
+    Kirjaudu ulos
+  </button>
+</div>
 
       {items.length === 0 && (
 <p

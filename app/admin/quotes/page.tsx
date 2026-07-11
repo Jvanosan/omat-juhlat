@@ -43,39 +43,86 @@ export default function AdminQuotesPage() {
   }
 
   if (loading) {
-    return <p>Ladataan…</p>;
+return (
+  <main
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      background: "#f3f4f6",
+      color: "#111827",
+      fontSize: 18,
+      fontWeight: 600,
+      fontFamily: "Arial, sans-serif",
+    }}
+  >
+    Ladataan…
+  </main>
+);
   }
 
   return (
-    <main style={{ padding: 40 }}>
-      {/* YLÄPALKKI */}
+<main
+  style={{
+    minHeight: "100vh",
+    padding: 24,
+    background: "#f3f4f6",
+    fontFamily: "Arial, sans-serif",
+  }}
+>      {/* YLÄPALKKI */}
       <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
+style={{
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: 16,
+  marginBottom: 24,
+}}
       >
-        <h1>Tarjouspyynnöt (Admin)</h1>
-
+<h1
+  style={{
+    margin: 0,
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#111827",
+    lineHeight: 1.3,
+    wordBreak: "break-word",
+  }}
+>
+  📋 Tarjouspyynnöt
+</h1>
         <button
           onClick={handleLogout}
-          style={{
-            background: "#111",
-            color: "#fff",
-            border: "none",
-            padding: "8px 14px",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: 600,
-          }}
+style={{
+  background: "#111827",
+  color: "#ffffff",
+  border: "none",
+  padding: "12px 18px",
+  borderRadius: 10,
+  cursor: "pointer",
+  fontWeight: "bold",
+  fontSize: 15,
+  whiteSpace: "nowrap",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.12)",
+}}
         >
           Kirjaudu ulos
         </button>
       </div>
-
-      <QuotesClient />
+<div
+  style={{
+    background: "#ffffff",
+    borderRadius: 16,
+    padding: 24,
+    border: "1px solid #e5e7eb",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+    overflowX: "auto",
+  }}
+>
+  <QuotesClient />
+</div>
     </main>
   );
 }
