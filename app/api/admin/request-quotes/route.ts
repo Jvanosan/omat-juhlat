@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 // Server-only Supabase client (service role)
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
@@ -32,7 +32,6 @@ export async function GET() {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    console.log("PATCH BODY:", body);
 
     const { id, status } = body;
 
@@ -49,7 +48,6 @@ export async function PATCH(req: Request) {
       .eq("id", id);
 
     if (error) {
-      console.error("SUPABASE ERROR:", error);
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
@@ -58,7 +56,6 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("PATCH CRASH:", err);
     return NextResponse.json(
       { error: "Server error" },
       { status: 500 }
