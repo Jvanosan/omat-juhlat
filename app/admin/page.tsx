@@ -174,11 +174,22 @@ const updateQuoteStatus = async (
   return (
 <main
   style={{
+    minHeight: "100vh",
     padding: 40,
-    fontFamily: "Arial",
+    fontFamily: "Arial, sans-serif",
     color: "#111827",
+    background: "#f3f4f6",
   }}
 >
+  <div
+  style={{
+    background: "#ffffff",
+    borderRadius: 20,
+    padding: 30,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+  }}
+>
+
   <h1
   style={{
     fontSize: 36,
@@ -188,7 +199,8 @@ const updateQuoteStatus = async (
   }}
 >
   🛠️ Admin – OmatJuhlat
-</h1>      <h2
+</h1>      
+<h2
   style={{
     marginTop: 40,
     fontSize: 28,
@@ -217,11 +229,34 @@ const updateQuoteStatus = async (
       {requests.map((r) => (
         <tr key={r.id}>
           <td>{r.date}</td>
-          <td>{r.location}</td>
-          <td>{r.guests}</td>
-          <td>{r.status || "avoin"}</td>
-          <td>{r.offerCount}</td>
+<td>{r.location}</td>
+<td>{r.guests}</td>
 
+<td>
+  <span
+    style={{
+      padding: "6px 12px",
+      borderRadius: 999,
+      fontWeight: "bold",
+      color:
+        r.status === "suljettu"
+          ? "#166534"
+          : r.status === "käsittelyssä"
+          ? "#92400e"
+          : "#1e3a8a",
+      background:
+        r.status === "suljettu"
+          ? "#dcfce7"
+          : r.status === "käsittelyssä"
+          ? "#fef3c7"
+          : "#dbeafe",
+    }}
+  >
+    {r.status || "avoin"}
+  </span>
+</td>
+
+<td>{r.offerCount}</td>
          <td>
             <a
               href={`/quote/${r.id}`}
@@ -242,7 +277,9 @@ const updateQuoteStatus = async (
       padding: "6px 12px",
       borderRadius: 6,
       border: "none",
-      background: "#fde68a",
+background: "#fbbf24",
+color: "#111827",
+fontWeight: "bold",
       cursor: "pointer",
     }}
   >
@@ -262,7 +299,9 @@ const updateQuoteStatus = async (
       padding: "6px 12px",
       borderRadius: 6,
       border: "none",
-      background: "#bbf7d0",
+background: "#fbbf24",
+color: "#111827",
+fontWeight: "bold",
       cursor: "pointer",
     }}
   >
@@ -282,8 +321,16 @@ const updateQuoteStatus = async (
     </tbody>
   </table>
 )}
-      <h2 style={{ marginTop: 40 }}>🤝 Kumppanit</h2>
-
+<h2
+  style={{
+    marginTop: 40,
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#111827",
+  }}
+>
+  🤝 Kumppanit
+</h2>
       {partners.length === 0 ? (
         <p>Ei kumppaneita vielä.</p>
       ) : (
@@ -335,6 +382,7 @@ const updateQuoteStatus = async (
 </tbody>
         </table>
       )}
+      </div>
     </main>
   );
 }
@@ -345,6 +393,9 @@ const tableStyle: React.CSSProperties = {
   width: "100%",
   borderCollapse: "collapse",
   marginTop: 16,
+  background: "#ffffff",
+  borderRadius: 12,
+  overflow: "hidden",
 };
 const approveBtn: React.CSSProperties = {
   background: "#1a7f37",

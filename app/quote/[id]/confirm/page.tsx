@@ -181,24 +181,36 @@ export default function ConfirmPage() {
     border: "1px solid #e5e7eb",
   }}
 >
-         {item.partner?.images &&
-  item.partner.images
-    .split(",")
-    .map((img: string, i: number) => (
-      <img
-  key={i}
-  src={img.trim()}
-  alt={item.partner?.company}
-  style={{
-    width: 120,
-    height: 90,
-    objectFit: "cover",
-    borderRadius: 8,
-    marginRight: 8,
-  }}
-      />
-    ))}
-        
+
+{items.map((item: any) => (
+  <div key={item.id}>
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        marginBottom: 12,
+        overflowX: "auto",
+      }}
+    >
+      {item.partner?.images &&
+        item.partner.images
+          .split(",")
+          .map((img: string, i: number) => (
+            <img
+              key={i}
+              src={img.trim()}
+              alt={item.partner?.company || "Partner image"}
+              style={{
+                width: 120,
+                height: 90,
+                objectFit: "cover",
+                borderRadius: 8,
+              }}
+            />
+          ))}
+    </div>
+  </div>
+))}
                 <div
   style={{
     fontWeight: "bold",
@@ -213,20 +225,21 @@ color: "#111827",
                 <div
   style={{
     marginTop: 8,
-    color: "#111827",
-    fontSize: 24,
+    color: "#10b981",
+    fontSize: 28,
     fontWeight: "bold",
   }}
 >
   💰 {item.offer_price} €
 </div>
-              </div>
+</div>
+            
             ))}
 
-            <div
+           <div
   style={{
-    fontSize: 32,
-    color: "#111827",
+    fontSize: 36,
+    color: "#10b981",
     fontWeight: "bold",
     marginTop: 30,
     marginBottom: 20,

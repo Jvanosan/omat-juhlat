@@ -124,7 +124,8 @@ export default function QuotePage() {
         {quote && (
   <div
     style={{
-      background: "#f5f3ef",
+      background: "#ffffff",
+      border: "1px solid #e5e7eb",
       padding: 20,
       borderRadius: 16,
       marginBottom: 30,
@@ -135,6 +136,7 @@ export default function QuotePage() {
     marginBottom: 10,
     fontSize: 24,
     fontWeight: "bold",
+    color: "#111827",
   }}
 >
   📋 Juhlan tiedot
@@ -248,11 +250,11 @@ export default function QuotePage() {
 
                     <div
   style={{
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 10,
-    wordBreak: "break-word",
-  }}
+  fontSize: 36,
+  fontWeight: "bold",
+  color: "#111827",
+  marginBottom: 10,
+}}
 >
 💰 {o.offer_price} €
                     </div>

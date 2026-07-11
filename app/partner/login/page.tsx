@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function PartnerLoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,32 +34,59 @@ export default function PartnerLoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "linear-gradient(180deg, #f9fafb, #eef2f3)",
+        padding: 20,
+        background: "#f3f4f6",
+        fontFamily: "Arial, sans-serif",
       }}
     >
       <div
         style={{
-          background: "white",
-          padding: 32,
-          borderRadius: 16,
           width: "100%",
-          maxWidth: 400,
-          boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+          maxWidth: 420,
+          background: "#ffffff",
+          borderRadius: 18,
+          padding: 32,
+          boxShadow: "0 15px 35px rgba(0,0,0,0.12)",
+          border: "1px solid #e5e7eb",
         }}
       >
-<h1
-  style={{
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 20,
-    textAlign: "center",
-  }}
->
-  🔐 Partner Login
-</h1>
+        <h1
+          style={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: "#111827",
+            textAlign: "center",
+            marginBottom: 12,
+          }}
+        >
+          🔐 Partner Login
+        </h1>
+
+        <p
+          style={{
+            textAlign: "center",
+            color: "#374151",
+            fontSize: 16,
+            lineHeight: 1.6,
+            marginBottom: 24,
+          }}
+        >
+          Kirjaudu sisään hallinnoidaksesi tarjouksiasi.
+        </p>
+
         {error && (
-          <p style={{ color: "red", marginBottom: 12 }}>{error}</p>
+          <div
+            style={{
+              background: "#fef2f2",
+              color: "#b91c1c",
+              border: "1px solid #fecaca",
+              borderRadius: 10,
+              padding: 12,
+              marginBottom: 20,
+            }}
+          >
+            {error}
+          </div>
         )}
 
         <input
@@ -66,49 +94,49 @@ export default function PartnerLoginPage() {
           placeholder="Sähköposti"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-style={{
-  width: "100%",
-  padding: 12,
-  marginBottom: 12,
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  fontSize: 16,
-  boxSizing: "border-box",
-  color: "#111827",
-background: "#ffffff",
-}}        />
-<p
-  style={{
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 1.5,
-  }}
->
-  Kirjaudu sisään hallinnoidaksesi tarjouksiasi.
-</p>
+          style={{
+            width: "100%",
+            padding: "14px 16px",
+            marginBottom: 16,
+            borderRadius: 10,
+            border: "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#111827",
+            fontSize: 16,
+            boxSizing: "border-box",
+          }}
+        />
 
         <input
           type="password"
           placeholder="Salasana"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 20 }}
+          style={{
+            width: "100%",
+            padding: "14px 16px",
+            marginBottom: 24,
+            borderRadius: 10,
+            border: "1px solid #cbd5e1",
+            background: "#ffffff",
+            color: "#111827",
+            fontSize: 16,
+            boxSizing: "border-box",
+          }}
         />
 
         <button
           onClick={login}
           style={{
             width: "100%",
-            padding: 14,
+            padding: "15px",
             borderRadius: 10,
             border: "none",
-            background:
-              "linear-gradient(90deg, #10b981, #34d399)",
-            color: "white",
+            background: "#10b981",
+            color: "#ffffff",
+            fontSize: 17,
             fontWeight: "bold",
             cursor: "pointer",
-            fontSize: 16,
           }}
         >
           Kirjaudu sisään

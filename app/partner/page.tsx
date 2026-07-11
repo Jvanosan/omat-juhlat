@@ -115,7 +115,7 @@ if (!partner) {
   style={{
     minHeight: "100vh",
     padding: 16,
-    background: "linear-gradient(180deg, #f9fafb, #eef2f3)",
+    background: "linear-gradient(180deg, #f3f4f6, #e5e7eb)",
   }}
 >
 <h1
