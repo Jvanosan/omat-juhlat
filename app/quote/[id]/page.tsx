@@ -121,43 +121,83 @@ export default function QuotePage() {
 >  Vertaa tarjouksia ja valitse paras vaihtoehto palvelulle.
 </p>
 
-        {quote && (
+  {quote && (
   <div
     style={{
       background: "#ffffff",
       border: "1px solid #e5e7eb",
-      padding: 20,
+      padding: 24,
       borderRadius: 16,
       marginBottom: 30,
+      boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
     }}
   >
-<h3
-  style={{
-    marginBottom: 10,
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#111827",
-  }}
->
-  📋 Juhlan tiedot
-</h3>
-    <p style={{ fontSize: 18 }}>📅 {quote.date}</p>
-<p style={{ fontSize: 18 }}>📍 {quote.location}</p>
-<p style={{ fontSize: 18 }}>👥 {quote.guests} vierasta</p>
+    <h3
+      style={{
+        margin: "0 0 16px 0",
+        fontSize: 26,
+        fontWeight: "bold",
+        color: "#111827",
+        lineHeight: 1.3,
+      }}
+    >
+      📋 Juhlan tiedot
+    </h3>
 
+    <p
+      style={{
+        margin: "0 0 12px 0",
+        fontSize: 18,
+        color: "#111827",
+        fontWeight: 600,
+        lineHeight: 1.6,
+      }}
+    >
+      📅 {quote.date}
+    </p>
+
+    <p
+      style={{
+        margin: "0 0 12px 0",
+        fontSize: 18,
+        color: "#111827",
+        fontWeight: 600,
+        lineHeight: 1.6,
+      }}
+    >
+      📍 {quote.location}
+    </p>
+
+    <p
+      style={{
+        margin: 0,
+        fontSize: 18,
+        color: "#111827",
+        fontWeight: 600,
+        lineHeight: 1.6,
+      }}
+    >
+      👥 {quote.guests} vierasta
+    </p>
   </div>
 )}
+
 {quoteStatus === "confirmed" && (
   <div
     style={{
       background: "#dcfce7",
-      padding: 14,
-      borderRadius: 10,
+      border: "1px solid #86efac",
+      color: "#111827",
+      padding: 16,
+      borderRadius: 12,
       marginBottom: 20,
+      fontSize: 17,
       fontWeight: "bold",
+      lineHeight: 1.5,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
     }}
   >
-      ✅ Tarjous on jo vahvistettu
+    ✅ Tarjous on jo vahvistettu
   </div>
 )}
 {offers.length === 0 && <p>Ei vielä tarjouksia.</p>}
@@ -248,16 +288,16 @@ export default function QuotePage() {
   {o.partner?.company}
 </h3>
 
-                    <div
+<div
   style={{
-  fontSize: 36,
-  fontWeight: "bold",
-  color: "#111827",
-  marginBottom: 10,
-}}
+    fontSize: 38,
+    fontWeight: "bold",
+    color: "#10b981",
+    marginBottom: 12,
+  }}
 >
-💰 {o.offer_price} €
-                    </div>
+  💰 {o.offer_price} €
+</div>
 
                     {o.offer_message && (
 <p
@@ -265,8 +305,10 @@ export default function QuotePage() {
     marginBottom: 16,
     fontSize: 17,
     lineHeight: 1.6,
+    color: "#374151",
   }}
->                        “{o.offer_message}”
+>
+                     “{o.offer_message}”
                       </p>
                     )}
 

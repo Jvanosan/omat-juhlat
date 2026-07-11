@@ -118,20 +118,30 @@ if (!partner) {
     background: "linear-gradient(180deg, #f3f4f6, #e5e7eb)",
   }}
 >
+
 <h1
   style={{
     fontSize: 32,
     marginBottom: 24,
     fontWeight: "bold",
     wordBreak: "break-word",
+    color: "#111827",
+    lineHeight: 1.3,
   }}
->     
+>   
 📥 Saapuneet tarjouspyynnöt
       </h1>
 
       {items.length === 0 && (
-        <p>Ei avoimia tarjouspyyntöjä tällä hetkellä.</p>
-      )}
+<p
+  style={{
+    color: "#111827",
+    fontSize: 17,
+    lineHeight: 1.6,
+  }}
+>
+  Ei avoimia tarjouspyyntöjä tällä hetkellä.
+</p>      )}
 
       {items.map((item) => (
         <div
@@ -225,38 +235,51 @@ if (!partner) {
     ✅ Tarjous lähetetty – odottaa asiakkaan päätöstä
   </div>
 )}
+
 <h3
   style={{
-    marginBottom: 8,
+    marginBottom: 10,
     fontSize: 22,
     fontWeight: 700,
     wordBreak: "break-word",
+    color: "#111827",
+    lineHeight: 1.4,
   }}
->         📦 Palvelu: {item.service}
+>
+        📦 Palvelu: {item.service}
           </h3>
 
 <p
   style={{
-    color: "#1f2937",
-    fontSize: 16,
-    lineHeight: 1.6,
+    color: "#111827",
+    fontSize: 17,
+    fontWeight: 500,
+    lineHeight: 1.8,
   }}
->            📅 {item.quote?.date} <br />
+>          📅 {item.quote?.date} <br />
             📍 {item.quote?.location} <br />
             👥 {item.quote?.guests} vierasta
           </p>
           {item.quote?.extraInfo && (
-  <div
-    style={{
-      marginTop: 12,
-      padding: 12,
-      background: "#f9fafb",
-      borderRadius: 10,
-      border: "1px solid #e5e7eb",
-    }}
-  >
-    <strong>Lisätiedot:</strong>
-    <br />
+<div
+  style={{
+    marginTop: 12,
+    padding: 14,
+    background: "#f9fafb",
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+    color: "#111827",
+    lineHeight: 1.7,
+  }}
+>
+<strong
+  style={{
+    color: "#111827",
+    fontSize: 16,
+  }}
+>
+  Lisätiedot:
+</strong>    <br />
     {item.quote.extraInfo}
   </div>
 )}
@@ -270,15 +293,19 @@ if (!partner) {
   onChange={(e) =>
     setPrices({ ...prices, [item.id]: e.target.value })
   }
-  style={{
-    width: "100%",
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    fontSize: 16,
-    boxSizing: "border-box",
-  }}
+style={{
+  width: "100%",
+  padding: 12,
+  marginBottom: 8,
+  borderRadius: 10,
+  border: "1px solid #d1d5db",
+  fontSize: 16,
+  boxSizing: "border-box",
+  color: "#111827",
+  background: "#ffffff",
+  WebkitTextFillColor: "#111827",
+  caretColor: "#111827",
+}}
 />
 
               <textarea
@@ -287,7 +314,7 @@ if (!partner) {
                 onChange={(e) =>
                   setMessages({ ...messages, [item.id]: e.target.value })
                 }
-                style={{
+style={{
   width: "100%",
   padding: 12,
   marginBottom: 12,
@@ -295,6 +322,10 @@ if (!partner) {
   border: "1px solid #d1d5db",
   fontSize: 16,
   boxSizing: "border-box",
+  color: "#111827",
+  background: "#ffffff",
+  WebkitTextFillColor: "#111827",
+  caretColor: "#111827",
 }}
               />
 
@@ -313,18 +344,20 @@ if (!partner) {
                 }}
               >
                 💰 Lähetä tarjous
-              </button>
+</button>
             </>
           ) : item.offer_price ? (
             <div
-  style={{
-    background: "#ecfdf5",
-    padding: 16,
-    borderRadius: 12,
-    color: "#065f46",
-    marginTop: 12,
-    border: "1px solid #a7f3d0",
-  }}
+style={{
+  background: "#ecfdf5",
+  padding: 16,
+  borderRadius: 12,
+  color: "#111827",
+  marginTop: 12,
+  border: "1px solid #a7f3d0",
+  lineHeight: 1.7,
+}}
+
 >
               <p><strong>Lähettämäsi tarjous:</strong></p>
               <p>💰 {item.offer_price} €</p>
@@ -349,7 +382,7 @@ if (!partner) {
             </div>
           ) : null}
         </div>
-      ))}
+              ))}
     </main>
   </PageContainer>
 );
