@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 
 // ✅ LOPULLINEN palveluiden puhdistus + normalisointi
 function cleanAndNormalizeServices(raw: any): string[] {
+
+
   if (!raw) return [];
 
   let str = Array.isArray(raw) ? raw.join(",") : String(raw);
@@ -49,34 +51,111 @@ function cleanAndNormalizeServices(raw: any): string[] {
 }
 
 export default function BrowsePage() {
+
   const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [guests, setGuests] = useState("");
+  const [location, setLocation] = useState("");
+  const [eventType, setEventType] = useState("");
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const [loadingPartners,setLoadingPartners]=useState(true);
+const [partnersError,setPartnersError]=useState("");
+
+const minDate = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  return d.toISOString().split("T")[0];
+})();
+const LOCATIONS = [
+  "Helsinki",
+  "Espoo",
+  "Vantaa",
+  "Tampere",
+  "Turku",
+  "Oulu",
+  "Jyväskylä",
+  "Lahti",
+  "Kuopio",
+  "Joensuu",
+  "Pori",
+  "Vaasa",
+  "Rovaniemi",
+  "Seinäjoki",
+  "Lappeenranta",
+  "Kotka",
+  "Mikkeli",
+  "Hämeenlinna",
+  "Salo",
+  "Kokkola",
+  "Kajaani",
+  "Rauma",
+  "Porvoo",
+  "Hyvinkää",
+  "Järvenpää",
+  "Lohja",
+  "Kerava",
+  "Tuusula",
+  "Nurmijärvi",
+  "Ylöjärvi",
+  "Nokia",
+  "Kangasala",
+  "Riihimäki",
+  "Savonlinna",
+  "Imatra",
+  "Raahe",
+  "Iisalmi",
+  "Varkaus",
+  "Kemi",
+  "Tornio",
+  "Pietarsaari",
+  "Forssa",
+  "Valkeakoski",
+  "Kuusamo",
+  "Kempele",
+  "Sipoo",
+  "Kirkkonummi",
+  "Vihti",
+  "Lempäälä",
+  "Pirkkala",
+];
+const EVENT_TYPES = [
+  "Häät",
+  "Syntymäpäivä",
+  "Valmistujaiset",
+  "Yritysjuhla",
+  "Ristiäiset",
+  "Muu juhla",
+];
   const [partners, setPartners] = useState<any[]>([]);
   const [areaFilter, setAreaFilter] = useState("Kaikki");
   const [serviceFilter, setServiceFilter] = useState("Kaikki");
  const [notes, setNotes] = useState("");
   useEffect(() => {
-    const fetchPartners = async () => {
-      const { data, error } = await supabase
-        .from("partners")
-        .select("id, company, area, services,images")
-        .eq("status", "approved");
+  const fetchPartners = async () => {
+    setLoadingPartners(true);
+    setPartnersError("");
 
-      if (error) {
-        console.error("SUPABASE PARTNERS ERROR:", error);
-      }
+    const { data, error } = await supabase
+      .from("partners")
+      .select("id, company, area, services,images")
+      .eq("status", "approved");
 
-      setPartners(data || []);
-    };
+    if (error) {
+      console.error("SUPABASE PARTNERS ERROR:", error);
+      setPartnersError("Yrityksiä ei voitu ladata.");
+      setLoadingPartners(false);
+      return;
+    }
 
-    fetchPartners();
-  }, []);
+    setPartners(data || []);
+    setLoadingPartners(false);
+  };
 
+  fetchPartners();
+}, []);
   const areas = [
     "Kaikki",
     ...Array.from(new Set(partners.map((p) => p.area))).filter(Boolean),
@@ -106,15 +185,33 @@ export default function BrowsePage() {
   }, {});
 
   const handleSubmit = async () => {
-    if (!email || !eventDate || !guests || selectedPartners.length === 0) {
-      alert("Täytä kaikki kentät ja valitse vähintään yksi yritys.");
-      return;
+    const cleanEmail = email.trim();
+
+const emailRegex =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailRegex.test(cleanEmail)) {
+  alert("Anna kelvollinen sähköpostiosoite.");
+  return;
+}
+if (
+  !email ||
+  !location ||
+  !eventType ||
+  !eventDate ||
+  !guests ||
+  selectedPartners.length === 0
+) {
+alert(
+  "Valitse paikkakunta, tapahtumatyyppi, täytä sähköposti, päivämäärä, vierasmäärä ja valitse vähintään yksi yritys."
+);
+ return;
     }
 
     setSending(true);
 
     const { error } = await supabase.from("direct_requests").insert({
-      email,
+      email: cleanEmail,
       event_date: eventDate,
       guests: Number(guests),
       partner_ids: selectedPartners,
@@ -132,7 +229,7 @@ export default function BrowsePage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email,
+      email: cleanEmail,
         event_date: eventDate,
         guests,
         partner_ids: selectedPartners,
@@ -158,6 +255,7 @@ export default function BrowsePage() {
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
             Löydä palvelut tapahtumaasi
           </h1>
+
           <p className="mt-3 text-lg text-zinc-300 max-w-md">
             Valitse haluamasi palveluntarjoajat ja lähetä tarjouspyyntö suoraan heille.
           </p>
@@ -203,7 +301,42 @@ export default function BrowsePage() {
             </div>
           </div>
         </div>
+<div className="mb-6 text-zinc-400">
 
+Löytyi
+
+<strong className="text-white">
+
+{" "}
+{Object.values(groupedPartners)
+.flatMap((x:any)=>Object.values(x))
+.flat()
+.length}
+
+</strong>
+
+yritystä nykyisillä suodattimilla.
+
+</div>
+{loadingPartners && (
+
+<div className="py-10 text-center text-zinc-400">
+
+Ladataan palveluntarjoajia...
+
+</div>
+
+)}
+
+{partnersError && (
+
+<div className="rounded-xl border border-red-900 bg-red-950/40 p-4 text-red-400">
+
+{partnersError}
+
+</div>
+
+)}
 {/* Service Groups */}
         {Object.keys(groupedPartners).length === 0 && (
           <div className="text-center py-16 text-zinc-400">
@@ -299,21 +432,28 @@ export default function BrowsePage() {
           ))}
         </div>
         {selectedPartners.length > 0 && (
-  <div className="mb-10 rounded-2xl border border-emerald-800 bg-emerald-950/30 p-5">
-    <h3 className="text-xl font-semibold text-emerald-400 mb-3">
+<div className="sticky top-4 z-20 mb-10 rounded-2xl border border-emerald-800 bg-zinc-900 p-5 shadow-lg">   
+   <h3 className="text-xl font-semibold text-emerald-400 mb-3">
+    <button
+  onClick={() => setSelectedPartners([])}
+  className="mb-3 rounded-lg bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
+>
+  Tyhjennä valinnat
+</button>
       📋 Valitsemasi palveluntarjoajat ({selectedPartners.length})
     </h3>
 
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {partners
         .filter((partner) =>
           selectedPartners.includes(partner.id)
         )
         .map((partner) => (
           <div
-            key={partner.id}
-            className="rounded-full bg-emerald-600 px-3 py-1 text-sm text-white"
-          >
+  key={partner.id}
+  className="flex gap-3 items-center rounded-xl bg-zinc-800 p-3"
+>
+           
             ✅ {partner.company}
           </div>
         ))}
@@ -326,6 +466,16 @@ export default function BrowsePage() {
           <div className="mb-6">
             <h2 className="text-2xl font-semibold tracking-tight">Lähetä tarjouspyyntö</h2>
             <p className="text-zinc-400 mt-1">Pyyntö lähetetään vain valitsemillesi palveluntarjoajille.</p>
+            <div className="mt-4 rounded-2xl border border-emerald-900 bg-emerald-950/30 p-4">
+  <div className="font-medium text-emerald-400">
+    🔒 Turvallinen tarjouspyyntö
+  </div>
+
+  <p className="text-sm text-zinc-300 mt-1">
+    Tarjouspyyntö lähetetään vain valitsemillesi palveluntarjoajille.
+    Tietojasi ei lähetetä muille yrityksille.
+  </p>
+</div>
           </div>
 
           {success ? (
@@ -334,6 +484,32 @@ export default function BrowsePage() {
             </div>
           ) : (
             <div className="space-y-4">
+            <select
+  value={location}
+  onChange={(e) => setLocation(e.target.value)}
+  className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white focus:outline-none focus:border-emerald-700"
+>
+  <option value="">Valitse paikkakunta</option>
+
+  {LOCATIONS.map((city) => (
+    <option key={city} value={city}>
+      {city}
+    </option>
+  ))}
+</select>
+<select
+  value={eventType}
+  onChange={(e) => setEventType(e.target.value)}
+  className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white focus:outline-none focus:border-emerald-700"
+>
+  <option value="">Valitse tapahtuman tyyppi</option>
+
+  {EVENT_TYPES.map((type) => (
+    <option key={type} value={type}>
+      {type}
+    </option>
+  ))}
+</select>
               <div>
                 <input
                   type="email"
@@ -346,26 +522,41 @@ export default function BrowsePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
-                  type="date"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white focus:outline-none focus:border-emerald-700"
-                />
+  type="date"
+  min={minDate}
+  value={eventDate}
+  onChange={(e) => setEventDate(e.target.value)}
+  className="rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white focus:outline-none focus:border-emerald-700"
+/>
                 <input
-                  type="number"
-                  placeholder="Arvioitu vierasmäärä"
-                  value={guests}
-                  onChange={(e) => setGuests(e.target.value)}
-                  className="rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-700"
-                />
+  type="number"
+  min={1}
+  max={5000}
+  placeholder="Arvioitu vierasmäärä"
+  value={guests}
+  onChange={(e) => {
+    const value = Math.min(
+      5000,
+      Math.max(1, Number(e.target.value))
+    );
+    setGuests(
+      e.target.value === "" ? "" : String(value)
+    );
+  }}
+  className="rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-700"
+/>
               </div>
               <textarea
   placeholder="Lisätiedot (valinnainen)"
+  maxLength={1000}
   value={notes}
   onChange={(e) => setNotes(e.target.value)}
   className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-700"
 />
 
+<p className="text-right text-xs text-zinc-500">
+  {1000 - notes.length} merkkiä jäljellä
+</p>
               <button
                 onClick={handleSubmit}
                 disabled={sending}

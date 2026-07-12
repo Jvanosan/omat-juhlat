@@ -51,18 +51,48 @@ export default function HomePage() {
     console.log("SUBMIT AJETTU");
     setErrorMsg("");
 
-    if (
-      !event.date ||
-      !event.location ||
-      !event.guests ||
-      !event.email ||
-      selectedServices.length === 0
-    ) {
+if (
+  !event.date ||
+  !event.eventType ||
+  !event.location ||
+  !event.guests ||
+  !event.email ||
+  selectedServices.length === 0
+)
+     {
       setErrorMsg(
-        "Täytä päivämäärä, alue, vierasmäärä, sähköposti ja valitse vähintään yksi palvelu."
-      );
-      return;
+"Täytä päivämäärä, tapahtumatyyppi, paikkakunta, vierasmäärä, sähköposti ja valitse vähintään yksi palvelu."      );
+
+const guests = Number(event.guests);
+
+if (guests < 1) {
+  setErrorMsg("Vierasmäärän täytyy olla vähintään 1.");
+  return;
+}
+
+if (guests > 10000) {
+  setErrorMsg("Vierasmäärä on liian suuri.");
+  return;
+}     
+return;
     }
+const budget = event.budget ? Number(event.budget) : null;
+
+if (budget !== null && budget < 0) {
+  setErrorMsg("Budjetti ei voi olla negatiivinen.");
+  return;
+}
+
+const selectedDate = new Date(event.date);
+
+const earliest = new Date();
+earliest.setDate(earliest.getDate() + 3);
+earliest.setHours(0, 0, 0, 0);
+
+if (selectedDate < earliest) {
+  setErrorMsg("Valitse päivä vähintään 3 päivän päähän.");
+  return;
+}
 
     setLoading(true);
 
@@ -73,10 +103,11 @@ export default function HomePage() {
         event_type: event.eventType,
         location: event.location,
         guests: Number(event.guests),
-        email: event.email,
+        email: event.email.trim(),      
         budget: event.budget ? Number(event.budget) : null,
         services: selectedServices,
         status: "avoin",
+        notes: event.notes || null,
       })
       .select()
       .single();
@@ -135,7 +166,7 @@ if (rows.length > 0) {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    email: event.email,
+   email: event.email.trim(),
     quoteId: data.id,
     eventType: event.eventType,
     date: event.date,
@@ -262,7 +293,76 @@ if (rows.length > 0) {
             </a>
           </div>
         </div>
+<div
+  style={{
+    background: "#ffffff",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  }}
+>
+  <h2
+    style={{
+      color: "#111827",
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 20,
+      textAlign: "center",
+    }}
+  >
+    🎉 Näin OmatJuhlat toimii
+  </h2>
 
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+      gap: 20,
+      textAlign: "center",
+    }}
+  >
+    <div>
+      <div style={{ fontSize: 40 }}>①</div>
+      <div style={{ fontWeight: "bold", color: "#111827" }}>
+        Täytä tiedot
+      </div>
+      <div style={{ color: "#6b7280", marginTop: 6 }}>
+        Kerro juhlastasi.
+      </div>
+    </div>
+
+    <div>
+      <div style={{ fontSize: 40 }}>②</div>
+      <div style={{ fontWeight: "bold", color: "#111827" }}>
+        Saat tarjoukset
+      </div>
+      <div style={{ color: "#6b7280", marginTop: 6 }}>
+        Palveluntarjoajat vastaavat.
+      </div>
+    </div>
+
+    <div>
+      <div style={{ fontSize: 40 }}>③</div>
+      <div style={{ fontWeight: "bold", color: "#111827" }}>
+        Vertaa
+      </div>
+      <div style={{ color: "#6b7280", marginTop: 6 }}>
+        Valitse paras tarjous.
+      </div>
+    </div>
+
+    <div>
+      <div style={{ fontSize: 40 }}>④</div>
+      <div style={{ fontWeight: "bold", color: "#111827" }}>
+        Nauti juhlista
+      </div>
+      <div style={{ color: "#6b7280", marginTop: 6 }}>
+        Kaikki on valmista. 🎉
+      </div>
+    </div>
+  </div>
+</div>
         {/* INFO BOX */}
         <div
           style={{
@@ -339,11 +439,13 @@ if (rows.length > 0) {
               >
                 Päivämäärä *
               </label>
-              <input
-                type="date"
-                value={event.date}
-                onChange={(e) => setEvent({ ...event, date: e.target.value })}
-                style={{
+<input
+  type="date"
+  min={new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0]}
+  value={event.date}
+  onChange={(e) => setEvent({ ...event, date: e.target.value })}style={{
                   width: "100%",
                   padding: "12px",
                   borderRadius: "8px",
@@ -401,12 +503,10 @@ if (rows.length > 0) {
               >
                 Paikkakunta *
               </label>
-              <input
-                type="text"
-                value={event.location}
-                onChange={(e) => setEvent({ ...event, location: e.target.value })}
-                placeholder="Esimerkiksi Helsinki, Tampere..."
-                style={{
+<select
+  value={event.location}
+  onChange={(e) => setEvent({ ...event, location: e.target.value })}
+  style={{
                   width: "100%",
                   padding: "12px",
                   borderRadius: "8px",
@@ -415,7 +515,59 @@ if (rows.length > 0) {
                   fontSize: "16px",
                   color: "#111",
                 }}
-              />
+>
+  <option value="">Valitse paikkakunta</option>
+  <option>Helsinki</option>
+  <option>Espoo</option>
+  <option>Vantaa</option>
+  <option>Tampere</option>
+  <option>Turku</option>
+  <option>Oulu</option>
+  <option>Jyväskylä</option>
+  <option>Lahti</option>
+  <option>Kuopio</option>
+  <option>Joensuu</option>
+  <option>Pori</option>
+<option>Vaasa</option>
+<option>Rovaniemi</option>
+<option>Seinäjoki</option>
+<option>Lappeenranta</option>
+<option>Kotka</option>
+<option>Mikkeli</option>
+<option>Hämeenlinna</option>
+<option>Salo</option>
+<option>Kokkola</option>
+<option>Kajaani</option>
+<option>Rauma</option>
+<option>Porvoo</option>
+<option>Hyvinkää</option>
+<option>Järvenpää</option>
+<option>Lohja</option>
+<option>Kerava</option>
+<option>Tuusula</option>
+<option>Nurmijärvi</option>
+<option>Ylöjärvi</option>
+<option>Nokia</option>
+<option>Kangasala</option>
+<option>Riihimäki</option>
+<option>Savonlinna</option>
+<option>Imatra</option>
+<option>Raahe</option>
+<option>Iisalmi</option>
+<option>Varkaus</option>
+<option>Kemi</option>
+<option>Tornio</option>
+<option>Pietarsaari</option>
+<option>Forssa</option>
+<option>Valkeakoski</option>
+<option>Kuusamo</option>
+<option>Kempele</option>
+<option>Sipoo</option>
+<option>Kirkkonummi</option>
+<option>Vihti</option>
+<option>Lempäälä</option>
+<option>Pirkkala</option>
+</select>
             </div>
 
             <div>
@@ -430,8 +582,12 @@ if (rows.length > 0) {
               >
                 Vierasmäärä *
               </label>
-              <input
-                type="number"
+              // TÄHÄN
+
+<input
+  type="number"
+  min={1}
+  max={10000}
                 value={event.guests}
                 onChange={(e) => setEvent({ ...event, guests: e.target.value })}
                 placeholder="Kuinka monta vierasta?"
@@ -489,6 +645,7 @@ if (rows.length > 0) {
   </label>
 
   <textarea
+    maxLength={1000}
     value={event.notes}
     onChange={(e) =>
       setEvent({ ...event, notes: e.target.value })
@@ -519,8 +676,11 @@ if (rows.length > 0) {
               >
                 Budjetti (valinnainen)
               </label>
-              <input
-                type="number"
+              // TÄHÄN
+
+<input
+  type="number"
+  min={0}
                 value={event.budget}
                 onChange={(e) => setEvent({ ...event, budget: e.target.value })}
                 placeholder="Budjetti euroina"
@@ -650,6 +810,95 @@ if (rows.length > 0) {
 >
   {loading ? "⏳ Lähetetään..." : "🎊 Pyydä tarjoukset nyt"}
 </button>
+<div
+  style={{
+    marginTop: 32,
+    background: "#ffffff",
+    borderRadius: 16,
+    padding: 24,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  }}
+>
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+      gap: 20,
+    }}
+  >
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontSize: 34 }}>🔒</div>
+
+      <div
+        style={{
+          fontWeight: "bold",
+          color: "#111827",
+          marginTop: 10,
+        }}
+      >
+        Turvallinen
+      </div>
+
+      <div
+        style={{
+          color: "#6b7280",
+          marginTop: 8,
+          lineHeight: 1.6,
+        }}
+      >
+        Tietosi välitetään vain valituille palveluntarjoajille.
+      </div>
+    </div>
+
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontSize: 34 }}>💚</div>
+
+      <div
+        style={{
+          fontWeight: "bold",
+          color: "#111827",
+          marginTop: 10,
+        }}
+      >
+        Maksuton
+      </div>
+
+      <div
+        style={{
+          color: "#6b7280",
+          marginTop: 8,
+          lineHeight: 1.6,
+        }}
+      >
+        Tarjouspyynnön lähettäminen on täysin ilmaista.
+      </div>
+    </div>
+
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontSize: 34 }}>⭐</div>
+
+      <div
+        style={{
+          fontWeight: "bold",
+          color: "#111827",
+          marginTop: 10,
+        }}
+      >
+        Ei sitoumuksia
+      </div>
+
+      <div
+        style={{
+          color: "#6b7280",
+          marginTop: 8,
+          lineHeight: 1.6,
+        }}
+      >
+        Päätät itse hyväksytkö saamasi tarjoukset.
+      </div>
+    </div>
+  </div>
+</div>
       </div>
     </main>
   );
