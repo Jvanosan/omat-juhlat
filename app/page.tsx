@@ -311,7 +311,7 @@ if (rows.length > 0) {
       textAlign: "center",
     }}
   >
-    🎉 Näin OmatJuhlat toimii
+     Näin OmatJuhlat toimii
   </h2>
 
   <div
@@ -582,7 +582,6 @@ if (rows.length > 0) {
               >
                 Vierasmäärä *
               </label>
-              // TÄHÄN
 
 <input
   type="number"
@@ -676,7 +675,6 @@ if (rows.length > 0) {
               >
                 Budjetti (valinnainen)
               </label>
-              // TÄHÄN
 
 <input
   type="number"
@@ -899,6 +897,53 @@ if (rows.length > 0) {
     </div>
   </div>
 </div>
+<div
+  style={{
+    marginTop: 40,
+    textAlign: "center",
+    background: "#ffffff",
+    borderRadius: 16,
+    padding: 32,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  }}
+>
+  <h2
+    style={{
+      fontSize: 28,
+      fontWeight: "bold",
+      color: "#111827",
+      marginBottom: 12,
+    }}
+  >
+    🤝 Tarjoatko juhlapalveluita?
+  </h2>
+
+  <p
+    style={{
+      color: "#6b7280",
+      marginBottom: 24,
+    }}
+  >
+    Hae OmatJuhlat-kumppaniksi ja vastaanota tarjouspyyntöjä
+    uusilta asiakkailta.
+  </p>
+
+  <a
+    href="/partner/apply"
+    style={{
+      display: "inline-block",
+      padding: "14px 28px",
+      borderRadius: "999px",
+      background: "#10b981",
+      color: "#fff",
+      textDecoration: "none",
+      fontWeight: "bold",
+    }}
+  >
+    🤝 Hae kumppaniksi
+  </a>
+</div>
+
       </div>
     </main>
   );

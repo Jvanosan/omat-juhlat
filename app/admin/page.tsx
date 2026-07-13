@@ -16,10 +16,15 @@ export default function AdminPage() {
 
   const [authorized, setAuthorized] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
+const [applications, setApplications] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [processingQuoteId, setProcessingQuoteId] = useState<string | null>(null);
+
+  const [processingApplicationId, setProcessingApplicationId] =
+  useState<string | null>(null);
   // 🔐 Tarkistetaan admin‑oikeus
 
 useEffect(() => {
@@ -70,17 +75,25 @@ useEffect(() => {
 
   // 📥 Haetaan kumppanit
   useEffect(() => {
-    if (!authorized) return;
+  if (!authorized) return;
 
-    const fetchPartners = async () => {
-      const res = await fetch("/api/admin/partners");
-      const data = await res.json();
-      setPartners(data || []);
-      setLoading(false);
-    };
+  const fetchPartners = async () => {
+    const res = await fetch("/api/admin/partners");
+    const data = await res.json();
+    setPartners(data || []);
 
-    fetchPartners();
-  }, [authorized]);
+    const { data: applicationData } = await supabase
+      .from("partner_applications")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    setApplications(applicationData || []);
+
+    setLoading(false);
+  };
+
+  fetchPartners();
+}, [authorized]);
 
   if (!authorized) {
   return (
@@ -154,6 +167,79 @@ const updateQuoteStatus = async (
     alert("Jotain meni pieleen");
   } finally {
     setProcessingQuoteId(null);
+  }
+};
+const approveApplication = async (application: any) => {
+  try {
+    setProcessingApplicationId(application.id);
+
+    const { error: partnerError } = await supabase
+      .from("partners")
+      .insert({
+        company: application.company_name,
+        email: application.email,
+        phone: application.phone,
+        description: application.description,
+        category: application.service_category,
+        area: application.city,
+
+        verified: false,
+        status: "pending",
+      });
+
+    if (partnerError) {
+      alert(partnerError.message);
+      return;
+    }
+
+    const { error: applicationError } = await supabase
+      .from("partner_applications")
+      .update({
+        status: "approved",
+      })
+      .eq("id", application.id);
+
+    if (applicationError) {
+      alert(applicationError.message);
+      return;
+    }
+
+    setApplications((prev) =>
+      prev.map((a) =>
+        a.id === application.id
+          ? { ...a, status: "approved" }
+          : a
+      )
+    );
+  } finally {
+    setProcessingApplicationId(null);
+  }
+};
+const rejectApplication = async (applicationId: string) => {
+  try {
+    setProcessingApplicationId(applicationId);
+
+    const { error } = await supabase
+      .from("partner_applications")
+      .update({
+        status: "rejected",
+      })
+      .eq("id", applicationId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setApplications((prev) =>
+      prev.map((a) =>
+        a.id === applicationId
+          ? { ...a, status: "rejected" }
+          : a
+      )
+    );
+  } finally {
+    setProcessingApplicationId(null);
   }
 };
 async function handleLogout() {
@@ -342,6 +428,70 @@ fontWeight: "bold",
     <span style={{ color: "#6b7280" }}>
       Ei toimintoja
     </span>
+  )}
+</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
+<h2
+  style={{
+    marginTop: 40,
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#111827",
+  }}
+>
+  📋 Partnerihakemukset
+</h2>
+
+{applications.length === 0 ? (
+  <p>Ei partnerihakemuksia.</p>
+) : (
+  <table style={tableStyle}>
+    <thead>
+      <tr>
+        <th>Yritys</th>
+<th>Yhteyshenkilö</th>
+<th>Sähköposti</th>
+<th>Kaupunki</th>
+<th>Palvelu</th>
+<th>Status</th>
+<th>Toiminnot</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {applications.map((a) => (
+        <tr key={a.id}>
+          <td>{a.company_name}</td>
+          <td>{a.contact_name}</td>
+          <td>{a.email}</td>
+          <td>{a.city}</td>
+          <td>{a.service_category}</td>
+<td>
+  {a.status === "pending" && (
+    <>
+      <button
+        onClick={() => approveApplication(a)}
+        disabled={processingApplicationId === a.id}
+        style={approveBtn}
+      >
+        {processingApplicationId === a.id
+          ? "Tallennetaan..."
+          : "Hyväksy"}
+      </button>
+      <button
+  onClick={() => rejectApplication(a.id)}
+  disabled={processingApplicationId === a.id}
+  style={rejectBtn}
+>
+  {processingApplicationId === a.id
+    ? "Tallennetaan..."
+    : "Hylkää"}
+</button>
+    </>
   )}
 </td>
         </tr>
