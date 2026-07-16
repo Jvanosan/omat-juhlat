@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Hero from "@/components/layout/Hero";
+import HowItWorks from "@/components/sections/HowItWorks";
+import TrustSection from "@/components/sections/TrustSection";
+import PartnerCTA from "@/components/sections/PartnerCTA";
 
 const EVENT_TYPES = [
   "Syntymäpäivä",
@@ -194,170 +198,8 @@ if (!response.ok) {
           borderRadius: "16px",
         }}
       >
-        {/* HERO SECTION */}
-        <div
-          style={{
-            background: "rgba(0, 0, 0, 0.7)",
-            backdropFilter: "blur(10px)",
-            borderRadius: "24px",
-            padding: "50px 30px",
-            marginBottom: "32px",
-            textAlign: "center",
-            boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <h1
-            style={{
-              color: "#ffffff",
-              fontSize: "36px",
-              fontWeight: "bold",
-              textShadow: "0 2px 8px rgba(0,0,0,0.7)",
-              marginBottom: "16px",
-              lineHeight: "1.3",
-            }}
-          >
-            Järjestä juhlat helposti
-          </h1>
-          <p
-            style={{
-              fontSize: "18px",
-              color: "#e0f2fe",
-              lineHeight: "1.6",
-              maxWidth: "600px",
-              margin: "0 auto 28px",
-            }}
-          >
-            Täytä juhlan tiedot, saat tarjoukset luotettavilta juhlapalveluilta ja valitset parhaan – rauhassa ja ilman sitoumuksia.
-          </p>
-          <div
-            style={{
-              display: "flex",
-              gap: "16px",
-              justifyContent: "center",
-              flexWrap: "wrap",
-              marginTop: "20px",
-            }}
-          >
-            <a
-              href="#lomake"
-              style={{
-                display: "inline-block",
-                padding: "14px 28px",
-                borderRadius: "999px",
-                background: "linear-gradient(90deg, #10b981, #34d399)",
-                color: "#fff",
-                fontSize: "16px",
-                fontWeight: "bold",
-                textDecoration: "none",
-                boxShadow: "0 8px 20px rgba(16, 185, 129, 0.3)",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = "";
-              }}
-            >
-              🎊 Pyydä tarjoukset nyt
-            </a>
-            <a
-              href="/browse"
-              style={{
-                display: "inline-block",
-                padding: "14px 28px",
-                borderRadius: "999px",
-                background: "rgba(255,255,255,0.1)",
-                color: "#ffffff",
-                fontSize: "16px",
-                fontWeight: "bold",
-                textDecoration: "none",
-                border: "1px solid rgba(255,255,255,0.3)",
-                backdropFilter: "blur(8px)",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.15)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-              }}
-            >
-              ✨ Ota yhteyttä suoraan palveluntarjoajaan
-            </a>
-          </div>
-        </div>
-<div
-  style={{
-    background: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
-    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-  }}
->
-  <h2
-    style={{
-      color: "#111827",
-      fontSize: 24,
-      fontWeight: "bold",
-      marginBottom: 20,
-      textAlign: "center",
-    }}
-  >
-     Näin OmatJuhlat toimii
-  </h2>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
-      gap: 20,
-      textAlign: "center",
-    }}
-  >
-    <div>
-      <div style={{ fontSize: 40 }}>①</div>
-      <div style={{ fontWeight: "bold", color: "#111827" }}>
-        Täytä tiedot
-      </div>
-      <div style={{ color: "#6b7280", marginTop: 6 }}>
-        Kerro juhlastasi.
-      </div>
-    </div>
-
-    <div>
-      <div style={{ fontSize: 40 }}>②</div>
-      <div style={{ fontWeight: "bold", color: "#111827" }}>
-        Saat tarjoukset
-      </div>
-      <div style={{ color: "#6b7280", marginTop: 6 }}>
-        Palveluntarjoajat vastaavat.
-      </div>
-    </div>
-
-    <div>
-      <div style={{ fontSize: 40 }}>③</div>
-      <div style={{ fontWeight: "bold", color: "#111827" }}>
-        Vertaa
-      </div>
-      <div style={{ color: "#6b7280", marginTop: 6 }}>
-        Valitse paras tarjous.
-      </div>
-    </div>
-
-    <div>
-      <div style={{ fontSize: 40 }}>④</div>
-      <div style={{ fontWeight: "bold", color: "#111827" }}>
-        Nauti juhlista
-      </div>
-      <div style={{ color: "#6b7280", marginTop: 6 }}>
-        Kaikki on valmista. 🎉
-      </div>
-    </div>
-  </div>
-</div>
+       <Hero />
+       <HowItWorks />
         {/* INFO BOX */}
         <div
           style={{
@@ -803,141 +645,12 @@ if (!response.ok) {
 >
   {loading ? "⏳ Lähetetään..." : "🎊 Pyydä tarjoukset nyt"}
 </button>
-<div
-  style={{
-    marginTop: 32,
-    background: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-  }}
->
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-      gap: 20,
-    }}
-  >
-    <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 34 }}>🔒</div>
 
-      <div
-        style={{
-          fontWeight: "bold",
-          color: "#111827",
-          marginTop: 10,
-        }}
-      >
-        Turvallinen
-      </div>
 
-      <div
-        style={{
-          color: "#6b7280",
-          marginTop: 8,
-          lineHeight: 1.6,
-        }}
-      >
-        Tietosi välitetään vain valituille palveluntarjoajille.
-      </div>
-    </div>
+<TrustSection />
+<PartnerCTA />
+  
 
-    <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 34 }}>💚</div>
-
-      <div
-        style={{
-          fontWeight: "bold",
-          color: "#111827",
-          marginTop: 10,
-        }}
-      >
-        Maksuton
-      </div>
-
-      <div
-        style={{
-          color: "#6b7280",
-          marginTop: 8,
-          lineHeight: 1.6,
-        }}
-      >
-        Tarjouspyynnön lähettäminen on täysin ilmaista.
-      </div>
-    </div>
-
-    <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 34 }}>⭐</div>
-
-      <div
-        style={{
-          fontWeight: "bold",
-          color: "#111827",
-          marginTop: 10,
-        }}
-      >
-        Ei sitoumuksia
-      </div>
-
-      <div
-        style={{
-          color: "#6b7280",
-          marginTop: 8,
-          lineHeight: 1.6,
-        }}
-      >
-        Päätät itse hyväksytkö saamasi tarjoukset.
-      </div>
-    </div>
-  </div>
-</div>
-<div
-  style={{
-    marginTop: 40,
-    textAlign: "center",
-    background: "#ffffff",
-    borderRadius: 16,
-    padding: 32,
-    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-  }}
->
-  <h2
-    style={{
-      fontSize: 28,
-      fontWeight: "bold",
-      color: "#111827",
-      marginBottom: 12,
-    }}
-  >
-    🤝 Tarjoatko juhlapalveluita?
-  </h2>
-
-  <p
-    style={{
-      color: "#6b7280",
-      marginBottom: 24,
-    }}
-  >
-    Hae OmatJuhlat-kumppaniksi ja vastaanota tarjouspyyntöjä
-    uusilta asiakkailta.
-  </p>
-
-  <a
-    href="/partner/apply"
-    style={{
-      display: "inline-block",
-      padding: "14px 28px",
-      borderRadius: "999px",
-      background: "#10b981",
-      color: "#fff",
-      textDecoration: "none",
-      fontWeight: "bold",
-    }}
-  >
-    🤝 Hae kumppaniksi
-  </a>
-</div>
 
       </div>
     </main>
