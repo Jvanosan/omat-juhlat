@@ -109,16 +109,25 @@ await resend.emails.send({
   <p>Ystävällisin terveisin,<br/>OmatJuhlat</p>
 `,
 });
-// 📧 Email hyväksytyille partnereille
+// 📧 Sähköposti hyväksytyille partnereille
 for (const p of acceptedPartners || []) {
+  const partner = p.partner?.[0];
+
+  if (!partner?.email) {
+    console.warn(
+      `Partnerilta puuttuu sähköpostiosoite. Palvelu: ${p.service}`
+    );
+    continue;
+  }
+
   await resend.emails.send({
     from: "OmatJuhlat <no-reply@omatjuhlat.fi>",
-    to: p.partner.email,
+    to: partner.email,
     subject: "📅 Uusi varaus vahvistettu – OmatJuhlat",
     html: `
       <h2>Uusi varaus vahvistettu</h2>
 
-      <p>Teidän palvelunne on varattu OmatJuhlat‑palvelun kautta.</p>
+      <p>Teidän palvelunne on varattu OmatJuhlat-palvelun kautta.</p>
 
       <p><strong>Palvelu:</strong> ${p.service}</p>
       <p><strong>Päivämäärä:</strong> ${quote.date}</p>
@@ -126,14 +135,18 @@ for (const p of acceptedPartners || []) {
 
       <p>Asiakas ottaa teihin yhteyttä tarvittaessa ennen tapahtumaa.</p>
 
-      <p>Ystävällisin terveisin,<br/>OmatJuhlat</p>
+      <p>Ystävällisin terveisin,<br />OmatJuhlat</p>
     `,
   });
 }
+
 const adminPartnerList = (acceptedPartners || [])
-  .map(
-    p => `<li><strong>${p.service}</strong>: ${p.partner.company}</li>`
-  )
+  .map((p) => {
+    const partner = p.partner?.[0];
+    const companyName = partner?.company || "Tuntematon partneri";
+
+    return `<li><strong>${p.service}</strong>: ${companyName}</li>`;
+  })
   .join("");
   // 📧 Email adminille
 await resend.emails.send({

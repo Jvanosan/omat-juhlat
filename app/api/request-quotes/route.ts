@@ -261,9 +261,15 @@ export async function POST(request: Request) {
 
       if (!areaMatches || !capacityMatches) continue;
 
-      const matchedServices = services.filter((service) =>
-        partnerServices.includes(service)
-      );
+      const requestedServices: string[] = Array.isArray(services)
+  ? services.filter(
+      (service): service is string => typeof service === "string"
+    )
+  : [];
+
+const matchedServices = requestedServices.filter((service) =>
+  partnerServices.includes(service)
+);
 
       for (const service of matchedServices) {
         quotePartnerRows.push({
