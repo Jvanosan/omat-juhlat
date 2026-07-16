@@ -1,0 +1,27 @@
+import type { HTMLAttributes, ReactNode } from "react";
+
+type CardProps = HTMLAttributes<HTMLDivElement> & {
+  children: ReactNode;
+};
+
+export default function Card({
+  children,
+  className = "",
+  ...props
+}: CardProps) {
+  return (
+    <div
+      className={[
+        "rounded-2xl border border-gray-200 bg-white p-6",
+        "shadow-sm transition-shadow duration-200",
+        "hover:shadow-md",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
