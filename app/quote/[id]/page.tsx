@@ -32,8 +32,7 @@ export default function QuotePage() {
       .from("quote_partners")
       .select("*")
       .eq("quote_id", quoteId)
-      .in("status", ["offered", "valittu"]);
-
+.in("status", ["offered", "selected", "valittu"]);
     if (!qpData) return;
 
     const { data: partners } = await supabase
@@ -58,12 +57,12 @@ export default function QuotePage() {
 
     await supabase
       .from("quote_partners")
-      .update({ status: "valittu" })
+.update({ status: "selected" })
       .eq("id", offer.id);
 
     await supabase
       .from("quote_partners")
-      .update({ status: "hävitty" })
+.update({ status: "rejected" })
       .eq("quote_id", quoteId)
       .eq("service", offer.service)
       .neq("id", offer.id);
@@ -214,8 +213,8 @@ export default function QuotePage() {
               {service}</h2>
 
             {list.map((o: any) => {
-              const isSelected = o.status === "valittu";
-
+const isSelected =
+  o.status === "selected" || o.status === "valittu";
               return (
                 <div
                   key={o.id}

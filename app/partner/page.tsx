@@ -51,16 +51,28 @@ if (!partner) {
       return;
     }
 
-    const quoteIds = qp.map((q) => q.quote_id);
+    const validQuotePartners = qp.filter(
+  (q) => q.quote_id !== null && q.quote_id !== undefined
+);
 
-    const { data: quotes } = await supabase
-      .from("request_quotes")
-      .select("*")
-      .in("id", quoteIds);
+const quoteIds = Array.from(
+  new Set(validQuotePartners.map((q) => q.quote_id))
+);
 
-    const combined = qp.map((q) => {
-      const quote = quotes?.find((r) => r.id === q.quote_id);
-      return {
+    const { data: quotes, error: quotesError } = await supabase
+  .from("request_quotes")
+  .select("*")
+  .in("id", quoteIds);
+
+console.log("PARTNER QUOTE IDS:", quoteIds);
+console.log("PARTNER QUOTES:", quotes);
+console.log("PARTNER QUOTES ERROR:", quotesError);
+
+const combined = validQuotePartners.map((q) => {
+  const quote = quotes?.find(
+  (r) => String(r.id) === String(q.quote_id)
+);      
+return {
         ...q,
         quote,
       };
@@ -102,7 +114,7 @@ if (!partner) {
 
     await supabase
       .from("quote_partners")
-      .update({ status: "peruttu" })
+.update({ status: "cancelled" })
       .eq("id", item.id);
 
     alert("Tarjous peruttu");
@@ -183,8 +195,9 @@ async function handleLogout() {
   }}
 >
           {/* TILA */}
-          {item.status === "peruttu" && (
-  <div
+{(item.status === "cancelled" ||
+  item.status === "peruttu") && (
+      <div
     style={{
       background: "#fee2e2",
       color: "#991b1b",
@@ -199,7 +212,8 @@ async function handleLogout() {
   </div>
 )}
 
-          {item.status === "valittu" && (
+          {(item.status === "selected" ||
+  item.status === "valittu") && (
   <div
     style={{
       background: "#dcfce7",
@@ -225,8 +239,8 @@ async function handleLogout() {
     )}
   </div>
 )}
-
-          {item.status === "hävitty" && (
+          {(item.status === "rejected" ||
+  item.status === "hävitty") && (
   <div
     style={{
       background: "#fee2e2",
@@ -242,8 +256,7 @@ async function handleLogout() {
   </div>
 )}
 
-          {item.status === "offered" && !item.offer_price && (
-            <p style={{ color: "#92400e", fontWeight: "bold" }}>
+{item.status === "sent" && !item.offer_price && (            <p style={{ color: "#92400e", fontWeight: "bold" }}>
               🕒 Odottaa vastaustasi
             </p>
           )}
@@ -311,8 +324,7 @@ async function handleLogout() {
   </div>
 )}
 
-          {!item.offer_price && item.status === "offered" ? (
-            <>
+{!item.offer_price && item.status === "sent" ? (            <>
               <input
   type="number"
   placeholder="Hinta (€)"

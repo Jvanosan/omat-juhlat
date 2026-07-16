@@ -22,8 +22,7 @@ export default function ConfirmPage() {
       .from("quote_partners")
       .select("*")
       .eq("quote_id", quoteId)
-      .eq("status", "valittu");
-
+.in("status", ["selected", "valittu"]);
     if (!selections) return;
 
     const { data: partners } = await supabase
@@ -108,9 +107,9 @@ export default function ConfirmPage() {
               lineHeight: 1.6,
             }}
           >
-            Olet valinnut juhlaasi sopivan palveluntarjoajan.
-            <br />
-            Olemme välittäneet tiedot eteenpäin.
+            Tarkista valitsemasi palveluntarjoajat ja hinnat.
+<br />
+Vahvistamisen jälkeen välitämme yhteystiedot osapuolille.
           </p>
 
           <div
@@ -143,13 +142,10 @@ export default function ConfirmPage() {
                 textAlign: "left",
               }}
             >
-              <li>✅ Palveluntarjoaja on saanut yhteystietosi</li>
-              <li>
-                ✅ Hän ottaa sinuun yhteyttä sopiakseen yksityiskohdista
-              </li>
-              <li>
-                ✅ Maksu ja tarkat järjestelyt sovitaan suoraan hänen kanssaan
-              </li>
+             <li>✅ Vahvistamme valintasi palveluntarjoajalle</li>
+<li>✅ Palveluntarjoaja saa tarvittavat yhteystietosi</li>
+<li>✅ Hän ottaa sinuun yhteyttä yksityiskohtien sopimiseksi</li>
+<li>✅ Sopimus ja maksaminen hoidetaan suoraan palveluntarjoajan kanssa</li>
             </ul>
           </div>
 
@@ -170,72 +166,79 @@ export default function ConfirmPage() {
   🎉 Valitsemasi palvelut
 </h3>
 
-            {items.map((item) => (
-              <div
-  style={{
-    background: "#fff",
-    padding: 24,
-    borderRadius: 20,
-    marginBottom: 16,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-    border: "1px solid #e5e7eb",
-  }}
->
+{items.map((item) => (
+  <div
+    key={item.id}
+    style={{
+      background: "#fff",
+      padding: 24,
+      borderRadius: 20,
+      marginBottom: 16,
+      boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+      border: "1px solid #e5e7eb",
+    }}
+  >
+    {item.partner?.images && (
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginBottom: 12,
+          overflowX: "auto",
+        }}
+      >
+        {item.partner.images
+          .split(",")
+          .map((img: string, index: number) => {
+            const imageUrl = img.trim();
 
-{items.map((item: any) => (
-  <div key={item.id}>
+            if (!imageUrl) return null;
+
+            return (
+              <img
+                key={`${item.id}-${index}`}
+                src={imageUrl}
+                alt={
+                  item.partner?.company
+                    ? `${item.partner.company} kuva`
+                    : "Palveluntarjoajan kuva"
+                }
+                style={{
+                  width: 120,
+                  height: 90,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  flexShrink: 0,
+                }}
+              />
+            );
+          })}
+      </div>
+    )}
+
     <div
       style={{
-        display: "flex",
-        gap: 8,
-        marginBottom: 12,
-        overflowX: "auto",
+        fontWeight: "bold",
+        fontSize: 32,
+        color: "#111827",
+        wordBreak: "break-word",
       }}
     >
-      {item.partner?.images &&
-        item.partner.images
-          .split(",")
-          .map((img: string, i: number) => (
-            <img
-              key={i}
-              src={img.trim()}
-              alt={item.partner?.company || "Partner image"}
-              style={{
-                width: 120,
-                height: 90,
-                objectFit: "cover",
-                borderRadius: 8,
-              }}
-            />
-          ))}
+      {item.partner?.company || "Palveluntarjoaja"}
+    </div>
+
+    <div
+      style={{
+        marginTop: 8,
+        color: "#10b981",
+        fontSize: 28,
+        fontWeight: "bold",
+      }}
+    >
+      💰 {item.offer_price} €
     </div>
   </div>
 ))}
-                <div
-  style={{
-    fontWeight: "bold",
-fontSize: 32,
-color: "#111827",
-    wordBreak: "break-word",
-  }}
->
-                  {item.partner?.company}
-                </div>
-
-                <div
-  style={{
-    marginTop: 8,
-    color: "#10b981",
-    fontSize: 28,
-    fontWeight: "bold",
-  }}
->
-  💰 {item.offer_price} €
-</div>
-</div>
-            
-            ))}
-
            <div
   style={{
     fontSize: 36,
@@ -265,7 +268,7 @@ color: "#111827",
                 marginBottom: 40,
               }}
             >
-              ✅ Vahvista lopullisesti
+              ✅ Vahvista palveluntarjoajan valinta
             </button>
           </div>
 

@@ -21,8 +21,9 @@ export async function POST(req: Request) {
 
   // hae quote_partners + partnerit
   const { data: qp } = await supabase
-    .from("quote_partners")
-    .select("partner_id, service");
+  .from("quote_partners")
+  .select("partner_id, service")
+  .eq("quote_id", quoteId);
 
   const { data: partners } = await supabase
     .from("partners")
@@ -46,7 +47,7 @@ from: "OmatJuhlat <noreply@omatjuhlat.fi>",      to: partner.email,
         <p><strong>Päivämäärä:</strong> ${quote.date}</p>
 
         <p>
-          <a href="http://localhost:3000/partner">
+          <a href="https://omat-juhlat.vercel.app/partner">
             👉 Avaa tarjouspyyntö
           </a>
         </p>

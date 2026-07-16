@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 const EVENT_TYPES = [
@@ -47,136 +46,132 @@ export default function HomePage() {
     );
   }
 
-  async function submit() {
-    console.log("SUBMIT AJETTU");
-    setErrorMsg("");
+async function submit() {
+  if (loading) return;
 
-if (
-  !event.date ||
-  !event.eventType ||
-  !event.location ||
-  !event.guests ||
-  !event.email ||
-  selectedServices.length === 0
-)
-     {
-      setErrorMsg(
-"Täytä päivämäärä, tapahtumatyyppi, paikkakunta, vierasmäärä, sähköposti ja valitse vähintään yksi palvelu."      );
+  setErrorMsg("");
 
-const guests = Number(event.guests);
+  const cleanEmail = event.email.trim();
+  const guests = Number(event.guests);
 
-if (guests < 1) {
-  setErrorMsg("Vierasmäärän täytyy olla vähintään 1.");
-  return;
-}
+  if (
+    !event.date ||
+    !event.eventType ||
+    !event.location ||
+    !event.guests ||
+    !cleanEmail ||
+    selectedServices.length === 0
+  ) {
+    setErrorMsg(
+      "Täytä päivämäärä, tapahtumatyyppi, paikkakunta, vierasmäärä, sähköposti ja valitse vähintään yksi palvelu."
+    );
+    return;
+  }
 
-if (guests > 10000) {
-  setErrorMsg("Vierasmäärä on liian suuri.");
-  return;
-}     
-return;
-    }
-const budget = event.budget ? Number(event.budget) : null;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-if (budget !== null && budget < 0) {
-  setErrorMsg("Budjetti ei voi olla negatiivinen.");
-  return;
-}
+  if (!emailRegex.test(cleanEmail)) {
+    setErrorMsg("Anna kelvollinen sähköpostiosoite.");
+    return;
+  }
 
-const selectedDate = new Date(event.date);
+  if (!Number.isInteger(guests) || guests < 1) {
+    setErrorMsg("Vierasmäärän täytyy olla vähintään 1.");
+    return;
+  }
 
-const earliest = new Date();
-earliest.setDate(earliest.getDate() + 3);
-earliest.setHours(0, 0, 0, 0);
+  if (guests > 10000) {
+    setErrorMsg("Vierasmäärä on liian suuri.");
+    return;
+  }
 
-if (selectedDate < earliest) {
-  setErrorMsg("Valitse päivä vähintään 3 päivän päähän.");
-  return;
-}
+  const budget =
+    event.budget.trim() === ""
+      ? null
+      : Number(event.budget);
 
-    setLoading(true);
+  if (
+    budget !== null &&
+    (!Number.isFinite(budget) || budget < 0)
+  ) {
+    setErrorMsg("Budjetin täytyy olla 0 tai sitä suurempi.");
+    return;
+  }
 
-    const { data, error } = await supabase
-      .from("request_quotes")
-      .insert({
+  setLoading(true);
+
+  try {
+    const response = await fetch("/api/request-quotes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         date: event.date,
-        event_type: event.eventType,
+        eventType: event.eventType,
         location: event.location,
-        guests: Number(event.guests),
-        email: event.email.trim(),      
-        budget: event.budget ? Number(event.budget) : null,
+        guests,
+        email: cleanEmail,
+        budget,
         services: selectedServices,
-        status: "avoin",
-        notes: event.notes || null,
-      })
-      .select()
-      .single();
+        notes: event.notes.trim(),
+      }),
+    });
 
-    if (error) {
-      setErrorMsg(error.message);
-      setLoading(false);
+    const responseText = await response.text();
+
+let result: any = {};
+
+if (responseText) {
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    console.error("API RETURNED INVALID RESPONSE:", responseText);
+
+    setErrorMsg(
+      `Palvelin palautti virheellisen vastauksen. HTTP ${response.status}`
+    );
+    return;
+  }
+}
+
+if (!response.ok) {
+  console.error("REQUEST QUOTE API ERROR:", {
+    status: response.status,
+    responseText,
+  });
+
+  setErrorMsg(
+    result.error ||
+      `Tarjouspyynnön lähettäminen epäonnistui. HTTP ${response.status}`
+  );
+  return;
+}
+
+    if (!result.quoteId) {
+      setErrorMsg(
+        "Tarjouspyyntö tallennettiin, mutta sen tunnusta ei saatu."
+      );
       return;
     }
 
-    const { data: partners } = await supabase.from("partners").select("id, services");
-
-    let rows: any[] = [];
-
-if (partners && partners.length > 0) {
-  for (const partner of partners) {
-    let partnerServices: string[] = [];
-
-    if (Array.isArray(partner.services)) {
-      partnerServices = partner.services;
-    } else if (typeof partner.services === "string") {
-      partnerServices = partner.services
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
+    if (result.matchedPartners === 0) {
+      alert(
+        "Tarjouspyyntö tallennettiin, mutta sopivia palveluntarjoajia ei löytynyt vielä."
+      );
     }
 
-    const matchedService = partnerServices.find((s) =>
-      selectedServices.includes(s)
+    router.push(`/quote/${result.quoteId}`);
+  } catch (error) {
+    console.error("REQUEST QUOTE ERROR:", error);
+
+    setErrorMsg(
+      "Yhteys palvelimeen epäonnistui. Yritä hetken kuluttua uudelleen."
     );
-
-    if (!matchedService) continue;
-
-    rows.push({
-      quote_id: data.id,
-      partner_id: partner.id,
-      partner_name: partner.company,
-      service: matchedService,
-      status: "offered",
-    });
-  }
-}
-
-if (rows.length > 0) {
-  await supabase.from("quote_partners").insert(rows);
-}
-
-      await fetch("/api/notify-partners", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quoteId: data.id }),
-      });
-    
-
-    await fetch("/api/confirm-request", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-   email: event.email.trim(),
-    quoteId: data.id,
-    eventType: event.eventType,
-    date: event.date,
-  }),
-});
+  } finally {
     setLoading(false);
-
-    router.push(`/quote/${data.id}`);
   }
-
+}
   return (
     <main
       style={{

@@ -35,15 +35,18 @@ export async function POST(req: Request) {
     }
 
     // VOITTAJAT
-    const winners = offers.filter(
-      (o) => o.status === "valittu"
-    );
+  const winners = offers.filter(
+  (o) =>
+    o.status === "selected" ||
+    o.status === "valittu"
+);
 
     // HÄVIÄJÄT
     const losers = offers.filter(
-      (o) => o.status === "hävitty"
-    );
-
+  (o) =>
+    o.status === "rejected" ||
+    o.status === "hävitty"
+);
     // ✅ VOITTAJA-EMAIL
     for (const win of winners) {
       const partner = partners.find(
@@ -103,15 +106,19 @@ if (winners.length > 0 && quote?.email) {
 
   await resend.emails.send({
 from: "OmatJuhlat <noreply@omatjuhlat.fi>",    to: quote.email,
-    subject: "✅ Varaus vahvistettu – OmatJuhlat",
-    html: `
+subject: "✅ Palveluntarjoajan valinta vahvistettu – OmatJuhlat",    html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>🎉 Kiitos! Varaus on vahvistettu</h2>
+        <h2>🎉 Palveluntarjoajan valinta on vahvistettu</h2>
 
-        <p>
-          Olet valinnut palveluntarjoajan tapahtumaasi.
-          Alla on yhteenveto valinnastasi.
-        </p>
+<p>
+  Olet valinnut palveluntarjoajan tapahtumaasi.
+  Alla on yhteenveto valinnastasi.
+</p>
+
+<p>
+  Huomioithan, että varsinainen sopimus, maksaminen ja tapahtuman
+  yksityiskohdat sovitaan suoraan palveluntarjoajan kanssa.
+</p>
 
         <hr />
 
@@ -134,8 +141,8 @@ from: "OmatJuhlat <noreply@omatjuhlat.fi>",    to: quote.email,
         <p>
           ✅ Olemme ilmoittaneet valitulle palveluntarjoajalle
           <strong>${partner?.company || ""}</strong>.
-          Hän on sinuun yhteydessä sopiakseen yksityiskohdista.
-        </p>
+          Palveluntarjoaja on sinuun yhteydessä sopiakseen yksityiskohdista.
+          </p>
 
         <p style="margin-top: 16px;">
           Kiitos kun käytit <strong>OmatJuhlat</strong>‑palvelua!
