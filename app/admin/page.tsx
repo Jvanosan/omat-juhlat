@@ -12,11 +12,15 @@ type Partner = {
 };
 
 export default function AdminPage() {
+
+
   const router = useRouter();
 
   const [authorized, setAuthorized] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
 const [applications, setApplications] = useState<any[]>([]);
+const [reviews, setReviews] = useState<any[]>([]);
+const [approvedReviews, setApprovedReviews] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<any[]>([]);
@@ -24,6 +28,8 @@ const [applications, setApplications] = useState<any[]>([]);
   const [processingQuoteId, setProcessingQuoteId] = useState<string | null>(null);
 
   const [processingApplicationId, setProcessingApplicationId] =
+  useState<string | null>(null);
+  const [processingReviewId, setProcessingReviewId] =
   useState<string | null>(null);
   // 🔐 Tarkistetaan admin‑oikeus
 
@@ -88,6 +94,35 @@ useEffect(() => {
       .order("created_at", { ascending: false });
 
     setApplications(applicationData || []);
+
+    const { data: reviewData, error: reviewError } = await supabase
+  .from("partner_reviews")
+  .select(`
+    *,
+    partners (
+      company
+    )
+  `)
+  .eq("approved", false)
+  .order("created_at", { ascending: false });
+
+if (reviewError) {
+  console.error("Arvostelujen haku epäonnistui:", reviewError);
+}
+
+setReviews(reviewData || []);
+const { data: approvedData } = await supabase
+  .from("partner_reviews")
+  .select(`
+    *,
+    partners (
+      company
+    )
+  `)
+  .eq("approved", true)
+  .order("created_at", { ascending: false });
+
+setApprovedReviews(approvedData || []);
 
     setLoading(false);
   };
@@ -211,6 +246,17 @@ const approveApplication = async (application: any) => {
           : a
       )
     );
+    await fetch("/api/admin/send-application-approved", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    email: application.email,
+    contactName: application.contact_name,
+    companyName: application.company_name,
+  }),
+});
   } finally {
     setProcessingApplicationId(null);
   }
@@ -242,10 +288,73 @@ const rejectApplication = async (applicationId: string) => {
     setProcessingApplicationId(null);
   }
 };
+
+const approveReview = async (reviewId: string) => {
+  try {
+    setProcessingReviewId(reviewId);
+
+    const { error } = await supabase
+      .from("partner_reviews")
+      .update({
+        approved: true,
+      })
+      .eq("id", reviewId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setReviews((prev) =>
+      prev.filter((r) => r.id !== reviewId)
+    );
+  } finally {
+    setProcessingReviewId(null);
+  }
+};
+const rejectReview = async (reviewId: string) => {
+  try {
+    setProcessingReviewId(reviewId);
+
+    const { error } = await supabase
+      .from("partner_reviews")
+      .delete()
+      .eq("id", reviewId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setReviews((prev) =>
+      prev.filter((r) => r.id !== reviewId)
+    );
+  } finally {
+    setProcessingReviewId(null);
+  }
+};
 async function handleLogout() {
   await supabase.auth.signOut();
   router.push("/login");
 }
+const totalPartners = partners.length;
+
+const openRequests = requests.filter(
+  (r) => r.status !== "suljettu"
+).length;
+
+const pendingApplications = applications.filter(
+  (a) => a.status === "pending"
+).length;
+
+const pendingReviews = reviews.length;
+
+const scrollToSection = (sectionId: string) => {
+  document.getElementById(sectionId)?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+};
   if (loading) {
   return (
     <p
@@ -313,8 +422,58 @@ async function handleLogout() {
   >
     Kirjaudu ulos
   </button>
-</div>    
+</div>  
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 20,
+    marginTop: 30,
+    marginBottom: 40,
+  }}
+>
+  <button
+  type="button"
+  onClick={() => scrollToSection("partners-section")}
+  style={dashboardCard}
+>
+  <div style={dashboardIcon}>👥</div>
+  <div style={dashboardNumber}>{totalPartners}</div>
+  <div style={dashboardLabel}>Kumppanit</div>
+</button>
+
+ <button
+  type="button"
+  onClick={() => scrollToSection("requests-section")}
+  style={dashboardCard}
+>
+  <div style={dashboardIcon}>📨</div>
+  <div style={dashboardNumber}>{openRequests}</div>
+  <div style={dashboardLabel}>Avoimet tarjouspyynnöt</div>
+</button>
+
+  <button
+  type="button"
+  onClick={() => scrollToSection("applications-section")}
+  style={dashboardCard}
+>
+  <div style={dashboardIcon}>📋</div>
+  <div style={dashboardNumber}>{pendingApplications}</div>
+  <div style={dashboardLabel}>Partnerihakemukset</div>
+</button>
+
+  <button
+  type="button"
+  onClick={() => scrollToSection("reviews-section")}
+  style={dashboardCard}
+>
+  <div style={dashboardIcon}>⭐</div>
+  <div style={dashboardNumber}>{pendingReviews}</div>
+  <div style={dashboardLabel}>Odottavat arvostelut</div>
+</button>
+</div> 
 <h2
+  id="requests-section"
   style={{
     marginTop: 40,
     fontSize: 28,
@@ -436,6 +595,7 @@ fontWeight: "bold",
   </table>
 )}
 <h2
+id="applications-section"
   style={{
     marginTop: 40,
     fontSize: 28,
@@ -500,6 +660,116 @@ fontWeight: "bold",
   </table>
 )}
 <h2
+id="reviews-section"
+  style={{
+    marginTop: 40,
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#111827",
+  }}
+>
+  ⭐ Odottavat arvostelut
+</h2>
+
+{reviews.length === 0 ? (
+  <p>Ei odottavia arvosteluja.</p>
+) : (
+  <table style={tableStyle}>
+    <thead>
+      <tr>
+        <th>Yritys</th>
+        <th>Sähköposti</th>
+        <th>Arvosana</th>
+        <th>Arvostelu</th>
+        <th>Päivä</th>
+        <th>Toiminnot</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {reviews.map((review) => (
+        <tr key={review.id}>
+          <td>{review.partner_id}</td>
+          <td>{review.customer_email}</td>
+          <td>
+            {"★".repeat(review.rating)}
+            {"☆".repeat(5 - review.rating)}
+          </td>
+          <td>{review.review}</td>
+          <td>
+            {new Date(review.created_at).toLocaleDateString("fi-FI")}
+          </td>
+          <td>
+  <button
+    onClick={() => approveReview(review.id)}
+    disabled={processingReviewId === review.id}
+    style={approveBtn}
+  >
+    {processingReviewId === review.id
+      ? "Tallennetaan..."
+      : "Hyväksy"}
+  </button>
+
+  <button
+    onClick={() => rejectReview(review.id)}
+    disabled={processingReviewId === review.id}
+    style={rejectBtn}
+  >
+    {processingReviewId === review.id
+      ? "Tallennetaan..."
+      : "Hylkää"}
+  </button>
+</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
+<h2
+  style={{
+    marginTop: 40,
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#111827",
+  }}
+>
+  ⭐ Hyväksytyt arvostelut
+</h2>
+
+{approvedReviews.length === 0 ? (
+  <p>Ei hyväksyttyjä arvosteluja.</p>
+) : (
+  <table style={tableStyle}>
+    <thead>
+      <tr>
+        <th>Yritys</th>
+        <th>Sähköposti</th>
+        <th>Arvosana</th>
+        <th>Arvostelu</th>
+        <th>Päivä</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {approvedReviews.map((review) => (
+        <tr key={review.id}>
+          <td>{review.partners?.company}</td>
+          <td>{review.customer_email}</td>
+          <td>
+            {"★".repeat(review.rating)}
+            {"☆".repeat(5 - review.rating)}
+          </td>
+          <td>{review.review}</td>
+          <td>
+            {new Date(review.created_at).toLocaleDateString("fi-FI")}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
+<h2
+id="partners-section"
   style={{
     marginTop: 40,
     fontSize: 28,
@@ -592,4 +862,38 @@ const rejectBtn: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: 6,
   cursor: "pointer",
+};
+
+const dashboardCard: React.CSSProperties = {
+  background: "#ffffff",
+  borderRadius: 18,
+  padding: 24,
+  textAlign: "center",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+  border: "1px solid #ececec",
+
+  cursor: "pointer",
+  width: "100%",
+  fontFamily: "inherit",
+  transition: "all 0.2s ease",
+
+  appearance: "none",
+  WebkitAppearance: "none",
+};
+
+const dashboardIcon: React.CSSProperties = {
+  fontSize: 36,
+  marginBottom: 12,
+};
+
+const dashboardNumber: React.CSSProperties = {
+  fontSize: 34,
+  fontWeight: "bold",
+  color: "#111827",
+};
+
+const dashboardLabel: React.CSSProperties = {
+  marginTop: 8,
+  color: "#6b7280",
+  fontSize: 15,
 };

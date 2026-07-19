@@ -4,12 +4,21 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PageContainer from "../components/PageContainer"
+import DashboardStats from "../components/partner/DashboardStats";
+import DashboardHeader from "../components/partner/DashboardHeader";
+import QuoteCard from "../components/partner/QuoteCard";
+import EmptyState from "../components/partner/EmptyState";
+import InfoBanner from "../components/partner/InfoBanner";
 
 export default function PartnerPage() {
   const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
+const [activeFilter, setActiveFilter] = useState<
+  "all" | "waiting" | "offered" | "selected"
+>("all");
+
 
   useEffect(() => {
   loadData();
@@ -71,7 +80,8 @@ console.log("PARTNER QUOTES ERROR:", quotesError);
 const combined = validQuotePartners.map((q) => {
   const quote = quotes?.find(
   (r) => String(r.id) === String(q.quote_id)
-);      
+);    
+
 return {
         ...q,
         quote,
@@ -124,6 +134,33 @@ async function handleLogout() {
   await supabase.auth.signOut();
   router.push("/partner/login");
 }
+const waitingCount = items.filter(
+  (item) => item.status === "sent" && !item.offer_price
+).length;
+
+const offeredCount = items.filter(
+  (item) => item.status === "offered" && item.offer_price
+).length;
+
+const selectedCount = items.filter(
+  (item) => item.status === "selected" || item.status === "valittu"
+).length;
+
+const filteredItems = items.filter((item) => {
+  if (activeFilter === "waiting") {
+    return item.status === "sent" && !item.offer_price;
+  }
+
+  if (activeFilter === "offered") {
+    return item.status === "offered" && Boolean(item.offer_price);
+  }
+
+  if (activeFilter === "selected") {
+    return item.status === "selected" || item.status === "valittu";
+  }
+
+  return true;
+});
   return (
     <PageContainer>
     <main
@@ -134,294 +171,43 @@ async function handleLogout() {
   }}
 >
 
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-    gap: 12,
-    flexWrap: "wrap",
-  }}
->
-  <h1
-    style={{
-      fontSize: 32,
-      fontWeight: "bold",
-      color: "#111827",
-      margin: 0,
-    }}
-  >
-    📥 Saapuneet tarjouspyynnöt
-  </h1>
-
-  <button
-    onClick={handleLogout}
-    style={{
-      background: "#ef4444",
-      color: "#fff",
-      border: "none",
-      padding: "10px 16px",
-      borderRadius: 8,
-      cursor: "pointer",
-      fontWeight: "bold",
-    }}
-  >
-    Kirjaudu ulos
-  </button>
-</div>
-
-      {items.length === 0 && (
-<p
-  style={{
-    color: "#111827",
-    fontSize: 17,
-    lineHeight: 1.6,
-  }}
->
-  Ei avoimia tarjouspyyntöjä tällä hetkellä.
-</p>      )}
-
-      {items.map((item) => (
-        <div
-  key={item.id}
-  style={{
-    background: "white",
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-    border: "1px solid #e5e7eb",
-  }}
->
-          {/* TILA */}
-{(item.status === "cancelled" ||
-  item.status === "peruttu") && (
-      <div
-    style={{
-      background: "#fee2e2",
-      color: "#991b1b",
-      padding: "10px 14px",
-      borderRadius: 10,
-      marginBottom: 12,
-      fontWeight: "bold",
-      display: "inline-block",
-    }}
-  >
-    ❌ Tarjous peruttu
-  </div>
-)}
-
-          {(item.status === "selected" ||
-  item.status === "valittu") && (
-  <div
-    style={{
-      background: "#dcfce7",
-      color: "#166534",
-      padding: "14px",
-      borderRadius: 10,
-      marginBottom: 12,
-      border: "1px solid #86efac",
-    }}
-  >
-    <div style={{ fontWeight: "bold", marginBottom: 10 }}>
-      🏆 Asiakas valitsi tämän tarjouksen
-    </div>
-
-    <div>👤 {item.quote?.name}</div>
-    <div>📧 {item.quote?.email}</div>
-    <div>📞 {item.quote?.phone}</div>
-
-    {item.quote?.extraInfo && (
-      <div style={{ marginTop: 10 }}>
-        💬 {item.quote.extraInfo}
-      </div>
-    )}
-  </div>
-)}
-          {(item.status === "rejected" ||
-  item.status === "hävitty") && (
-  <div
-    style={{
-      background: "#fee2e2",
-      color: "#991b1b",
-      padding: "10px 14px",
-      borderRadius: 10,
-      marginBottom: 12,
-      fontWeight: "bold",
-      display: "inline-block",
-    }}
-  >
-    ❌ Asiakas valitsi toisen tarjouksen
-  </div>
-)}
-
-{item.status === "sent" && !item.offer_price && (            <p style={{ color: "#92400e", fontWeight: "bold" }}>
-              🕒 Odottaa vastaustasi
-            </p>
-          )}
-{item.status === "offered" && item.offer_price && (
-  <div
-    style={{
-      background: "#dcfce7",
-      color: "#166534",
-      padding: "10px 14px",
-      borderRadius: 10,
-      marginBottom: 12,
-      fontWeight: "bold",
-      display: "inline-block",
-    }}
-  >
-    ✅ Tarjous lähetetty – odottaa asiakkaan päätöstä
-  </div>
-)}
-
-<h3
-  style={{
-    marginBottom: 10,
-    fontSize: 22,
-    fontWeight: 700,
-    wordBreak: "break-word",
-    color: "#111827",
-    lineHeight: 1.4,
-  }}
->
-        📦 Palvelu: {item.service}
-          </h3>
-
-<p
-  style={{
-    color: "#111827",
-    fontSize: 17,
-    fontWeight: 500,
-    lineHeight: 1.8,
-  }}
->          📅 {item.quote?.date} <br />
-            📍 {item.quote?.location} <br />
-            👥 {item.quote?.guests} vierasta
-          </p>
-          {item.quote?.extraInfo && (
-<div
-  style={{
-    marginTop: 12,
-    padding: 14,
-    background: "#f9fafb",
-    borderRadius: 10,
-    border: "1px solid #e5e7eb",
-    color: "#111827",
-    lineHeight: 1.7,
-  }}
->
-<strong
-  style={{
-    color: "#111827",
-    fontSize: 16,
-  }}
->
-  Lisätiedot:
-</strong>    <br />
-    {item.quote.extraInfo}
-  </div>
-)}
-
-{!item.offer_price && item.status === "sent" ? (            <>
-              <input
-  type="number"
-  placeholder="Hinta (€)"
-  value={prices[item.id] || ""}
-  onChange={(e) =>
-    setPrices({ ...prices, [item.id]: e.target.value })
-  }
-style={{
-  width: "100%",
-  padding: 12,
-  marginBottom: 8,
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  fontSize: 16,
-  boxSizing: "border-box",
-  color: "#111827",
-  background: "#ffffff",
-  WebkitTextFillColor: "#111827",
-  caretColor: "#111827",
-}}
+<DashboardHeader onLogout={handleLogout} />
+<InfoBanner />
+<DashboardStats
+  total={items.length}
+  waiting={waitingCount}
+  offered={offeredCount}
+  selected={selectedCount}
+  activeFilter={activeFilter}
+  onFilterChange={setActiveFilter}
 />
 
-              <textarea
-                placeholder="Viesti asiakkaalle (valinnainen)"
-                value={messages[item.id] || ""}
-                onChange={(e) =>
-                  setMessages({ ...messages, [item.id]: e.target.value })
-                }
-style={{
-  width: "100%",
-  padding: 12,
-  marginBottom: 12,
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  fontSize: 16,
-  boxSizing: "border-box",
-  color: "#111827",
-  background: "#ffffff",
-  WebkitTextFillColor: "#111827",
-  caretColor: "#111827",
-}}
-              />
+{filteredItems.length === 0 && (
+  <EmptyState activeFilter={activeFilter} />
+)}
 
-              <button
-                onClick={() => submitOffer(item)}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  border: "none",
-                  background:
-                    "linear-gradient(90deg, #10b981, #34d399)",
-                  color: "white",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
-              >
-                💰 Lähetä tarjous
-</button>
-            </>
-          ) : item.offer_price ? (
-            <div
-style={{
-  background: "#ecfdf5",
-  padding: 16,
-  borderRadius: 12,
-  color: "#111827",
-  marginTop: 12,
-  border: "1px solid #a7f3d0",
-  lineHeight: 1.7,
-}}
-
->
-              <p><strong>Lähettämäsi tarjous:</strong></p>
-              <p>💰 {item.offer_price} €</p>
-              {item.offer_message && <p>💬 {item.offer_message}</p>}
-
-              {item.status === "offered" && (
-                <button
-                  onClick={() => cancelOffer(item)}
-                  style={{
-                    marginTop: 8,
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    border: "none",
-                    background: "#ef4444",
-                    color: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  ❌ Peru tarjous
-                </button>
-              )}
-            </div>
-          ) : null}
-        </div>
-              ))}
+{filteredItems.map((item) => (
+  <QuoteCard
+    key={item.id}
+    item={item}
+    price={prices[item.id] || ""}
+    message={messages[item.id] || ""}
+    onPriceChange={(value) =>
+      setPrices({
+        ...prices,
+        [item.id]: value,
+      })
+    }
+    onMessageChange={(value) =>
+      setMessages({
+        ...messages,
+        [item.id]: value,
+      })
+    }
+    onSubmitOffer={() => submitOffer(item)}
+    onCancelOffer={() => cancelOffer(item)}
+  />
+))}
     </main>
   </PageContainer>
 );
