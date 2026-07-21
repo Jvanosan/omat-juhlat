@@ -155,12 +155,12 @@ if (!response.ok) {
   return;
 }
 
-    if (!result.quoteId) {
-      setErrorMsg(
-        "Tarjouspyyntö tallennettiin, mutta sen tunnusta ei saatu."
-      );
-      return;
-    }
+    if (!result.quoteId || !result.accessToken) {
+  setErrorMsg(
+    "Tarjouspyyntö tallennettiin, mutta turvallista linkkiä ei saatu.",
+  );
+  return;
+}
 
     if (result.matchedPartners === 0) {
       alert(
@@ -168,7 +168,11 @@ if (!response.ok) {
       );
     }
 
-    router.push(`/quote/${result.quoteId}`);
+    router.push(
+  `/quote/${result.quoteId}?token=${encodeURIComponent(
+    result.accessToken,
+  )}`,
+);
   } catch (error) {
     console.error("REQUEST QUOTE ERROR:", error);
 

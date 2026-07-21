@@ -1,28 +1,67 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import {
+  adminSupabase,
+  isAuthorizedAdmin,
+} from "@/lib/server/adminAuth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { data, error } = await supabase
-      .from("partners")
-      .select("id, company, email, area, max_guests, status")
+    const authorized =
+      await isAuthorizedAdmin(request);
+
+    if (!authorized) {
+      return NextResponse.json(
+        {
+          error:
+            "Sinulla ei ole oikeutta nähdä partnerihakemuksia.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const { data, error } =
+      await adminSupabase
+        .from("partners")
+        .select(`
+          id,
+          company,
+          email,
+          area,
+          max_guests,
+          status
+        `)
+        .order("company", {
+  ascending: true,
+});
 
     if (error) {
+      console.error(
+        "ADMIN PARTNERS LOAD ERROR:",
+        error
+      );
+
       return NextResponse.json(
-        { error: error.message },
+        {
+          error:
+            "Partnerihakemusten hakeminen epäonnistui.",
+        },
         { status: 500 }
       );
     }
 
     return NextResponse.json(data ?? []);
-  } catch (err) {
+  } catch (error) {
+    console.error(
+      "ADMIN PARTNERS API ERROR:",
+      error
+    );
+
     return NextResponse.json(
-      { error: "Server error" },
+      {
+        error:
+          "Palvelimella tapahtui odottamaton virhe.",
+      },
       { status: 500 }
     );
   }

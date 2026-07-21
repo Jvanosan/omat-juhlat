@@ -1,15 +1,18 @@
 type RequestFormProps = {
   success: boolean;
   eventType: string;
+  location: string;
   email: string;
   eventDate: string;
   guests: string;
   notes: string;
   sending: boolean;
   minDate: string;
-  eventTypes: string[];
+    eventTypes: string[];
+  locations: string[];
   selectedPartnersCount: number;
   onEventTypeChange: (value: string) => void;
+  onLocationChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onEventDateChange: (value: string) => void;
   onGuestsChange: (value: string) => void;
@@ -20,15 +23,18 @@ type RequestFormProps = {
 export default function RequestForm({
   success,
   eventType,
+  location,
   email,
   eventDate,
   guests,
   notes,
   sending,
   minDate,
-  eventTypes,
+    eventTypes,
+  locations,
   selectedPartnersCount,
   onEventTypeChange,
+  onLocationChange,
   onEmailChange,
   onEventDateChange,
   onGuestsChange,
@@ -66,22 +72,43 @@ export default function RequestForm({
         <div className="space-y-4">
           
 
-          <select
-            value={eventType}
-            onChange={(e) => onEventTypeChange(e.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white focus:border-emerald-700 focus:outline-none"
-          >
-            <option value="">Valitse tapahtuman tyyppi</option>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+  <select
+    value={eventType}
+    onChange={(e) => onEventTypeChange(e.target.value)}
+    required
+    aria-label="Tapahtuman tyyppi"
+    className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white focus:border-emerald-700 focus:outline-none"
+  >
+    <option value="">Valitse tapahtuman tyyppi *</option>
 
-            {eventTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+    {eventTypes.map((type) => (
+      <option key={type} value={type}>
+        {type}
+      </option>
+    ))}
+  </select>
+
+  <select
+    value={location}
+    onChange={(e) => onLocationChange(e.target.value)}
+    required
+    aria-label="Tapahtuman sijainti"
+    className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 text-white focus:border-emerald-700 focus:outline-none"
+  >
+    <option value="">Valitse sijainti *</option>
+
+    {locations.map((city) => (
+      <option key={city} value={city}>
+        {city}
+      </option>
+    ))}
+  </select>
+</div>
 
           <input
             type="email"
+            required
             placeholder="Sähköpostiosoitteesi"
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
@@ -91,6 +118,7 @@ export default function RequestForm({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <input
               type="date"
+              required
               min={minDate}
               value={eventDate}
               onChange={(e) => onEventDateChange(e.target.value)}
@@ -99,6 +127,7 @@ export default function RequestForm({
 
             <input
               type="number"
+              required
               min={1}
               max={5000}
               placeholder="Arvioitu vierasmäärä"

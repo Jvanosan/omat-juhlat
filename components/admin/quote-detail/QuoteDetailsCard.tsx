@@ -1,0 +1,102 @@
+import type { AdminQuote } from "./types";
+
+type QuoteDetailsCardProps = {
+  quote: AdminQuote;
+};
+
+function formatDate(value: string | null) {
+  if (!value) return "Ei ilmoitettu";
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("fi-FI").format(date);
+}
+
+function formatServices(value: AdminQuote["services"]) {
+  if (!value) return "Ei ilmoitettu";
+
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+
+  return value;
+}
+
+export default function QuoteDetailsCard({
+  quote,
+}: QuoteDetailsCardProps) {
+  return (
+    <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
+      <div className="mb-6">
+        <p className="text-sm font-semibold uppercase tracking-wider text-emerald-400">
+          Tarjouspyyntö #{quote.id}
+        </p>
+
+        <h2 className="mt-2 text-2xl font-bold text-white">
+          Asiakkaan juhla- ja yhteystiedot
+        </h2>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <Detail label="Tapahtuma" value={quote.event_type} />
+        <Detail label="Päivämäärä" value={formatDate(quote.date)} />
+        <Detail label="Sijainti" value={quote.location} />
+        <Detail
+          label="Vierasmäärä"
+          value={
+            quote.guests
+              ? `${quote.guests} henkilöä`
+              : "Ei ilmoitettu"
+          }
+        />
+        <Detail
+          label="Budjetti"
+          value={
+            quote.budget !== null && quote.budget !== ""
+              ? `${quote.budget} €`
+              : "Ei ilmoitettu"
+          }
+        />
+        <Detail
+          label="Pyydetyt palvelut"
+          value={formatServices(quote.services)}
+        />
+        <Detail label="Asiakkaan nimi" value={quote.name} />
+        <Detail label="Sähköposti" value={quote.email} />
+        <Detail label="Puhelinnumero" value={quote.phone} />
+      </div>
+
+      {(quote.notes || quote.extraInfo) && (
+        <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+          <p className="text-sm text-zinc-500">Lisätiedot</p>
+
+          <p className="mt-2 whitespace-pre-line leading-7 text-zinc-300">
+            {quote.notes || quote.extraInfo}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | null;
+}) {
+  return (
+    <div>
+      <p className="text-sm text-zinc-500">{label}</p>
+
+      <p className="mt-1 break-words font-medium text-zinc-100">
+        {value || "Ei ilmoitettu"}
+      </p>
+    </div>
+  );
+}

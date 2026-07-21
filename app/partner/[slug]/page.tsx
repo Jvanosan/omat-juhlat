@@ -51,8 +51,8 @@ export default async function PartnerPage({
   const { slug } = await params;
 
   const { data: partner, error } = await supabase
-    .from("partners")
-    .select(`
+  .from("public_partners")
+  .select(`
       id,
       company,
       description,
@@ -76,9 +76,7 @@ export default async function PartnerPage({
       slug
     `)
     .eq("slug", slug)
-    .eq("status", "approved")
-    .eq("profile_completed", true)
-    .maybeSingle();
+.maybeSingle();
 
   if (error) {
     console.error("Partnerin julkisen profiilin lataus epäonnistui:", error);

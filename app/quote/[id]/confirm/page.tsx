@@ -1,15 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+
+import {
+  useParams,
+  useRouter,
+  useSearchParams,
+}
+ from "next/navigation";import { supabase } from "@/lib/supabase";
 import PageContainer from "@/app/components/PageContainer";
 
 export default function ConfirmPage() {
-  const params = useParams();
-  const router = useRouter();
-  const quoteId = params.id;
 
+const params = useParams();
+const router = useRouter();
+const searchParams = useSearchParams();
+
+const quoteId = params.id;
+const accessToken = searchParams.get("token");
+
+const [confirming, setConfirming] = useState(false);
+const [confirmationError, setConfirmationError] = useState("");
+  const [accessDenied, setAccessDenied] = useState(false)
   const [items, setItems] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
 
@@ -17,8 +29,34 @@ export default function ConfirmPage() {
     loadSelections();
   }, []);
 
-  async function loadSelections() {
-    const { data: selections } = await supabase
+
+async function loadSelections() {
+  if (!accessToken) {
+    setAccessDenied(true);
+    setItems([]);
+    setTotal(0);
+    return;
+  }
+
+  const { data: matchingQuote, error: quoteError } =
+    await supabase
+      .from("request_quotes")
+      .select("id")
+      .eq("id", quoteId)
+      .eq("access_token", accessToken)
+      .maybeSingle();
+
+  if (quoteError || !matchingQuote) {
+    setAccessDenied(true);
+    setItems([]);
+    setTotal(0);
+    return;
+  }
+
+  setAccessDenied(false);
+
+  const { data: selections } = await supabase
+
       .from("quote_partners")
       .select("*")
       .eq("quote_id", quoteId)
@@ -50,20 +88,116 @@ export default function ConfirmPage() {
     setTotal(sum);
   }
 
-  async function approveFinally() {
-    await fetch("/api/send", {
+async function approveFinally() {
+  if (confirming) return;
+
+  if (!accessToken) {
+    setAccessDenied(true);
+    return;
+  }
+
+  if (items.length === 0) {
+    setConfirmationError(
+      "Valitse vähintään yksi palveluntarjoaja ennen vahvistamista.",
+    );
+    return;
+  }
+
+  try {
+    setConfirming(true);
+    setConfirmationError("");
+
+    const response = await fetch("/api/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ quoteId }),
+      body: JSON.stringify({
+        quoteId,
+        accessToken,
+      }),
     });
 
-    alert("✅ Varaus vahvistettu");
+    const result = await response.json().catch(() => ({}));
 
-    router.replace(`/quote/${quoteId}`);
+    if (!response.ok) {
+      if (result.alreadyConfirmed) {
+        alert("Tarjouspyyntö on jo vahvistettu.");
+
+        router.replace(
+          `/quote/${quoteId}?token=${encodeURIComponent(
+            accessToken,
+          )}`,
+        );
+
+        return;
+      }
+
+      throw new Error(
+        result.error || "Vahvistaminen epäonnistui.",
+      );
+    }
+
+    alert("✅ Palveluntarjoajan valinta vahvistettiin");
+
+    router.replace(
+      `/quote/${quoteId}?token=${encodeURIComponent(
+        accessToken,
+      )}`,
+    );
+  } catch (error) {
+    console.error("CONFIRMATION ERROR:", error);
+
+    setConfirmationError(
+      error instanceof Error
+        ? error.message
+        : "Vahvistaminen epäonnistui.",
+    );
+  } finally {
+    setConfirming(false);
   }
+}
 
+if (accessDenied) {
+  return (
+    <PageContainer>
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          background: "#faf9f7",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 560,
+            padding: 32,
+            borderRadius: 20,
+            background: "#ffffff",
+            border: "1px solid #fecaca",
+            textAlign: "center",
+            color: "#111827",
+          }}
+        >
+          <div style={{ fontSize: 42, marginBottom: 16 }}>🔒</div>
+
+          <h1 style={{ fontSize: 26, marginBottom: 12 }}>
+            Linkki ei ole voimassa
+          </h1>
+
+          <p style={{ color: "#4b5563", lineHeight: 1.6 }}>
+            Vahvistussivua ei löytynyt tai linkin turvallinen
+            tunniste on virheellinen.
+          </p>
+        </div>
+      </main>
+    </PageContainer>
+  );
+}
   return (
     <PageContainer>
       <main
@@ -252,24 +386,52 @@ Vahvistamisen jälkeen välitämme yhteystiedot osapuolille.
   💰 Yhteensä: {total} €
 </div>
 
-            <button
-              onClick={approveFinally}
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: 12,
-                border: "none",
-                background:
-                  "linear-gradient(90deg, #10b981, #34d399)",
-                color: "white",
-                fontSize: 18,
-                fontWeight: "bold",
-                cursor: "pointer",
-                marginBottom: 40,
-              }}
-            >
-              ✅ Vahvista palveluntarjoajan valinta
-            </button>
+{confirmationError && (
+  <div
+    role="alert"
+    style={{
+      marginBottom: 16,
+      padding: 14,
+      borderRadius: 10,
+      border: "1px solid #fecaca",
+      background: "#fef2f2",
+      color: "#b91c1c",
+      fontSize: 15,
+      lineHeight: 1.5,
+      textAlign: "left",
+    }}
+  >
+    {confirmationError}
+  </div>
+)}
+
+<button
+  type="button"
+  onClick={() => void approveFinally()}
+  disabled={confirming || items.length === 0}
+  style={{
+    width: "100%",
+    padding: "16px",
+    borderRadius: 12,
+    border: "none",
+    background:
+      "linear-gradient(90deg, #10b981, #34d399)",
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    cursor:
+      confirming || items.length === 0
+        ? "not-allowed"
+        : "pointer",
+    opacity:
+      confirming || items.length === 0 ? 0.6 : 1,
+    marginBottom: 40,
+  }}
+>
+  {confirming
+    ? "Vahvistetaan..."
+    : "✅ Vahvista palveluntarjoajan valinta"}
+</button>
           </div>
 
           <p

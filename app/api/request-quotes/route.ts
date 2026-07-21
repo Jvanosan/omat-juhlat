@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
+import { Resend } from "resend";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +13,7 @@ const supabase = createClient(
     },
   }
 );
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const ALLOWED_SERVICES = [
   "juhlatila",
@@ -90,6 +93,14 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -188,22 +199,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Luo tarjouspyyntö
-    const { data: quote, error: quoteError } = await supabase
+const accessToken = randomUUID();
+
+const { data: quote, error: quoteError } = await supabase
       .from("request_quotes")
       .insert({
-        date,
-        event_type: eventType,
-        location,
-        guests,
-        email,
-        budget,
-        services,
-        status: "avoin",
-        notes: notes || null,
-      })
-      .select("id")
-      .single();
+  date,
+  event_type: eventType,
+  location,
+  guests,
+  email,
+  budget,
+  services,
+  status: "avoin",
+  notes: notes || null,
+  access_token: accessToken,
+})
+.select("id, access_token")
+.single();
 
     if (quoteError || !quote) {
       console.error("REQUEST QUOTE INSERT ERROR:", quoteError);
@@ -214,7 +227,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Hae vain hyväksytyt partnerit
     const { data: partners, error: partnersError } = await supabase
       .from("partners")
       .select(
@@ -244,7 +256,6 @@ export async function POST(request: Request) {
       status: string;
     }> = [];
 
-    // 3. Tarkista palvelu, alue ja kapasiteetti
     for (const partner of partners ?? []) {
       const partnerServices = parsePartnerServices(partner.services);
       const partnerAreas = parsePartnerAreas(partner.area);
@@ -281,7 +292,6 @@ const matchedServices = requestedServices.filter((service) =>
       }
     }
 
-    // 4. Luo partnerikohtaiset rivit
     if (quotePartnerRows.length > 0) {
       const { error: assignmentsError } = await supabase
         .from("quote_partners")
@@ -307,17 +317,98 @@ const matchedServices = requestedServices.filter((service) =>
       }
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        quoteId: quote.id,
-        matchedPartners: new Set(
-          quotePartnerRows.map((row) => row.partner_id)
-        ).size,
-        createdAssignments: quotePartnerRows.length,
-      },
-      { status: 201 }
+
+
+let confirmationEmailSent = false;
+
+try {
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  new URL(request.url).origin;
+
+  const quoteUrl =
+    `${siteUrl}/quote/${quote.id}` +
+    `?token=${encodeURIComponent(accessToken)}`;
+
+  const { error: emailError } = await resend.emails.send({
+    from: "OmatJuhlat <noreply@omatjuhlat.fi>",
+    to: email,
+    subject: "✅ Tarjouspyyntö vastaanotettu – OmatJuhlat",
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Tarjouspyyntösi on vastaanotettu ✅</h2>
+
+        <p>
+          <strong>Tapahtuma:</strong>
+          ${escapeHtml(eventType)}
+        </p>
+
+        <p>
+          <strong>Päivämäärä:</strong>
+          ${escapeHtml(date)}
+        </p>
+
+        <p>
+          Palveluntarjoajat käsittelevät pyyntöäsi ja
+          saat pian tarjouksia.
+        </p>
+
+        <p style="margin: 24px 0;">
+          <a
+            href="${quoteUrl}"
+            style="
+              display: inline-block;
+              padding: 12px 20px;
+              border-radius: 10px;
+              background: #10b981;
+              color: #ffffff;
+              font-weight: bold;
+              text-decoration: none;
+            "
+          >
+            Avaa tarjouspyyntösi
+          </a>
+        </p>
+
+        <p style="color: #6b7280; font-size: 14px;">
+          Tämä linkki on henkilökohtainen. Älä jaa sitä muille.
+        </p>
+
+        <p>Kiitos, kun käytit OmatJuhlat-palvelua 💙</p>
+      </div>
+    `,
+  });
+
+  if (emailError) {
+    console.error(
+      "REQUEST CONFIRMATION EMAIL ERROR:",
+      emailError,
     );
+  } else {
+    confirmationEmailSent = true;
+  }
+} catch (emailError) {
+  console.error(
+    "REQUEST CONFIRMATION EMAIL ERROR:",
+    emailError,
+  );
+}
+
+
+return NextResponse.json(
+  {
+    success: true,
+    quoteId: quote.id,
+    accessToken,
+    confirmationEmailSent,
+    matchedPartners: new Set(
+      quotePartnerRows.map((row) => row.partner_id),
+    ).size,
+    createdAssignments: quotePartnerRows.length,
+  },
+  { status: 201 },
+);
+
   } catch (error) {
     console.error("REQUEST QUOTES API ERROR:", error);
 

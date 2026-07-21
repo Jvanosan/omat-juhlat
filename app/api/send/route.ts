@@ -8,16 +8,77 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// LISÄÄ TÄMÄ
+
+type EmailPayload = {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+};
+
+async function sendEmail(payload: EmailPayload) {
+  const { error } = await resend.emails.send(payload);
+
+  if (error) {
+    console.error("RESEND EMAIL ERROR:", error);
+    throw new Error(error.message);
+  }
+}
+// TÄHÄN
+
 export async function POST(req: Request) {
   try {
-    const { quoteId } = await req.json();
+    const body = await req.json();
 
-    // tarjouspyyntö
-    const { data: quote } = await supabase
+    const quoteId = Number(body.quoteId);
+    const accessToken = String(body.accessToken ?? "").trim();
+
+    if (
+      !Number.isInteger(quoteId) ||
+      quoteId < 1 ||
+      !accessToken
+    ) {
+      return Response.json(
+        { error: "Tarjouspyynnön tunniste puuttuu tai on virheellinen." },
+        { status: 400 },
+      );
+    }
+
+    // Tarkista, että ID ja turvallinen token kuuluvat yhteen
+    const { data: quote, error: quoteError } = await supabase
       .from("request_quotes")
       .select("*")
       .eq("id", quoteId)
-      .single();
+      .eq("access_token", accessToken)
+      .maybeSingle();
+
+    if (quoteError) {
+      console.error("QUOTE ACCESS CHECK ERROR:", quoteError);
+
+      return Response.json(
+        { error: "Tarjouspyynnön tarkistaminen epäonnistui." },
+        { status: 500 },
+      );
+    }
+
+    if (!quote) {
+      return Response.json(
+        { error: "Linkki ei ole voimassa." },
+        { status: 403 },
+      );
+    }
+    // LISÄÄ TÄMÄ
+
+if (quote.status === "confirmed") {
+  return Response.json(
+    {
+      error: "Tarjouspyyntö on jo vahvistettu.",
+      alreadyConfirmed: true,
+    },
+    { status: 409 },
+  );
+}
 
     // kaikki tarjoukset
     const { data: offers } = await supabase
@@ -40,7 +101,14 @@ export async function POST(req: Request) {
     o.status === "selected" ||
     o.status === "valittu"
 );
+// LISÄÄ TÄMÄ
 
+if (winners.length === 0) {
+  return Response.json(
+    { error: "Yhtään palveluntarjoajaa ei ole valittu." },
+    { status: 400 },
+  );
+}
     // HÄVIÄJÄT
     const losers = offers.filter(
   (o) =>
@@ -54,8 +122,8 @@ export async function POST(req: Request) {
       );
       if (!partner) continue;
 
-      await resend.emails.send({
-        from: "OmatJuhlat <noreply@omatjuhlat.fi>",
+await sendEmail({
+          from: "OmatJuhlat <noreply@omatjuhlat.fi>",
         to: partner.email,
         subject: "🎉 Voitit tarjouksen – OmatJuhlat",
         html: `
@@ -82,8 +150,8 @@ export async function POST(req: Request) {
       );
       if (!partner) continue;
 
-      await resend.emails.send({
-from: "OmatJuhlat <noreply@omatjuhlat.fi>",
+await sendEmail({
+  from: "OmatJuhlat <noreply@omatjuhlat.fi>",
         to: partner.email,
         subject: "Kiitos tarjouksesta – OmatJuhlat",
         html: `
@@ -104,8 +172,8 @@ if (winners.length > 0 && quote?.email) {
     (p) => p.id === selected.partner_id
   );
 
-  await resend.emails.send({
-from: "OmatJuhlat <noreply@omatjuhlat.fi>",    to: quote.email,
+await sendEmail({
+  from: "OmatJuhlat <noreply@omatjuhlat.fi>",    to: quote.email,
 subject: "✅ Palveluntarjoajan valinta vahvistettu – OmatJuhlat",    html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         <h2>🎉 Palveluntarjoajan valinta on vahvistettu</h2>
@@ -155,7 +223,29 @@ subject: "✅ Palveluntarjoajan valinta vahvistettu – OmatJuhlat",    html: `
     `,
   });
 }
-    return Response.json({ success: true });
+// TÄHÄN
+
+const { error: statusUpdateError } = await supabase
+  .from("request_quotes")
+  .update({
+    status: "confirmed",
+  })
+  .eq("id", quoteId)
+  .eq("access_token", accessToken);
+
+if (statusUpdateError) {
+  console.error(
+    "QUOTE CONFIRMATION STATUS ERROR:",
+    statusUpdateError,
+  );
+
+  return Response.json(
+    { error: "Vahvistuksen tilan tallentaminen epäonnistui." },
+    { status: 500 },
+  );
+}
+
+return Response.json({ success: true });
   } catch (err) {
     console.error(err);
     return Response.json(

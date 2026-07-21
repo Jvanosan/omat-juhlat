@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BrowseHero from "@/components/browse/BrowseHero";
 import BrowseFilters from "@/components/browse/BrowseFilters";
@@ -71,6 +74,7 @@ const [toast, setToast] = useState<{
   company: string;
 } | null>(null);
 const searchParams = useSearchParams();
+const router = useRouter();
   const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -158,12 +162,18 @@ const EVENT_TYPES = [
     setPartnersError("");
 
     const { data, error } = await supabase
-  .from("partners")
-  .select(
-    "id, company, area, category, services, images, logo_url, cover_image_url, slug, profile_completed"
-  )
-  .eq("status", "approved")
-  .eq("profile_completed", true);
+  .from("public_partners")
+  .select(`
+    id,
+    company,
+    area,
+    category,
+    services,
+    images,
+    logo_url,
+    cover_image_url,
+    slug
+  `);
 
     if (error) {
       console.error("SUPABASE PARTNERS ERROR:", error);
@@ -235,63 +245,123 @@ useEffect(() => {
   const handleSubmit = async () => {
     const cleanEmail = email.trim();
 
-const emailRegex =
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const guestCount = Number(guests);
+
+if (
+  !eventType ||
+  !location ||
+  !cleanEmail ||
+  !eventDate ||
+  !guests ||
+  selectedPartners.length === 0
+) {
+  alert(
+    "Valitse tapahtumatyyppi ja sijainti, täytä sähköposti, päivämäärä ja vierasmäärä sekä valitse vähintään yksi yritys."
+  );
+  return;
+}
 
 if (!emailRegex.test(cleanEmail)) {
   alert("Anna kelvollinen sähköpostiosoite.");
   return;
 }
+
 if (
-  !email ||
-  !eventType ||
-  !eventDate ||
-  !guests ||
-  selectedPartners.length === 0
+  !Number.isInteger(guestCount) ||
+  guestCount < 1 ||
+  guestCount > 5000
 ) {
-alert(
-"Valitse tapahtumatyyppi, täytä sähköposti, päivämäärä, vierasmäärä ja valitse vähintään yksi yritys."
-);
- return;
-    }
-
-    setSending(true);
-
-    const { data: createdRequest, error } = await supabase
-  .from("direct_requests")
-  .insert({
-    email: cleanEmail,
-    event_date: eventDate,
-    guests: Number(guests),
-    partner_ids: selectedPartners,
-    notes: notes.trim(),
-    status: "new",
-  })
-  .select()
-  .single();
-
-if (error) {
-  console.error("Tarjouspyynnön tallennus epäonnistui:", error);
-  alert(`Tarjouspyynnön lähetys epäonnistui: ${error.message}`);
+  alert("Vierasmäärän täytyy olla 1–5000.");
   return;
 }
 
-console.log("Tarjouspyyntö lähetetty suoraan partnereille:", createdRequest);
+if (eventDate < minDate) {
+  alert("Valitse päivä vähintään kolmen päivän päähän.");
+  return;
+}
 
-    await fetch("/api/send-direct-request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+   setSending(true);
+
+try {
+  const response = await fetch("/api/send-direct-request", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
       email: cleanEmail,
-        event_date: eventDate,
-        guests,
-        partner_ids: selectedPartners,
-         notes,
-      }),
-    });
+      event_date: eventDate,
+      guests: guestCount,
+      location,
+      event_type: eventType,
+      partner_ids: selectedPartners,
+      notes: notes.trim(),
+    }),
+  });
 
-    setSending(false);
-    setSuccess(true);
+  const responseText = await response.text();
+
+  let result: {
+  success?: boolean;
+  requestId?: string;
+  accessToken?: string;
+  error?: string;
+} = {};
+
+  if (responseText) {
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      console.error(
+        "DIRECT REQUEST INVALID API RESPONSE:",
+        responseText
+      );
+
+      throw new Error(
+        `Palvelin palautti virheellisen vastauksen. HTTP ${response.status}`
+      );
+    }
+  }
+
+  if (!response.ok || !result.success) {
+  throw new Error(
+    result.error ||
+      `Tarjouspyynnön lähettäminen epäonnistui. HTTP ${response.status}`
+  );
+}
+
+if (!result.requestId || !result.accessToken) {
+  throw new Error(
+    "Tarjouspyyntö tallennettiin, mutta turvallista linkkiä ei saatu."
+  );
+}
+
+  console.log(
+    "Tarjouspyyntö lähetettiin turvallisesti:",
+    result.requestId
+  );
+
+  setSuccess(true);
+setSelectedPartners([]);
+
+router.push(
+  `/direct-request/${encodeURIComponent(
+    result.requestId
+  )}?token=${encodeURIComponent(result.accessToken)}`
+);
+} catch (error) {
+  console.error("DIRECT REQUEST ERROR:", error);
+
+  const message =
+    error instanceof Error
+      ? error.message
+      : "Tarjouspyynnön lähettäminen epäonnistui.";
+
+  alert(message);
+} finally {
+  setSending(false);
+} 
   };
 
   const visiblePartnerCount = new Set(
@@ -407,6 +477,7 @@ onToggle={() => {
 <RequestForm
   success={success}
   eventType={eventType}
+  location={location}
   email={email}
   eventDate={eventDate}
   guests={guests}
@@ -414,9 +485,11 @@ onToggle={() => {
   sending={sending}
   minDate={minDate}
   eventTypes={EVENT_TYPES}
-  selectedPartnersCount={selectedPartners.length}
-  onEventTypeChange={setEventType}
-  onEmailChange={setEmail}
+locations={LOCATIONS}
+selectedPartnersCount={selectedPartners.length}
+onEventTypeChange={setEventType}
+onLocationChange={setLocation}
+onEmailChange={setEmail}
   onEventDateChange={setEventDate}
   onGuestsChange={(value) => {
     const numericValue = Math.min(
