@@ -14,14 +14,33 @@ export const MAX_GALLERY_IMAGES = 10;
 
 export const DEFAULT_FORM: OnboardingForm = {
   company: {
-    companyName: "",
-    contactName: "",
-    email: "",
-    phone: "",
-    website: "",
-    city: "",
-    description: "",
-  },
+  companyName: "",
+  contactName: "",
+  businessId: "",
+
+  email: "",
+  phone: "",
+  website: "",
+
+  city: "",
+  address: "",
+  postalCode: "",
+  operatingRangeKm: "",
+
+  minGuests: "",
+  maxGuests: "",
+  avgPriceLevel: "",
+
+  parking: false,
+  accessibility: false,
+
+  instagramUrl: "",
+  facebookUrl: "",
+  tiktokUrl: "",
+  openingHours: "",
+
+  description: "",
+},
 
   logoUrl: "",
   coverImageUrl: "",

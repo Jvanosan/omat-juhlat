@@ -4,10 +4,29 @@ import type { PricingUnit } from "./pricingTemplates";
 export type CompanyDetails = {
   companyName: string;
   contactName: string;
+  businessId: string;
+
   email: string;
   phone: string;
   website: string;
+
   city: string;
+  address: string;
+  postalCode: string;
+  operatingRangeKm: string;
+
+  minGuests: string;
+  maxGuests: string;
+  avgPriceLevel: string;
+
+  parking: boolean;
+  accessibility: boolean;
+
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
+  openingHours: string;
+
   description: string;
 };
 

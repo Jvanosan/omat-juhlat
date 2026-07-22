@@ -20,6 +20,8 @@ import {
 
 import {
   getTomorrowDate,
+  isOfferExpired,
+  isOfferLocked,
   toDateInputValue,
   toOfferExpiryTimestamp,
 } from "@/components/partner/quotes/quoteUtils";
@@ -422,6 +424,24 @@ export function usePartnerQuotes() {
     if (!currentPartnerId || savingOffer) {
       return;
     }
+        if (
+      request.directOffer &&
+      (
+        isOfferLocked(
+          request.directOffer.status,
+        ) ||
+        isOfferExpired(
+          request.directOffer.expires_at,
+        )
+      )
+    ) {
+      alert(
+        "Tätä tarjousta ei voi enää muokata.",
+      );
+
+      await loadQuotes();
+      return;
+    }
 
     const numericPrice = validateDraft();
 
@@ -433,44 +453,75 @@ export function usePartnerQuotes() {
 
     try {
       setSavingOffer(true);
-
       if (request.directOffer) {
-        const { error } = await supabase
-          .from("direct_request_offers")
+        const {
+          data: updatedOffer,
+          error,
+        } = await supabase
+          .from(
+            "direct_request_offers",
+          )
           .update({
             price: numericPrice,
             message:
-              draft.message.trim() || null,
-expires_at: toOfferExpiryTimestamp(
-  draft.expiresAt
-),
+              draft.message.trim() ||
+              null,
+            expires_at:
+              toOfferExpiryTimestamp(
+                draft.expiresAt,
+              ),
             status: "sent",
           })
-          .eq("id", request.directOffer.id)
+          .eq(
+            "id",
+            request.directOffer.id,
+          )
           .eq(
             "partner_id",
-            currentPartnerId
+            currentPartnerId,
+          )
+          .in("status", [
+            "draft",
+            "sent",
+          ])
+          .select("id")
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        if (!updatedOffer) {
+          throw new Error(
+            "Tarjous on jo lukittu eikä sitä voi muokata.",
           );
-
-        if (error) throw error;
+        }
       } else {
-        const { error } = await supabase
-          .from("direct_request_offers")
-          .insert({
-            direct_request_id: request.id,
-            partner_id: currentPartnerId,
-            price: numericPrice,
-            message:
-              draft.message.trim() || null,
-            expires_at: toOfferExpiryTimestamp(
-  draft.expiresAt
-),
-            status: "sent",
-          });
+        const { error } =
+          await supabase
+            .from(
+              "direct_request_offers",
+            )
+            .insert({
+              direct_request_id:
+                request.id,
+              partner_id:
+                currentPartnerId,
+              price: numericPrice,
+              message:
+                draft.message.trim() ||
+                null,
+              expires_at:
+                toOfferExpiryTimestamp(
+                  draft.expiresAt,
+                ),
+              status: "sent",
+            });
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
       }
-
       resetEditor();
       await loadQuotes();
 
@@ -499,31 +550,80 @@ expires_at: toOfferExpiryTimestamp(
     request: CategoryRequest
   ) {
     if (savingOffer) return;
+        const existingOffer =
+      Number.isFinite(
+        Number(request.offerPrice),
+      ) &&
+      Number(request.offerPrice) > 0;
+
+    if (
+      existingOffer &&
+      (
+        isOfferLocked(
+          request.quotePartnerStatus,
+        ) ||
+        isOfferExpired(
+          request.offerExpiresAt,
+        )
+      )
+    ) {
+      alert(
+        "Tätä tarjousta ei voi enää muokata.",
+      );
+
+      await loadQuotes();
+      return;
+    }
 
     const numericPrice = validateDraft();
 
     if (numericPrice === null) return;
 
-    const editing =
-      request.offerPrice !== null;
+        const editing = existingOffer;
 
     try {
       setSavingOffer(true);
 
-      const { error } = await supabase
+            const {
+        data: updatedOffer,
+        error,
+      } = await supabase
         .from("quote_partners")
         .update({
           offer_price: numericPrice,
           offer_message:
-            draft.message.trim() || null,
-          expires_at: toOfferExpiryTimestamp(
-  draft.expiresAt
-),
-          status: "sent",
+            draft.message.trim() ||
+            null,
+          expires_at:
+            toOfferExpiryTimestamp(
+              draft.expiresAt,
+            ),
+          status: "offered",
         })
-        .eq("id", request.quotePartnerId);
+        .eq(
+          "id",
+          request.quotePartnerId,
+        )
+        .eq(
+          "partner_id",
+          currentPartnerId,
+        )
+        .in("status", [
+          "sent",
+          "offered",
+        ])
+        .select("id")
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
+      if (!updatedOffer) {
+        throw new Error(
+          "Tarjous on jo lukittu eikä sitä voi muokata.",
+        );
+      }
 
       resetEditor();
       await loadQuotes();

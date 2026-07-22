@@ -187,6 +187,94 @@ if (partnerError || !partner) {
     { status: 500 }
   );
 }
+if (!directRequest.event_date) {
+  return NextResponse.json(
+    {
+      error:
+        "Tarjouspyynnöltä puuttuu tapahtuman päivämäärä.",
+    },
+    { status: 400 },
+  );
+}
+
+const {
+  data: existingCalendarEntry,
+  error: calendarCheckError,
+} = await supabase
+  .from("partner_calendar_entries")
+  .select("id, status")
+  .eq("partner_id", offer.partner_id)
+  .eq("date", directRequest.event_date)
+  .maybeSingle();
+
+if (calendarCheckError) {
+  console.error(
+    "DIRECT SELECTION CALENDAR CHECK ERROR:",
+    calendarCheckError,
+  );
+
+  return NextResponse.json(
+    {
+      error:
+        "Palveluntarjoajan saatavuutta ei voitu tarkistaa.",
+    },
+    { status: 500 },
+  );
+}
+
+if (existingCalendarEntry) {
+  return NextResponse.json(
+    {
+      error:
+        "Palveluntarjoaja ei ole enää saatavilla tapahtuman päivänä. Valitse toinen tarjous.",
+    },
+    { status: 409 },
+  );
+}
+
+const {
+  data: createdCalendarEntry,
+  error: calendarInsertError,
+} = await supabase
+  .from("partner_calendar_entries")
+  .insert({
+    partner_id: offer.partner_id,
+    date: directRequest.event_date,
+    status: "booked",
+    note: `OmatJuhlat-varaus – ${
+  directRequest.event_type || "Tapahtuma"
+}${
+  directRequest.location
+    ? `, ${directRequest.location}`
+    : ""
+}`,
+  })
+  .select("id")
+  .single();
+
+if (
+  calendarInsertError ||
+  !createdCalendarEntry
+) {
+  console.error(
+    "DIRECT SELECTION CALENDAR INSERT ERROR:",
+    calendarInsertError,
+  );
+
+  const conflict =
+    calendarInsertError?.code === "23505";
+
+  return NextResponse.json(
+    {
+      error: conflict
+        ? "Palveluntarjoaja ehti juuri varautua tapahtuman päivälle. Valitse toinen tarjous."
+        : "Varauksen lisääminen kalenteriin epäonnistui.",
+    },
+    {
+      status: conflict ? 409 : 500,
+    },
+  );
+}
     // Hyväksy valittu tarjous.
     const { error: selectError } = await supabase
       .from("direct_request_offers")
@@ -201,7 +289,10 @@ if (partnerError || !partner) {
         "DIRECT OFFER SELECTION UPDATE ERROR:",
         selectError
       );
-
+await supabase
+  .from("partner_calendar_entries")
+  .delete()
+  .eq("id", createdCalendarEntry.id);
       return NextResponse.json(
         { error: "Tarjouksen valitseminen epäonnistui." },
         { status: 500 }
@@ -218,20 +309,36 @@ if (partnerError || !partner) {
       .neq("id", offer.id)
       .in("status", ["sent", "draft"]);
 
-    if (rejectError) {
-      console.error(
-        "DIRECT OTHER OFFERS REJECT ERROR:",
-        rejectError
-      );
+   if (rejectError) {
+  console.error(
+    "DIRECT OTHER OFFERS REJECT ERROR:",
+    rejectError,
+  );
 
-      return NextResponse.json(
-        {
-          error:
-            "Tarjous valittiin, mutta muiden tarjousten sulkeminen epäonnistui.",
-        },
-        { status: 500 }
-      );
-    }
+  return NextResponse.json(
+    {
+      error:
+        "Tarjous valittiin, mutta muiden tarjousten sulkeminen epäonnistui.",
+    },
+    { status: 500 },
+  );
+}
+
+// Merkitään koko suora tarjouspyyntö hyväksytyksi.
+const { error: requestStatusError } =
+  await supabase
+    .from("direct_requests")
+    .update({
+      status: "accepted",
+    })
+    .eq("id", directRequestId);
+
+if (requestStatusError) {
+  console.error(
+    "DIRECT REQUEST STATUS UPDATE ERROR:",
+    requestStatusError,
+  );
+}
 
 let customerEmailSent = false;
 let partnerEmailSent = false;

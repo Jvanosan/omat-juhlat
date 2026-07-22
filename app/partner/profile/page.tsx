@@ -1,19 +1,26 @@
-import EmptyState from "@/components/partner/EmptyState";
+import Link from "next/link";
+
+import ProfileEditor from "@/components/partner/profile/ProfileEditor";
 import SectionHeader from "@/components/partner/SectionHeader";
 
 export default function PartnerProfilePage() {
   return (
     <div className="mx-auto max-w-7xl">
       <SectionHeader
-        title="Yritysprofiili"
-        description="Muokkaa yrityksesi tietoja, palveluita, kuvia ja hintatietoja."
+        eyebrow="Yritysprofiili"
+        title="Muokkaa yrityksesi tietoja"
+        description="Pidä yhteystiedot, toiminta-alueet, palvelut, kuvat ja hinnat ajan tasalla. Kattava profiili auttaa asiakkaita valitsemaan yrityksesi."
+        action={
+          <Link
+            href="/partner/dashboard"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#d8c7ad] bg-white px-4 py-2 text-sm font-bold text-[#795a28] shadow-sm transition hover:-translate-y-0.5 hover:border-[#b48a45]"
+          >
+            ← Takaisin dashboardiin
+          </Link>
+        }
       />
 
-      <EmptyState
-        icon="👤"
-        title="Profiilin muokkaus rakennetaan seuraavaksi"
-        description="Tälle sivulle tuodaan onboardingissa käytetty lomake, jotta partneri voi päivittää yritysprofiiliaan."
-      />
+      <ProfileEditor />
     </div>
   );
 }

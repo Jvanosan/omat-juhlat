@@ -1,8 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  --background: #fbf8f2;
+  --foreground: #211b16;
+
+  --surface: #ffffff;
+  --surface-soft: #fffaf2;
+  --surface-warm: #f8efe2;
+
+  --border: #e8ded0;
+  --border-strong: #d8c7ad;
+
+  --muted: #70675e;
+  --muted-light: #91877d;
+
+  --gold: #b48a45;
+  --gold-dark: #8a672f;
+  --gold-light: #ead8b8;
+
+  --rose: #d9a8b8;
+  --peach: #e7b89a;
+
+  --success: #168365;
+  --success-soft: #e9f7f1;
+
+  --danger: #b44242;
+  --danger-soft: #fff0f0;
+
+  --shadow-soft:
+    0 10px 30px rgba(73, 53, 31, 0.07);
+
+  --shadow-card:
+    0 18px 50px rgba(73, 53, 31, 0.1);
 }
 
 @theme inline {
@@ -12,15 +43,84 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+  background: var(--background);
 }
 
 body {
-  background: var(--background);
+  min-width: 320px;
+  margin: 0;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(234, 216, 184, 0.28),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(217, 168, 184, 0.16),
+      transparent 28rem
+    ),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+  var(--font-geist-sans),
+  Arial,
+  Helvetica,
+  sans-serif;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+a {
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--gold-light);
+  color: var(--foreground);
+}
+
+:focus-visible {
+  outline: 3px solid rgba(180, 138, 69, 0.45);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

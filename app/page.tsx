@@ -9,6 +9,8 @@ import PartnerCTA from "@/components/sections/PartnerCTA";
 import QuoteForm from "@/components/forms/QuoteForm";
 import ServiceSelector from "@/components/forms/ServiceSelector";
 import SubmitSection from "@/components/forms/SubmitSection";
+import PublicHeader from "@/components/layout/PublicHeader";
+import PublicFooter from "@/components/layout/PublicFooter";
 
 const EVENT_TYPES = [
   "Syntymäpäivä",
@@ -184,6 +186,9 @@ if (!response.ok) {
   }
 }
   return (
+  <>
+    <PublicHeader />
+
     <main
       style={{
         minHeight: "100vh",
@@ -207,6 +212,10 @@ if (!response.ok) {
       >
        <Hero />
        <HowItWorks />
+       <section
+  id="tarjouspyynto"
+  className="scroll-mt-6"
+>
         <QuoteForm
   event={event}
   setEvent={setEvent}
@@ -231,10 +240,13 @@ if (!response.ok) {
   servicesComplete={selectedServices.length > 0}
   onSubmit={submit}
 />    
+</section>
 <TrustSection />
 <PartnerCTA />
 
       </div>
-    </main>
+        </main>
+          <PublicFooter />
+  </>
   );
 }

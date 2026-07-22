@@ -18,7 +18,19 @@ import type {
   SubmitState,
 } from "../types";
 import type { ServiceCategoryId } from "../serviceOptions";
+function toNullableNumber(value: string) {
+  const cleanValue = value.trim();
 
+  if (!cleanValue) {
+    return null;
+  }
+
+  const numberValue = Number(cleanValue);
+
+  return Number.isFinite(numberValue)
+    ? numberValue
+    : null;
+}
 export function useOnboarding() {
   const [step, setStep] = useState(0);
 
@@ -60,19 +72,37 @@ export function useOnboarding() {
         await supabase
           .from("partners")
           .select(`
-            company,
-            email,
-            phone,
-            website,
-            area,
-            description,
-            logo_url,
-            cover_image_url,
-            gallery,
-            category,
-            service_options,
-            pricing
-          `)
+  company,
+  contact_name,
+  email,
+  phone,
+  website,
+  area,
+  description,
+
+  businessId,
+  address,
+  postal_code,
+  operating_range_km,
+  min_guests,
+  max_guests,
+  avg_price_level,
+
+  parking,
+  accessibility,
+
+  instagram_url,
+  facebook_url,
+  tiktok_url,
+  opening_hours,
+
+  logo_url,
+  cover_image_url,
+  gallery,
+  category,
+  service_options,
+  pricing
+`)
           .eq("auth_user_id", user.id)
           .single();
 
@@ -134,14 +164,48 @@ export function useOnboarding() {
 
       setForm({
         company: {
-          companyName: partner.company ?? "",
-          contactName: "",
-          email: partner.email ?? user.email ?? "",
-          phone: partner.phone ?? "",
-          website: partner.website ?? "",
-          city: partner.area ?? "",
-          description: partner.description ?? "",
-        },
+  companyName: partner.company ?? "",
+  contactName: partner.contact_name ?? "",
+  businessId: partner.businessId ?? "",
+
+  email: partner.email ?? user.email ?? "",
+  phone: partner.phone ?? "",
+  website: partner.website ?? "",
+
+  city: partner.area ?? "",
+  address: partner.address ?? "",
+  postalCode: partner.postal_code ?? "",
+
+  operatingRangeKm:
+    partner.operating_range_km === null ||
+    partner.operating_range_km === undefined
+      ? ""
+      : String(partner.operating_range_km),
+
+  minGuests:
+    partner.min_guests === null ||
+    partner.min_guests === undefined
+      ? ""
+      : String(partner.min_guests),
+
+  maxGuests:
+    partner.max_guests === null ||
+    partner.max_guests === undefined
+      ? ""
+      : String(partner.max_guests),
+
+  avgPriceLevel: partner.avg_price_level ?? "",
+
+  parking: Boolean(partner.parking),
+  accessibility: Boolean(partner.accessibility),
+
+  instagramUrl: partner.instagram_url ?? "",
+  facebookUrl: partner.facebook_url ?? "",
+  tiktokUrl: partner.tiktok_url ?? "",
+  openingHours: partner.opening_hours ?? "",
+
+  description: partner.description ?? "",
+},
 
         logoUrl: partner.logo_url ?? "",
         coverImageUrl: partner.cover_image_url ?? "",
@@ -190,10 +254,12 @@ export function useOnboarding() {
     [form]
   );
 
-  function updateCompany(
-    field: keyof CompanyDetails,
-    value: string
-  ) {
+  function updateCompany<
+  Field extends keyof CompanyDetails,
+>(
+  field: Field,
+  value: CompanyDetails[Field],
+) {
     setForm((prev) => ({
       ...prev,
       company: {
@@ -317,18 +383,32 @@ export function useOnboarding() {
     setStep((prev) => Math.max(prev - 1, 0));
   }
 
-async function submit() {
+async function submit(
+  options: {
+    validateAllSteps?: boolean;
+    updateOnboardingTimestamp?: boolean;
+  } = {},
+) {
   setValidationError("");
 
-  const validationResult = validateStep(3, form);
+  const stepsToValidate = options.validateAllSteps
+    ? [0, 1, 2, 3]
+    : [3];
 
-  if (!validationResult.valid) {
-    setValidationError(
-      validationResult.message ??
-        "Tarkista lomakkeen tiedot."
+  for (const stepNumber of stepsToValidate) {
+    const validationResult = validateStep(
+      stepNumber,
+      form,
     );
 
-    return false;
+    if (!validationResult.valid) {
+      setValidationError(
+        validationResult.message ??
+          "Tarkista lomakkeen tiedot.",
+      );
+
+      return false;
+    }
   }
 
   setSubmitState({
@@ -369,14 +449,67 @@ async function submit() {
         .from("partners")
         .update({
           company: form.company.companyName.trim(),
-          email: form.company.email.trim(),
-          phone: form.company.phone.trim(),
-          website: normalizeWebsite(
-            form.company.website
-          ),
-          area: form.company.city.trim(),
-          description:
-            form.company.description.trim(),
+
+contact_name:
+  form.company.contactName.trim() || null,
+
+businessId:
+  form.company.businessId.trim() || null,
+
+email: form.company.email.trim(),
+
+phone:
+  form.company.phone.trim() || null,
+
+website: form.company.website.trim()
+  ? normalizeWebsite(form.company.website)
+  : null,
+
+area:
+  form.company.city.trim() || null,
+
+address:
+  form.company.address.trim() || null,
+
+postal_code:
+  form.company.postalCode.trim() || null,
+
+operating_range_km: toNullableNumber(
+  form.company.operatingRangeKm,
+),
+
+min_guests: toNullableNumber(
+  form.company.minGuests,
+),
+
+max_guests: toNullableNumber(
+  form.company.maxGuests,
+),
+
+avg_price_level:
+  form.company.avgPriceLevel.trim() || null,
+
+parking: form.company.parking,
+
+accessibility: form.company.accessibility,
+
+instagram_url: form.company.instagramUrl.trim()
+  ? normalizeWebsite(form.company.instagramUrl)
+  : null,
+
+facebook_url: form.company.facebookUrl.trim()
+  ? normalizeWebsite(form.company.facebookUrl)
+  : null,
+
+tiktok_url: form.company.tiktokUrl.trim()
+  ? normalizeWebsite(form.company.tiktokUrl)
+  : null,
+
+opening_hours:
+  form.company.openingHours.trim() || null,
+
+description:
+  form.company.description.trim(),
 
           logo_url: form.logoUrl.trim() || null,
           cover_image_url:
@@ -398,15 +531,20 @@ async function submit() {
           })),
 
           profile_completion: profileCompletion,
-          profile_completed:
-            profileCompletion === 100,
 
-          onboarding_completed_at:
-            new Date().toISOString(),
+...(options.updateOnboardingTimestamp !== false
+  ? {
+      profile_completed:
+        profileCompletion === 100,
 
-          slug: createSlug(
-            form.company.companyName
-          ),
+      onboarding_completed_at:
+        new Date().toISOString(),
+
+      slug: createSlug(
+        form.company.companyName,
+      ),
+    }
+  : {}),
         })
         .eq("auth_user_id", user.id)
         .select("id, company, profile_completion")

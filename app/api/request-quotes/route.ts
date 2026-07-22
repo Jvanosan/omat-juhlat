@@ -232,8 +232,8 @@ const { data: quote, error: quoteError } = await supabase
       .select(
         "id, company, email, services, area, max_guests, status"
       )
-      .eq("status", "approved");
-
+.eq("status", "approved")
+.eq("profile_completed", true);
     if (partnersError) {
       console.error("PARTNERS SELECT ERROR:", partnersError);
 
@@ -246,7 +246,49 @@ const { data: quote, error: quoteError } = await supabase
         { status: 500 }
       );
     }
+const partnerIds = (partners ?? []).map(
+  (partner) => String(partner.id),
+);
 
+const unavailablePartnerIds =
+  new Set<string>();
+
+if (partnerIds.length > 0) {
+  const {
+    data: calendarEntries,
+    error: calendarError,
+  } = await supabase
+    .from("partner_calendar_entries")
+    .select("partner_id")
+    .eq("date", date)
+    .in("partner_id", partnerIds)
+    .in("status", [
+      "unavailable",
+      "booked",
+    ]);
+
+  if (calendarError) {
+    console.error(
+      "REQUEST QUOTE CALENDAR ERROR:",
+      calendarError,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "Tarjouspyyntö tallennettiin, mutta palveluntarjoajien saatavuutta ei voitu tarkistaa.",
+        quoteId: quote.id,
+      },
+      { status: 500 },
+    );
+  }
+
+  for (const entry of calendarEntries ?? []) {
+    unavailablePartnerIds.add(
+      String(entry.partner_id),
+    );
+  }
+}
     const requestedLocation = location.toLowerCase();
 
     const quotePartnerRows: Array<{
@@ -257,7 +299,15 @@ const { data: quote, error: quoteError } = await supabase
     }> = [];
 
     for (const partner of partners ?? []) {
-      const partnerServices = parsePartnerServices(partner.services);
+  if (
+    unavailablePartnerIds.has(
+      String(partner.id),
+    )
+  ) {
+    continue;
+  }
+
+  const partnerServices = parsePartnerServices(partner.services);
       const partnerAreas = parsePartnerAreas(partner.area);
 
       const areaMatches =

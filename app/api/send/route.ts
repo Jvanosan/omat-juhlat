@@ -17,12 +17,30 @@ type EmailPayload = {
   html: string;
 };
 
-async function sendEmail(payload: EmailPayload) {
-  const { error } = await resend.emails.send(payload);
+async function sendEmail(
+  payload: EmailPayload,
+) {
+  try {
+    const { error } =
+      await resend.emails.send(payload);
 
-  if (error) {
-    console.error("RESEND EMAIL ERROR:", error);
-    throw new Error(error.message);
+    if (error) {
+      console.error(
+        "RESEND EMAIL ERROR:",
+        error,
+      );
+
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "RESEND EMAIL ERROR:",
+      error,
+    );
+
+    return false;
   }
 }
 // TÄHÄN
@@ -107,6 +125,173 @@ if (winners.length === 0) {
   return Response.json(
     { error: "Yhtään palveluntarjoajaa ei ole valittu." },
     { status: 400 },
+  );
+}
+if (!quote.date) {
+  return Response.json(
+    {
+      error:
+        "Tarjouspyynnöltä puuttuu tapahtuman päivämäärä.",
+    },
+    { status: 400 },
+  );
+}
+
+// Sama partneri voi voittaa useamman palvelun,
+// mutta kalenteriin tehdään vain yksi päivämerkintä.
+const winnerPartnerIds = Array.from(
+  new Set(
+    winners
+      .map((winner) =>
+        String(winner.partner_id ?? ""),
+      )
+      .filter(Boolean),
+  ),
+);
+
+const {
+  data: existingCalendarEntries,
+  error: calendarCheckError,
+} = await supabase
+  .from("partner_calendar_entries")
+  .select("partner_id, status")
+  .eq("date", quote.date)
+  .in("partner_id", winnerPartnerIds);
+
+if (calendarCheckError) {
+  console.error(
+    "QUOTE CALENDAR CHECK ERROR:",
+    calendarCheckError,
+  );
+
+  return Response.json(
+    {
+      error:
+        "Palveluntarjoajien saatavuutta ei voitu tarkistaa.",
+    },
+    { status: 500 },
+  );
+}
+
+if (
+  existingCalendarEntries &&
+  existingCalendarEntries.length > 0
+) {
+  const unavailableIds = new Set(
+    existingCalendarEntries.map((entry) =>
+      String(entry.partner_id),
+    ),
+  );
+
+  const unavailableCompanies = partners
+    .filter((partner) =>
+      unavailableIds.has(
+        String(partner.id),
+      ),
+    )
+    .map(
+      (partner) =>
+        partner.company ||
+        "Palveluntarjoaja",
+    );
+
+  return Response.json(
+    {
+      error:
+        unavailableCompanies.length === 1
+          ? `${unavailableCompanies[0]} ei ole enää saatavilla tapahtuman päivänä.`
+          : `Seuraavat palveluntarjoajat eivät ole enää saatavilla tapahtuman päivänä: ${unavailableCompanies.join(
+              ", ",
+            )}.`,
+    },
+    { status: 409 },
+  );
+}
+
+const {
+  data: createdCalendarEntries,
+  error: calendarInsertError,
+} = await supabase
+  .from("partner_calendar_entries")
+  .insert(
+    winnerPartnerIds.map((partnerId) => ({
+      partner_id: partnerId,
+      date: quote.date,
+      status: "booked",
+      note: `OmatJuhlat-varaus – ${
+  quote.event_type || "Tapahtuma"
+}${
+  quote.location
+    ? `, ${quote.location}`
+    : ""
+}`,
+    })),
+  )
+  .select("id");
+
+if (calendarInsertError) {
+  console.error(
+    "QUOTE CALENDAR INSERT ERROR:",
+    calendarInsertError,
+  );
+
+  const conflict =
+    calendarInsertError.code === "23505";
+
+  return Response.json(
+    {
+      error: conflict
+        ? "Yksi palveluntarjoajista ehti juuri varautua tapahtuman päivälle."
+        : "Varauksen lisääminen kalenteriin epäonnistui.",
+    },
+    {
+      status: conflict ? 409 : 500,
+    },
+  );
+}
+const { error: statusUpdateError } =
+  await supabase
+    .from("request_quotes")
+    .update({
+      status: "confirmed",
+    })
+    .eq("id", quoteId)
+    .eq("access_token", accessToken)
+    .neq("status", "confirmed");
+
+if (statusUpdateError) {
+  console.error(
+    "QUOTE CONFIRMATION STATUS ERROR:",
+    statusUpdateError,
+  );
+
+  const createdEntryIds = (
+    createdCalendarEntries ?? []
+  ).map((entry) => entry.id);
+
+  // Jos vahvistus epäonnistui, palautetaan tämän
+  // pyynnön juuri luomat kalenterimerkinnät.
+  if (createdEntryIds.length > 0) {
+    const { error: rollbackError } =
+      await supabase
+        .from("partner_calendar_entries")
+        .delete()
+        .in("id", createdEntryIds);
+
+    if (rollbackError) {
+      console.error(
+        "QUOTE CALENDAR ROLLBACK ERROR:",
+        rollbackError,
+      );
+    }
+  }
+
+  return Response.json(
+    {
+      error:
+        "Vahvistuksen tilan tallentaminen epäonnistui.",
+    },
+    { status: 500 },
   );
 }
     // HÄVIÄJÄT
@@ -223,28 +408,6 @@ subject: "✅ Palveluntarjoajan valinta vahvistettu – OmatJuhlat",    html: `
     `,
   });
 }
-// TÄHÄN
-
-const { error: statusUpdateError } = await supabase
-  .from("request_quotes")
-  .update({
-    status: "confirmed",
-  })
-  .eq("id", quoteId)
-  .eq("access_token", accessToken);
-
-if (statusUpdateError) {
-  console.error(
-    "QUOTE CONFIRMATION STATUS ERROR:",
-    statusUpdateError,
-  );
-
-  return Response.json(
-    { error: "Vahvistuksen tilan tallentaminen epäonnistui." },
-    { status: 500 },
-  );
-}
-
 return Response.json({ success: true });
   } catch (err) {
     console.error(err);

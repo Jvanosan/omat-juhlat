@@ -1,430 +1,393 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+
 import PartnerCard from "@/components/partner/PartnerCard";
 import QuickAction from "@/components/partner/QuickAction";
 import SectionHeader from "@/components/partner/SectionHeader";
 import StatCard from "@/components/partner/StatCard";
 
-type PartnerData = {
-  id: string;
-  company: string | null;
-  status: string | null;
-  verified: boolean | null;
-  profile_completed: boolean | null;
-  profile_completion: number | null;
-  published_at: string | null;
-  average_rating: number | string | null;
-  review_count: number | null;
-};
+import {
+  DASHBOARD_QUICK_ACTIONS,
+  getProfileCompletion,
+  isPublishedPartner,
+} from "@/components/partner/dashboard/dashboardUtils";
 
-type DashboardStats = {
-  newRequests: number;
-  sentOffers: number;
-  acceptedOffers: number;
-  averageRating: string;
-};
+import type { DashboardStatItem } from "@/components/partner/dashboard/types";
 
-const quickActions = [
-  {
-    title: "Muokkaa profiilia",
-    description: "Päivitä yrityksen tiedot, palvelut ja kuvaus.",
-    href: "/partner/profile",
-    icon: "✏️",
-  },
-  {
-    title: "Hallitse tarjouspyyntöjä",
-    description: "Katso uusia pyyntöjä ja lähetä tarjouksia.",
-    href: "/partner/quotes",
-    icon: "📨",
-  },
-  {
-    title: "Päivitä kalenteri",
-    description: "Merkitse vapaat ja varatut päivät.",
-    href: "/partner/calendar",
-    icon: "📅",
-  },
-  {
-    title: "Asetukset",
-    description: "Hallitse käyttäjätiliä ja ilmoituksia.",
-    href: "/partner/settings",
-    icon: "⚙️",
-  },
-];
-
-function normalizeStatus(status: string | null | undefined) {
-  return status?.trim().toLowerCase() ?? "";
-}
-
-function isNewRequestStatus(status: string | null | undefined) {
-  const normalizedStatus = normalizeStatus(status);
-
-  return [
-    "",
-    "new",
-    "pending",
-    "open",
-    "sent",
-    "waiting",
-    "uusi",
-    "odottaa",
-    "avoin",
-  ].includes(normalizedStatus);
-}
-
-function isAcceptedOfferStatus(status: string | null | undefined) {
-  const normalizedStatus = normalizeStatus(status);
-
-  return [
-    "accepted",
-    "approved",
-    "won",
-    "confirmed",
-    "hyväksytty",
-    "hyvaksytty",
-    "vahvistettu",
-  ].includes(normalizedStatus);
-}
-
-function isPublishedPartner(partner: PartnerData | null) {
-  if (!partner) {
-    return false;
-  }
-
-  const normalizedStatus = normalizeStatus(partner.status);
-
-  return (
-    partner.verified === true ||
-    Boolean(partner.published_at) ||
-    ["active", "approved", "published", "hyväksytty", "hyvaksytty"].includes(
-      normalizedStatus,
-    )
-  );
-}
+import { usePartnerDashboard } from "./usePartnerDashboard";
 
 export default function PartnerDashboardPage() {
-  const [partner, setPartner] = useState<PartnerData | null>(null);
-  const [stats, setStats] = useState<DashboardStats>({
-    newRequests: 0,
-    sentOffers: 0,
-    acceptedOffers: 0,
-    averageRating: "–",
-  });
+  const {
+    partner,
+    stats,
+    loading,
+    errorMessage,
+    reload,
+  } = usePartnerDashboard();
 
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
+  const profilePublished =
+    isPublishedPartner(partner);
 
-  useEffect(() => {
-    let isMounted = true;
+  const profileCompletion =
+    getProfileCompletion(partner);
 
-    async function loadDashboard() {
-      try {
-        setLoading(true);
-        setErrorMessage("");
-
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) {
-          throw userError;
-        }
-
-        if (!user) {
-          if (isMounted) {
-            setErrorMessage(
-              "Kirjaudu partneritilille nähdäksesi hallintapaneelin tiedot.",
-            );
-          }
-
-          return;
-        }
-
-        const { data: partnerData, error: partnerError } = await supabase
-          .from("partners")
-          .select(
-            `
-              id,
-              company,
-              status,
-              verified,
-              profile_completed,
-              profile_completion,
-              published_at,
-              average_rating,
-              review_count
-            `,
-          )
-          .eq("auth_user_id", user.id)
-          .maybeSingle();
-
-        if (partnerError) {
-          throw partnerError;
-        }
-
-        if (!partnerData) {
-          if (isMounted) {
-            setErrorMessage(
-              "Kirjautuneelle käyttäjälle ei löytynyt partneriprofiilia.",
-            );
-          }
-
-          return;
-        }
-
-        const currentPartner = partnerData as PartnerData;
-
-        const [
-          quotePartnersResult,
-          offersResult,
-        ] = await Promise.all([
-          supabase
-            .from("quote_partners")
-            .select("id, status")
-            .eq("partner_id", currentPartner.id),
-
-          supabase
-            .from("offers")
-            .select("id, status")
-            .eq("partner_id", currentPartner.id),
-        ]);
-
-        if (quotePartnersResult.error) {
-          throw quotePartnersResult.error;
-        }
-
-        if (offersResult.error) {
-          throw offersResult.error;
-        }
-
-        const quotePartnerRows = quotePartnersResult.data ?? [];
-        const offerRows = offersResult.data ?? [];
-
-        const newRequests = quotePartnerRows.filter((row) =>
-          isNewRequestStatus(row.status),
-        ).length;
-
-        const sentOffers = offerRows.length;
-
-        const acceptedOffers = offerRows.filter((row) =>
-          isAcceptedOfferStatus(row.status),
-        ).length;
-
-        const numericAverageRating = Number(currentPartner.average_rating);
-
-        const averageRating =
-          Number.isFinite(numericAverageRating) && numericAverageRating > 0
-            ? numericAverageRating.toFixed(1)
-            : "–";
-
-        if (isMounted) {
-          setPartner(currentPartner);
-
-          setStats({
-            newRequests,
-            sentOffers,
-            acceptedOffers,
-            averageRating,
-          });
-        }
-      } catch (error) {
-        console.error("Partner dashboard loading failed:", error);
-
-        if (isMounted) {
-          setErrorMessage(
-            "Dashboardin tietojen lataaminen epäonnistui. Yritä päivittää sivu.",
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadDashboard();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const dashboardStats = [
-    {
-      label: "Uudet tarjouspyynnöt",
-      value: loading ? "…" : stats.newRequests,
-      icon: "📥",
-      href: "/partner/quotes",
-    },
-    {
-      label: "Lähetetyt tarjoukset",
-      value: loading ? "…" : stats.sentOffers,
-      icon: "💰",
-      href: "/partner/quotes",
-    },
-    {
-      label: "Hyväksytyt tarjoukset",
-      value: loading ? "…" : stats.acceptedOffers,
-      icon: "🏆",
-      href: "/partner/quotes",
-    },
-    {
-      label: "Arvostelujen keskiarvo",
-      value: loading ? "…" : stats.averageRating,
-      icon: "⭐",
-      href: "/partner/profile",
-    },
-  ];
-
-  const profileIsPublished = isPublishedPartner(partner);
+  const dashboardStats: DashboardStatItem[] =
+    [
+      {
+        label: "Uudet tarjouspyynnöt",
+        value: loading
+          ? "…"
+          : stats.newRequests,
+        icon: "📥",
+        href: "/partner/quotes",
+        tone: "blue",
+      },
+      {
+        label: "Lähetetyt tarjoukset",
+        value: loading
+          ? "…"
+          : stats.sentOffers,
+        icon: "💶",
+        href: "/partner/quotes",
+        tone: "gold",
+      },
+      {
+        label: "Hyväksytyt tarjoukset",
+        value: loading
+          ? "…"
+          : stats.acceptedOffers,
+        icon: "🏆",
+        href: "/partner/quotes",
+        tone: "green",
+      },
+      {
+        label: "Arvostelujen keskiarvo",
+        value: loading
+          ? "…"
+          : stats.averageRating,
+        icon: "⭐",
+        href: "/partner/profile",
+        tone: "rose",
+      },
+    ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
+    <div className="mx-auto max-w-7xl space-y-10">
       {errorMessage && (
         <div
           role="alert"
-          className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-200"
+          className="flex flex-col gap-4 rounded-2xl border border-[#edcaca] bg-[#fff3f3] p-5 text-[#a33d3d] sm:flex-row sm:items-center sm:justify-between"
         >
-          {errorMessage}
+          <div>
+            <p className="font-bold">
+              Tietojen lataaminen epäonnistui
+            </p>
+
+            <p className="mt-1 text-sm leading-6">
+              {errorMessage}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              void reload()
+            }
+            disabled={loading}
+            className="shrink-0 rounded-xl border border-[#d99e9e] bg-white px-4 py-2 text-sm font-bold text-[#a33d3d] transition hover:bg-[#fffafa] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading
+              ? "Ladataan..."
+              : "Yritä uudelleen"}
+          </button>
         </div>
       )}
 
-      <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6 shadow-2xl sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="mb-2 text-sm font-medium uppercase tracking-[0.2em] text-emerald-400">
-              Partner Portal
+      <section className="relative overflow-hidden rounded-[2rem] border border-[#e3d6c4] bg-gradient-to-br from-white via-[#fffaf0] to-[#f8e9e7] p-6 shadow-[0_20px_55px_rgba(73,53,31,0.09)] sm:p-8 lg:p-10">
+        <div
+          aria-hidden="true"
+          className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-[#efd7a9]/35 blur-3xl"
+        />
+
+        <div className="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9a773b]">
+              Partneriportaali
             </p>
 
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[#211b16] sm:text-4xl lg:text-5xl">
               {loading
-                ? "Tervetuloa takaisin 👋"
+                ? "Tervetuloa takaisin"
                 : `Tervetuloa takaisin${
-                    partner?.company ? `, ${partner.company}` : ""
-                  } 👋`}
+                    partner?.company
+                      ? `, ${partner.company}`
+                      : ""
+                  }`}
+              <span
+                aria-hidden="true"
+                className="ml-2"
+              >
+                👋
+              </span>
             </h2>
 
-            <p className="mt-3 max-w-2xl leading-7 text-zinc-400">
-              Hallitse yrityksesi profiilia, tarjouspyyntöjä ja tulevia
-              varauksia yhdestä paikasta.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-[#70675e] sm:text-lg">
+              Hallitse yrityksesi profiilia,
+              tarjouspyyntöjä, tarjouksia ja
+              saatavuutta yhdestä paikasta.
             </p>
-          </div>
 
-          <div
-            className={`rounded-2xl border px-5 py-4 ${
-              profileIsPublished
-                ? "border-emerald-500/20 bg-emerald-500/10"
-                : "border-amber-500/20 bg-amber-500/10"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className={`h-3 w-3 rounded-full ${
-                  profileIsPublished
-                    ? "bg-emerald-400"
-                    : "bg-amber-400"
-                }`}
-              />
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/partner/quotes"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#b48a45] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#9f783a] hover:shadow-md"
+              >
+                Katso tarjouspyynnöt
+              </Link>
 
-              <div>
-                <p
-                  className={`text-sm font-semibold ${
-                    profileIsPublished
-                      ? "text-emerald-300"
-                      : "text-amber-300"
-                  }`}
+              <Link
+                href="/partner/profile"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#d8c7ad] bg-white px-5 py-3 text-sm font-bold text-[#795a28] transition hover:border-[#b48a45] hover:bg-[#fffdf9]"
+              >
+                Muokkaa profiilia
+              </Link>
+
+              {partner?.slug && (
+                <Link
+                  href={`/partner/${encodeURIComponent(
+                    partner.slug,
+                  )}`}
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 py-3 text-sm font-bold text-[#62584f] transition hover:bg-white/70 hover:text-[#211b16]"
                 >
-                  {loading
-                    ? "Tarkistetaan profiilia"
-                    : profileIsPublished
-                      ? "Profiili julkaistu"
-                      : "Profiili ei ole vielä julkaistu"}
-                </p>
-
-                <p className="mt-1 text-xs text-zinc-400">
-                  {loading
-                    ? "Odota hetki..."
-                    : profileIsPublished
-                      ? "Yrityksesi näkyy asiakkaille"
-                      : "Viimeistele profiili ja odota hyväksyntää"}
-                </p>
-              </div>
+                  Näytä julkinen profiili ↗
+                </Link>
+              )}
             </div>
           </div>
+
+          <ProfileStatusCard
+            loading={loading}
+            published={profilePublished}
+            status={partner?.status}
+            completion={
+              profileCompletion
+            }
+          />
         </div>
       </section>
 
       <section>
         <SectionHeader
-          title="Yhteenveto"
-          description="Tärkeimmät tiedot yrityksesi toiminnasta."
+          eyebrow="Yhteenveto"
+          title="Yrityksesi tilanne"
+          description="Tärkeimmät luvut molemmista tarjouspyyntöpoluista."
         />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {dashboardStats.map((stat) => (
-            <StatCard
-              key={stat.label}
-              label={stat.label}
-              value={stat.value}
-              icon={stat.icon}
-              href={stat.href}
-            />
-          ))}
+          {dashboardStats.map(
+            (stat) => (
+              <StatCard
+                key={stat.label}
+                label={stat.label}
+                value={stat.value}
+                icon={stat.icon}
+                href={stat.href}
+                tone={stat.tone}
+                detail={
+                  stat.label ===
+                  "Uudet tarjouspyynnöt"
+                    ? "Odottaa vastaustasi"
+                    : stat.label ===
+                        "Lähetetyt tarjoukset"
+                      ? "Kaikki lähettämäsi tarjoukset"
+                      : stat.label ===
+                          "Hyväksytyt tarjoukset"
+                        ? "Asiakkaiden vahvistamat"
+                        : `${stats.reviewCount} ${
+                            stats.reviewCount ===
+                            1
+                              ? "arvostelu"
+                              : "arvostelua"
+                          }`
+                }
+              />
+            ),
+          )}
         </div>
       </section>
 
       <section>
         <SectionHeader
-          title="Pikatoiminnot"
-          description="Siirry nopeasti yleisimpiin toimintoihin."
+          eyebrow="Pikatoiminnot"
+          title="Mitä haluat tehdä?"
+          description="Siirry nopeasti tärkeimpiin partnerin toimintoihin."
         />
 
         <div className="grid gap-4 md:grid-cols-2">
-          {quickActions.map((action) => (
-            <QuickAction
-              key={action.href}
-              title={action.title}
-              description={action.description}
-              href={action.href}
-              icon={action.icon}
-            />
-          ))}
+          {DASHBOARD_QUICK_ACTIONS.map(
+            (action) => (
+              <QuickAction
+                key={action.href}
+                title={action.title}
+                description={
+                  action.description
+                }
+                href={action.href}
+                icon={action.icon}
+              />
+            ),
+          )}
         </div>
       </section>
 
-      <PartnerCard>
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">
+      <PartnerCard
+        as="section"
+        className="overflow-hidden"
+      >
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#9a773b]">
+              Profiilin näkyvyys
+            </p>
+
+            <h2 className="mt-2 text-xl font-bold text-[#211b16] sm:text-2xl">
               {partner?.profile_completed
                 ? "Pidä yritysprofiilisi ajan tasalla"
                 : "Viimeistele yritysprofiilisi"}
             </h2>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-              Laadukas kuvaus, selkeät hinnat ja hyvät kuvat auttavat
-              asiakkaita valitsemaan yrityksesi.
+            <p className="mt-2 text-sm leading-6 text-[#70675e]">
+              Laadukas kuvaus, oikeat
+              toiminta-alueet, selkeät hinnat ja
+              hyvät kuvat auttavat asiakasta
+              valitsemaan yrityksesi.
             </p>
 
-            {!loading &&
-              typeof partner?.profile_completion === "number" && (
-                <p className="mt-3 text-sm font-medium text-emerald-400">
-                  Profiili valmis {partner.profile_completion} %
-                </p>
-              )}
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                <span className="font-semibold text-[#62584f]">
+                  Profiilin valmius
+                </span>
+
+                <span className="font-black text-[#168365]">
+                  {loading
+                    ? "…"
+                    : `${profileCompletion} %`}
+                </span>
+              </div>
+
+              <div
+                className="h-2.5 overflow-hidden rounded-full bg-[#eee8df]"
+                role="progressbar"
+                aria-label="Profiilin valmius"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={
+                  profileCompletion
+                }
+              >
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#20a77c] to-[#64c7a8] transition-all"
+                  style={{
+                    width: `${profileCompletion}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           <Link
             href="/partner/profile"
-            className="inline-flex shrink-0 items-center justify-center rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-400"
+            className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-[#168365] px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#116b53]"
           >
-            Muokkaa profiilia
+            Täydennä profiilia
           </Link>
         </div>
       </PartnerCard>
+    </div>
+  );
+}
+
+function ProfileStatusCard({
+  loading,
+  published,
+  status,
+  completion,
+}: {
+  loading: boolean;
+  published: boolean;
+  status: string | null | undefined;
+  completion: number;
+}) {
+  const rejected =
+    status?.trim().toLowerCase() ===
+    "rejected";
+
+  const styles = loading
+    ? {
+        border: "border-[#e8ded0]",
+        background: "bg-white/75",
+        dot: "bg-[#b8aa9d]",
+        title: "text-[#62584f]",
+      }
+    : published
+      ? {
+          border: "border-[#b9dfd0]",
+          background: "bg-[#edf8f3]",
+          dot: "bg-[#20a77c]",
+          title: "text-[#11634d]",
+        }
+      : rejected
+        ? {
+            border: "border-[#edcaca]",
+            background: "bg-[#fff3f3]",
+            dot: "bg-[#c85b5b]",
+            title: "text-[#a33d3d]",
+          }
+        : {
+            border: "border-[#ead29d]",
+            background: "bg-[#fff8e8]",
+            dot: "bg-[#d4a449]",
+            title: "text-[#795a28]",
+          };
+
+  return (
+    <div
+      className={`w-full rounded-2xl border p-5 lg:max-w-sm ${styles.border} ${styles.background}`}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${styles.dot}`}
+        />
+
+        <div>
+          <p
+            className={`font-bold ${styles.title}`}
+          >
+            {loading
+              ? "Tarkistetaan profiilia"
+              : published
+                ? "Profiili julkaistu"
+                : rejected
+                  ? "Profiili vaatii korjauksia"
+                  : "Profiili tarkistuksessa"}
+          </p>
+
+          <p className="mt-1 text-sm leading-6 text-[#70675e]">
+            {loading
+              ? "Odota hetki..."
+              : published
+                ? "Yrityksesi näkyy asiakkaille Browse-sivulla."
+                : rejected
+                  ? "Tarkista profiilin tiedot ja lähetä se uudelleen tarkistettavaksi."
+                  : completion < 100
+                    ? `Täydennä vielä profiilisi. Valmius on ${completion} %.`
+                    : "Profiilisi odottaa adminin hyväksyntää."}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

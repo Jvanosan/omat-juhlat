@@ -1,7 +1,31 @@
+"use client";
+
+import type { MouseEvent } from "react";
 import Link from "next/link";
+
 import Card from "@/components/ui/Card";
 
+
 export default function Hero() {
+
+  function scrollToQuoteForm(
+  event: MouseEvent<HTMLAnchorElement>,
+) {
+  event.preventDefault();
+
+  window.history.replaceState(
+    null,
+    "",
+    "#tarjouspyynto",
+  );
+
+  document
+    .getElementById("tarjouspyynto")
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+}
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-white via-[#fffaf0] to-[#fcefe8]">
       <div
@@ -45,13 +69,13 @@ export default function Hero() {
               Täytä yksi tarjouspyyntö, ja OmatJuhlat välittää sen
               automaattisesti sopiville palveluntarjoajille.
             </p>
-
             <Link
-              href="/quote/new"
-              className="mt-7 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#c8a96a] px-6 py-3 font-semibold text-white transition duration-200 hover:bg-[#b89757] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a96a] focus-visible:ring-offset-2"
-            >
-              Aloita tarjouspyyntö
-            </Link>
+  href="#tarjouspyynto"
+  onClick={scrollToQuoteForm}
+  className="mt-7 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#c8a96a] px-6 py-3 font-semibold text-white transition duration-200 hover:bg-[#b89757] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a96a] focus-visible:ring-offset-2"
+>
+  Aloita tarjouspyyntö
+</Link>
           </Card>
 
           <Card className="group flex h-full flex-col">

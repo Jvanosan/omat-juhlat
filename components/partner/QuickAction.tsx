@@ -16,25 +16,31 @@ export default function QuickAction({
   return (
     <Link
       href={href}
-      className="group flex items-start gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-5 transition hover:border-emerald-500/30 hover:bg-zinc-800/80"
+      className="group flex min-h-full items-start gap-4 rounded-3xl border border-[#e8ded0] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-[#d8c7ad] hover:shadow-[0_16px_35px_rgba(73,53,31,0.09)] sm:p-6"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-xl">
-        <span aria-hidden="true">{icon}</span>
+      <div
+        aria-hidden="true"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff4df] text-xl transition group-hover:scale-105 group-hover:bg-[#f9e7c4]"
+      >
+        {icon}
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold">{title}</h3>
+        <h3 className="font-bold text-[#211b16] transition group-hover:text-[#795a28]">
+          {title}
+        </h3>
 
-          <span className="text-zinc-600 transition group-hover:translate-x-1 group-hover:text-emerald-400">
-            →
-          </span>
-        </div>
-
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-1 text-sm leading-6 text-[#70675e]">
           {description}
         </p>
       </div>
+
+      <span
+        aria-hidden="true"
+        className="mt-2 shrink-0 text-lg text-[#b5a99c] transition group-hover:translate-x-1 group-hover:text-[#9a773b]"
+      >
+        →
+      </span>
     </Link>
   );
 }
