@@ -1,347 +1,206 @@
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+
+import PublicFooter from "@/components/layout/PublicFooter";
+import PublicHeader from "@/components/layout/PublicHeader";
+
+import ApplicationSuccess from "@/components/partner/apply/ApplicationSuccess";
+import PartnerApplicationForm from "@/components/partner/apply/PartnerApplicationForm";
+
+import {
+  usePartnerApplication,
+} from "./usePartnerApplication";
 
 export default function PartnerApplyPage() {
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const {
+    form,
+    loading,
+    error,
+    success,
+    updateField,
+    submit,
+  } = usePartnerApplication();
 
-  const [form, setForm] = useState({
-    company_name: "",
-    contact_name: "",
-    email: "",
-    phone: "",
-    description: "",
-    service_category: "",
-    city: "",
-    website: "",
-    notes: "",
-  });
-
-  async function handleSubmit() {
-    if (
-      !form.company_name ||
-      !form.contact_name ||
-      !form.email ||
-      !form.phone ||
-      !form.service_category ||
-      !form.city
-    ) {
-      alert("Täytä kaikki pakolliset kentät.");
-      return;
-    }
-
-    setLoading(true);
-
-    const { error } = await supabase
-      .from("partner_applications")
-      .insert({
-        company_name: form.company_name,
-        contact_name: form.contact_name,
-        email: form.email.trim(),
-        phone: form.phone,
-        description: form.description,
-        service_category: form.service_category,
-        city: form.city,
-        website: form.website || null,
-        notes: form.notes || null,
-      });
-
-    setLoading(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setSuccess(true);
+  if (success) {
+    return (
+      <>
+        <PublicHeader />
+        <ApplicationSuccess />
+        <PublicFooter />
+      </>
+    );
   }
 
-if (success) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-black text-white flex items-center justify-center px-6 py-10">
+    <>
+      <PublicHeader />
 
-      <div className="max-w-2xl w-full rounded-3xl border border-emerald-500/20 bg-zinc-900/70 backdrop-blur-xl shadow-2xl p-8 sm:p-12 text-center">
+      <main className="min-h-screen bg-[#fbf8f2] text-[#211b16]">
+        <section className="relative overflow-hidden border-b border-[#eadfce] bg-gradient-to-br from-white via-[#fffaf0] to-[#f7ebe1]">
+          <div
+            aria-hidden="true"
+            className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#ead3ad]/35 blur-3xl"
+          />
 
-        <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 text-5xl">
-          ✅
-        </div>
+          <div
+            aria-hidden="true"
+            className="absolute -right-20 bottom-0 h-72 w-72 rounded-full bg-[#edccd5]/30 blur-3xl"
+          />
 
-        <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-          Hakemus vastaanotettu
-        </h1>
+          <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-bold text-[#87652f] transition hover:text-[#5f451f]"
+            >
+              <span aria-hidden="true">
+                ←
+              </span>
 
-        <p className="text-lg text-zinc-300 leading-8">
-          Kiitos kiinnostuksestasi liittyä OmatJuhlat-kumppaniksi.
-          Hakemuksesi on vastaanotettu onnistuneesti.
-        </p>
+              Takaisin etusivulle
+            </Link>
 
-        <div className="my-8 h-px bg-zinc-800" />
+            <div className="mx-auto mt-8 max-w-4xl text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#decba9] bg-white/80 px-4 py-2 text-sm font-bold text-[#87652f] shadow-sm backdrop-blur">
+                <span aria-hidden="true">
+                  ✓
+                </span>
 
-        <div className="space-y-5 text-left">
+                Luotettu kumppanihakemus
+              </div>
 
-          <div className="flex gap-4">
-            <span className="text-emerald-400 text-xl">✓</span>
-            <p className="text-zinc-300">
-              Hakemuksesi tallennettiin turvallisesti järjestelmäämme.
-            </p>
+              <h1 className="mt-6 text-4xl font-bold tracking-tight text-[#211b16] sm:text-5xl lg:text-6xl">
+                Kasvata liiketoimintaasi{" "}
+                <span className="text-[#b48a45]">
+                  OmatJuhlat-kumppanina
+                </span>
+              </h1>
+
+              <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-[#70675e] sm:text-lg">
+                Tavoita tapahtumia
+                suunnittelevat asiakkaat,
+                vastaanota sinulle sopivia
+                tarjouspyyntöjä ja esittele
+                yrityksesi palvelut yhdessä
+                selkeässä profiilissa.
+              </p>
+            </div>
+
+            <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
+              <BenefitCard
+                icon="📨"
+                title="Sopivia tarjouspyyntöjä"
+                description="Näet yrityksellesi kohdistetut asiakaspyynnöt yhdessä paikassa."
+              />
+
+              <BenefitCard
+                icon="✨"
+                title="Parempi näkyvyys"
+                description="Esittele palvelut, kuvat, hinnat ja asiakasarvostelut."
+              />
+
+              <BenefitCard
+                icon="🤝"
+                title="Sinä päätät"
+                description="Valitset itse, mihin tarjouspyyntöihin haluat vastata."
+              />
+            </div>
           </div>
+        </section>
 
-          <div className="flex gap-4">
-            <span className="text-emerald-400 text-xl">✓</span>
-            <p className="text-zinc-300">
-              Käymme jokaisen hakemuksen läpi yksilöllisesti.
-            </p>
+        <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <PartnerApplicationForm
+            form={form}
+            loading={loading}
+            errorMessage={error}
+            onChange={updateField}
+            onSubmit={() =>
+              void submit()
+            }
+          />
+        </section>
+
+        <section className="border-t border-[#eadfce] bg-white px-4 py-12 sm:px-6">
+          <div className="mx-auto max-w-4xl">
+            <div className="grid gap-6 md:grid-cols-3">
+              <ProcessStep
+                number="1"
+                title="Lähetä hakemus"
+                description="Kerro yrityksestäsi ja tarjoamistasi juhlapalveluista."
+              />
+
+              <ProcessStep
+                number="2"
+                title="Tarkistamme tiedot"
+                description="Käymme hakemuksen läpi ja olemme yhteydessä sähköpostitse."
+              />
+
+              <ProcessStep
+                number="3"
+                title="Julkaise profiilisi"
+                description="Hyväksymisen jälkeen viimeistelet yritysprofiilin ja aloitat tarjouspyyntöjen vastaanottamisen."
+              />
+            </div>
           </div>
+        </section>
+      </main>
 
-          <div className="flex gap-4">
-            <span className="text-emerald-400 text-xl">✓</span>
-            <p className="text-zinc-300">
-              Saat sähköpostia yleensä noin viikon kuluessa.
-            </p>
-          </div>
-
-        </div>
-
-        <div className="mt-10 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
-
-          <p className="text-sm text-zinc-400 leading-7">
-            Hakemusten käsittelyaika voi vaihdella hakemusmäärän mukaan.
-            Kiitos kärsivällisyydestäsi ja kiinnostuksestasi rakentaa
-            OmatJuhlat-palvelua kanssamme.
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
+      <PublicFooter />
+    </>
   );
 }
+
+function BenefitCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+}) {
   return (
-  <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-black text-white">
-
-    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
-
-      {/* HERO */}
-
-      <div className="text-center mb-14">
-
-        <div className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300 mb-6">
-          ✓ Luotettu kumppanihakemus
-        </div>
-
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-          Liity OmatJuhlat-
-          <span className="text-emerald-400">
-            kumppaniksi
-          </span>
-        </h1>
-
-        <p className="max-w-3xl mx-auto text-zinc-300 text-lg leading-8">
-          OmatJuhlat yhdistää asiakkaat ja luotettavat palveluntarjoajat
-          yhteen paikkaan. Kumppanina saat uusia tarjouspyyntöjä,
-          näkyvyyttä sekä mahdollisuuden kasvattaa liiketoimintaasi.
-        </p>
-
+    <article className="rounded-2xl border border-[#e8ded0] bg-white/80 p-5 text-left shadow-sm backdrop-blur">
+      <div
+        aria-hidden="true"
+        className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fbf5e9] text-xl"
+      >
+        {icon}
       </div>
 
-      {/* CARD */}
+      <h2 className="mt-4 font-bold text-[#211b16]">
+        {title}
+      </h2>
 
-<div className="max-w-4xl mx-auto rounded-3xl border border-white/10 bg-gradient-to-b from-zinc-900/90 to-zinc-950/90 backdrop-blur-xl shadow-[0_20px_80px_rgba(0,0,0,0.45)] p-6 sm:p-10">
-        <div className="mb-8">
-
-          <h2 className="text-3xl font-bold tracking-tight mb-3">
-  Kumppanihakemus
-</h2>
-
-<p className="text-zinc-300 leading-8 text-lg">            Täytä alla oleva lomake huolellisesti. Käymme kaikki
-            hakemukset läpi yksitellen ja olemme yhteydessä sähköpostitse,
-            mikäli hakemuksesi hyväksytään.
-          </p>
-
-        </div>
-
-<div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-4">
-  <p className="text-sm text-zinc-300">
-    <span className="font-semibold text-emerald-400">*</span> merkityt kentät ovat pakollisia.
-    Tarkistamme jokaisen hakemuksen huolellisesti ennen kumppanuuden hyväksymistä.
-  </p>
-</div>
-
-<div className="space-y-6">
-        
-<input
-  placeholder="Yrityksen nimi *"
-  value={form.company_name}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      company_name: e.target.value,
-    })
-  }
-  className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4"
-/>
- 
-
-          <input
-            placeholder="Yhteyshenkilön nimi *"
-            value={form.contact_name}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                contact_name: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4"
-          />
-
-          <input
-            placeholder="Sähköposti *"
-            value={form.email}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                email: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4"
-          />
-
-          <input
-            placeholder="Puhelinnumero *"
-            value={form.phone}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                phone: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4"
-          />
-
-          <input
-            placeholder="Palvelukategoria *"
-            value={form.service_category}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                service_category: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4"
-          />
-
-          <input
-            placeholder="Kaupunki *"
-            value={form.city}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                city: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4"
-          />
-
-          <input
-            placeholder="Verkkosivusto (valinnainen)"
-            value={form.website}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                website: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4"
-          />
-
-          <textarea
-            placeholder="Yrityksen kuvaus"
-            value={form.description}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                description: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4 min-h-[120px]"
-          />
-
-          <textarea
-            placeholder="Lisätiedot"
-            value={form.notes}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                notes: e.target.value,
-              })
-            }
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-4 min-h-[120px]"
-          />
-
-          <button
-  onClick={handleSubmit}
-  disabled={loading}
-  className="
-    w-full
-    rounded-2xl
-    bg-gradient-to-r
-    from-emerald-500
-    to-emerald-600
-    hover:from-emerald-400
-    hover:to-emerald-500
-    disabled:opacity-60
-    disabled:cursor-not-allowed
-    py-4
-    text-lg
-    font-semibold
-    shadow-lg
-    shadow-emerald-500/20
-    transition-all
-    duration-300
-    hover:scale-[1.01]
-    hover:shadow-emerald-500/40
-  "
->
-  {loading ? "Lähetetään..." : "Lähetä hakemus"}
-</button>
-</div>
-<div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5">
-  <div className="grid gap-4 sm:grid-cols-3 text-center">
-
-    <div>
-      <div className="text-2xl mb-2">🔒</div>
-      <p className="font-medium">Turvallinen hakemus</p>
-      <p className="text-sm text-zinc-400 mt-1">
-        Tietojasi käsitellään luottamuksellisesti.
+      <p className="mt-2 text-sm leading-6 text-[#70675e]">
+        {description}
       </p>
-    </div>
+    </article>
+  );
+}
 
-    <div>
-      <div className="text-2xl mb-2">⚡</div>
-      <p className="font-medium">Nopea käsittely</p>
-      <p className="text-sm text-zinc-400 mt-1">
-        Pyrimme käsittelemään hakemukset noin viikon sisällä.
-      </p>
-    </div>
-
-    <div>
-      <div className="text-2xl mb-2">🤝</div>
-      <p className="font-medium">Luotettava kumppanuus</p>
-      <p className="text-sm text-zinc-400 mt-1">
-        Rakennamme laadukasta palveluverkostoa yhdessä.
-      </p>
-      <p className="mt-4 text-center text-sm text-zinc-500">
-  Hakemuksen lähettäminen ei sido yritystänne kumppanuuteen.
-</p>
-    </div>
-
-  </div>
-</div>
-        </div>
+function ProcessStep({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <article className="text-center">
+      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#b48a45] font-bold text-white shadow-sm">
+        {number}
       </div>
-    </div>
+
+      <h2 className="mt-4 text-lg font-bold text-[#211b16]">
+        {title}
+      </h2>
+
+      <p className="mt-2 text-sm leading-6 text-[#70675e]">
+        {description}
+      </p>
+    </article>
   );
 }

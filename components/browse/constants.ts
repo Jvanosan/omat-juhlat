@@ -2,63 +2,54 @@ import {
   FINNISH_LOCATIONS,
 } from "@/lib/locations";
 
+import {
+  SERVICE_OPTIONS,
+} from "@/lib/services";
+
+export { EVENT_TYPES } from "@/lib/events";
+
 export const LOCATIONS = [
   ...FINNISH_LOCATIONS,
 ];
 
-export const EVENT_TYPES = [
-  "Häät",
-  "Syntymäpäivä",
-  "Valmistujaiset",
-  "Yritysjuhla",
-  "Ristiäiset",
-  "Muu juhla",
-] as const;
+
+export const CANONICAL_SERVICE_LABELS =
+  SERVICE_OPTIONS.map(
+    (category) =>
+      category.label,
+  );
 
 export const SERVICE_NAMES: Record<
   string,
   string
 > = {
-  juhlatila: "Juhlatila",
-  "juhla tila": "Juhlatila",
-  "juhla-tila": "Juhlatila",
-  juhlatilat: "Juhlatila",
-
+  /*
+   * Viralliset tunnisteet
+   */
+  venue: "Juhlatila",
   catering: "Catering",
-  ravintola: "Catering",
-  ruokailu: "Catering",
-  pitopalvelu: "Catering",
+  photography: "Valokuvaus",
+  dj: "DJ",
+  decoration: "Koristelu",
+  transport: "Kuljetus",
 
-  dj: "DJ / Musiikki",
-  musiikki: "DJ / Musiikki",
-  "dj musiikki": "DJ / Musiikki",
-  "dj & musiikki": "DJ / Musiikki",
-  "dj / musiikki": "DJ / Musiikki",
-
-  band: "Bändi / live-musiikki",
-  bändi: "Bändi / live-musiikki",
-  yhtye: "Bändi / live-musiikki",
-  "live-musiikki":
-    "Bändi / live-musiikki",
-
-  photographer: "Valokuvaus",
-  valokuvaaja: "Valokuvaus",
+  /*
+   * Virallisten kategorioiden
+   * suomenkieliset nimet
+   */
+  juhlatila: "Juhlatila",
   valokuvaus: "Valokuvaus",
-  kuvaaja: "Valokuvaus",
+  koristelu: "Koristelu",
+  kuljetus: "Kuljetus",
 
-  decor: "Somistus / Koristelu",
-  somistus: "Somistus / Koristelu",
-  koristelu: "Somistus / Koristelu",
-
-  "event planner":
-    "Tapahtumasuunnittelu",
-  tapahtumasuunnittelu:
-    "Tapahtumasuunnittelu",
-
-  leipomo: "Leipomo / Kakut",
-  kakut: "Leipomo / Kakut",
-  "leipomo kakut":
-    "Leipomo / Kakut",
+  /*
+   * Vanhat tekniset nimet samoille
+   * kuudelle kategorialle. Nämä voidaan
+   * poistaa demodatan siivouksen jälkeen.
+   */
+  photographer: "Valokuvaus",
+  decor: "Koristelu",
 };
 
-export const TOAST_DURATION_MS = 3500;
+export const TOAST_DURATION_MS =
+  3500;

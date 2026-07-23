@@ -532,11 +532,13 @@ description:
 
           profile_completion: profileCompletion,
 
+// Julkisen profiilin näkyvyys päivitetään
+// aina myös myöhempien profiilimuutosten yhteydessä.
+profile_completed:
+  profileCompletion === 100,
+
 ...(options.updateOnboardingTimestamp !== false
   ? {
-      profile_completed:
-        profileCompletion === 100,
-
       onboarding_completed_at:
         new Date().toISOString(),
 

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminSummary from "@/components/admin/AdminSummary";
 import ApplicationsSection from "@/components/admin/ApplicationsSection";
@@ -8,7 +10,37 @@ import PartnersSection from "@/components/admin/PartnersSection";
 import RequestsSection from "@/components/admin/RequestsSection";
 import ReviewsSection from "@/components/admin/ReviewsSection";
 
-import { useAdminDashboard } from "./useAdminDashboard";
+import {
+  useAdminDashboard,
+} from "./useAdminDashboard";
+
+const ADMIN_SECTIONS = [
+  {
+    id: "requests-section",
+    label: "Tarjouspyynnöt",
+    icon: "📨",
+  },
+  {
+    id: "direct-requests-section",
+    label: "Suorat pyynnöt",
+    icon: "🔎",
+  },
+  {
+    id: "applications-section",
+    label: "Hakemukset",
+    icon: "📋",
+  },
+  {
+    id: "reviews-section",
+    label: "Arvostelut",
+    icon: "⭐",
+  },
+  {
+    id: "partners-section",
+    label: "Kumppanit",
+    icon: "🤝",
+  },
+] as const;
 
 export default function AdminPage() {
   const {
@@ -17,9 +49,9 @@ export default function AdminPage() {
     errorMessage,
 
     partners,
-requests,
-directRequests,
-applications,
+    requests,
+    directRequests,
+    applications,
     pendingReviews,
     approvedReviews,
 
@@ -44,73 +76,53 @@ applications,
   } = useAdminDashboard();
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-5">
-        <div className="rounded-2xl border border-slate-200 bg-white px-8 py-7 text-center shadow-sm">
-          <div
-            aria-hidden="true"
-            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600"
-          />
-
-          <p className="font-semibold text-slate-800">
-            Ladataan hallintapaneelia...
-          </p>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Tarkistetaan samalla admin-oikeudet.
-          </p>
-        </div>
-      </main>
-    );
+    return <AdminLoadingState />;
   }
 
   if (!authorized) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-5">
-        <div className="max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
-          <div className="mb-4 text-4xl">
-            🔒
-          </div>
-
-          <h1 className="text-2xl font-bold text-slate-950">
-            Ei käyttöoikeutta
-          </h1>
-
-          <p className="mt-3 leading-6 text-slate-600">
-            Sinulla ei ole oikeutta avata
-            hallintapaneelia.
-          </p>
-        </div>
-      </main>
-    );
+    return <AdminAccessDenied />;
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <main className="min-h-screen bg-[#fbf8f2] px-4 py-6 text-[#211b16] sm:px-6 sm:py-8 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <AdminHeader
-          onLogout={() => void logout()}
+          onLogout={() =>
+            void logout()
+          }
         />
 
         {errorMessage && (
           <div
             role="alert"
-            className="mb-8 flex flex-col gap-4 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800 sm:flex-row sm:items-center sm:justify-between"
+            className="mb-8 flex flex-col gap-4 rounded-2xl border border-[#edcaca] bg-[#fff0f0] p-5 text-[#a33d3d] sm:flex-row sm:items-center sm:justify-between"
           >
-            <div>
-              <p className="font-semibold">
-                Tietojen lataaminen epäonnistui
-              </p>
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="text-xl"
+              >
+                ⚠️
+              </span>
 
-              <p className="mt-1 text-sm">
-                {errorMessage}
-              </p>
+              <div>
+                <p className="font-bold">
+                  Tietojen lataaminen
+                  epäonnistui
+                </p>
+
+                <p className="mt-1 text-sm leading-6">
+                  {errorMessage}
+                </p>
+              </div>
             </div>
 
             <button
               type="button"
-              onClick={() => void reload()}
-              className="shrink-0 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+              onClick={() =>
+                void reload()
+              }
+              className="shrink-0 rounded-xl bg-[#a33d3d] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#8d3030]"
             >
               Yritä uudelleen
             </button>
@@ -118,15 +130,27 @@ applications,
         )}
 
         <AdminSummary
-          totalPartners={totalPartners}
-          openRequests={openRequests}
+          totalPartners={
+            totalPartners
+          }
+          openRequests={
+            openRequests
+          }
           pendingApplications={
             pendingApplications
           }
           pendingReviews={
             pendingReviews.length
           }
-          onNavigate={scrollToSection}
+          onNavigate={
+            scrollToSection
+          }
+        />
+
+        <AdminSectionNavigation
+          onNavigate={
+            scrollToSection
+          }
         />
 
         <div className="space-y-8">
@@ -137,38 +161,48 @@ applications,
             }
             onUpdateStatus={(
               quoteId,
-              status
+              status,
             ) =>
               void updateQuoteStatus(
                 quoteId,
-                status
+                status,
               )
             }
           />
 
           <DirectRequestsSection
-  requests={directRequests}
-/>
+            requests={
+              directRequests
+            }
+          />
 
           <ApplicationsSection
-            applications={applications}
+            applications={
+              applications
+            }
             processingId={
               processingApplicationId
             }
-            onApprove={(application) =>
+            onApprove={(
+              application,
+            ) =>
               void approveApplication(
-                application
+                application,
               )
             }
-            onReject={(applicationId) =>
+            onReject={(
+              applicationId,
+            ) =>
               void rejectApplication(
-                applicationId
+                applicationId,
               )
             }
           />
 
           <ReviewsSection
-            pendingReviews={pendingReviews}
+            pendingReviews={
+              pendingReviews
+            }
             approvedReviews={
               approvedReviews
             }
@@ -176,10 +210,14 @@ applications,
               processingReviewId
             }
             onApprove={(reviewId) =>
-              void approveReview(reviewId)
+              void approveReview(
+                reviewId,
+              )
             }
             onReject={(reviewId) =>
-              void rejectReview(reviewId)
+              void rejectReview(
+                reviewId,
+              )
             }
           />
 
@@ -190,16 +228,131 @@ applications,
             }
             onUpdateStatus={(
               partnerId,
-              status
+              status,
             ) =>
               void updatePartnerStatus(
                 partnerId,
-                status
+                status,
               )
             }
           />
         </div>
+
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={() =>
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              })
+            }
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#ded3c4] bg-white px-5 py-3 text-sm font-bold text-[#62584f] shadow-sm transition hover:border-[#b48a45] hover:bg-[#fffaf2]"
+          >
+            ↑ Takaisin ylös
+          </button>
+        </div>
       </div>
+    </main>
+  );
+}
+
+function AdminSectionNavigation({
+  onNavigate,
+}: {
+  onNavigate: (
+    sectionId: string,
+  ) => void;
+}) {
+  return (
+    <nav
+      aria-label="Admin-osioiden navigaatio"
+      className="sticky top-3 z-30 mb-8 overflow-x-auto rounded-2xl border border-[#e2d5c4] bg-white/95 p-2 shadow-[0_8px_24px_rgba(73,53,31,0.1)] backdrop-blur"
+    >
+      <div className="flex min-w-max gap-2">
+        {ADMIN_SECTIONS.map(
+          (section) => (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() =>
+                onNavigate(
+                  section.id,
+                )
+              }
+              className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold text-[#62584f] transition hover:bg-[#fbf5e9] hover:text-[#87652f]"
+            >
+              <span aria-hidden="true">
+                {section.icon}
+              </span>
+
+              {section.label}
+            </button>
+          ),
+        )}
+      </div>
+    </nav>
+  );
+}
+
+function AdminLoadingState() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#fbf8f2] px-5 text-[#211b16]">
+      <div
+        role="status"
+        className="rounded-3xl border border-[#e2d5c4] bg-white px-9 py-8 text-center shadow-[0_20px_60px_rgba(73,53,31,0.12)]"
+      >
+        <div
+          aria-hidden="true"
+          className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#eadfce] border-t-[#b48a45]"
+        />
+
+        <p className="mt-4 font-bold text-[#3f362f]">
+          Ladataan hallintapaneelia...
+        </p>
+
+        <p className="mt-1 text-sm text-[#91877d]">
+          Tarkistetaan samalla
+          admin-oikeudet.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function AdminAccessDenied() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#fbf8f2] px-5 text-[#211b16]">
+      <section className="w-full max-w-md rounded-3xl border border-[#edcaca] bg-white p-8 text-center shadow-[0_20px_60px_rgba(73,53,31,0.12)]">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fff0f0] text-3xl">
+          🔒
+        </div>
+
+        <h1 className="mt-5 text-2xl font-bold text-[#211b16]">
+          Ei käyttöoikeutta
+        </h1>
+
+        <p className="mt-3 leading-7 text-[#70675e]">
+          Sinulla ei ole oikeutta avata
+          OmatJuhlat-hallintapaneelia.
+        </p>
+
+        <div className="mt-6 grid gap-3">
+          <Link
+            href="/login"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#b48a45] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#9f783a]"
+          >
+            Siirry admin-kirjautumiseen
+          </Link>
+
+          <Link
+            href="/"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#ded3c4] bg-white px-5 py-3 text-sm font-bold text-[#62584f] transition hover:border-[#b48a45] hover:bg-[#fffaf2]"
+          >
+            Palaa etusivulle
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

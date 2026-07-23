@@ -1,419 +1,823 @@
-import { Resend } from "resend";
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import {
+  releaseCompetingQuoteSelections,
+} from "@/lib/server/releaseCompetingQuoteSelections";
+import {
+  createCustomerEmail,
+  createLoserEmail,
+  createWinnerEmail,
+} from "./confirmationEmails";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+import {
+  isExpired,
+  sendEmail,
+} from "./confirmationUtils";
+
+import type {
+  ConfirmationPartner,
+  ConfirmationQuote,
+  QuotePartnerOffer,
+} from "./types";
+
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+const serviceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !serviceRoleKey) {
+  throw new Error(
+    "Supabase-palvelimen ympäristömuuttujat puuttuvat.",
+  );
+}
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  supabaseUrl,
+  serviceRoleKey,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  },
 );
 
-// LISÄÄ TÄMÄ
-
-type EmailPayload = {
-  from: string;
-  to: string;
-  subject: string;
-  html: string;
-};
-
-async function sendEmail(
-  payload: EmailPayload,
+async function deleteCalendarEntries(
+  entryIds: Array<
+    string | number
+  >,
 ) {
-  try {
-    const { error } =
-      await resend.emails.send(payload);
+  if (entryIds.length === 0) {
+    return;
+  }
 
-    if (error) {
-      console.error(
-        "RESEND EMAIL ERROR:",
-        error,
-      );
+  const { error } = await supabase
+    .from(
+      "partner_calendar_entries",
+    )
+    .delete()
+    .in("id", entryIds);
 
-      return false;
-    }
-
-    return true;
-  } catch (error) {
+  if (error) {
     console.error(
-      "RESEND EMAIL ERROR:",
+      "QUOTE CALENDAR ROLLBACK ERROR:",
       error,
     );
-
-    return false;
   }
 }
-// TÄHÄN
 
-export async function POST(req: Request) {
+export async function POST(
+  request: Request,
+) {
   try {
-    const body = await req.json();
+    let body: unknown;
 
-    const quoteId = Number(body.quoteId);
-    const accessToken = String(body.accessToken ?? "").trim();
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Vahvistuksen tiedot eivät ole kelvollisia.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      !body ||
+      typeof body !== "object" ||
+      Array.isArray(body)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Vahvistuksen tiedot puuttuvat.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const requestBody =
+      body as Record<string, unknown>;
+
+    const quoteId = Number(
+      requestBody.quoteId,
+    );
+
+    const accessToken = String(
+      requestBody.accessToken ?? "",
+    ).trim();
 
     if (
       !Number.isInteger(quoteId) ||
       quoteId < 1 ||
       !accessToken
     ) {
-      return Response.json(
-        { error: "Tarjouspyynnön tunniste puuttuu tai on virheellinen." },
-        { status: 400 },
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyynnön tunniste puuttuu tai on virheellinen.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
-    // Tarkista, että ID ja turvallinen token kuuluvat yhteen
-    const { data: quote, error: quoteError } = await supabase
+    const {
+      data: quoteData,
+      error: quoteError,
+    } = await supabase
       .from("request_quotes")
-      .select("*")
+      .select(`
+        id,
+        status,
+        date,
+        event_type,
+        location,
+        guests,
+        name,
+        email,
+        phone
+      `)
       .eq("id", quoteId)
-      .eq("access_token", accessToken)
+      .eq(
+        "access_token",
+        accessToken,
+      )
       .maybeSingle();
 
     if (quoteError) {
-      console.error("QUOTE ACCESS CHECK ERROR:", quoteError);
+      console.error(
+        "QUOTE ACCESS CHECK ERROR:",
+        quoteError,
+      );
 
-      return Response.json(
-        { error: "Tarjouspyynnön tarkistaminen epäonnistui." },
-        { status: 500 },
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyynnön tarkistaminen epäonnistui.",
+        },
+        {
+          status: 500,
+        },
       );
     }
 
-    if (!quote) {
-      return Response.json(
-        { error: "Linkki ei ole voimassa." },
-        { status: 403 },
+    if (!quoteData) {
+      return NextResponse.json(
+        {
+          error:
+            "Linkki ei ole voimassa.",
+        },
+        {
+          status: 403,
+        },
       );
     }
-    // LISÄÄ TÄMÄ
 
-if (quote.status === "confirmed") {
-  return Response.json(
-    {
-      error: "Tarjouspyyntö on jo vahvistettu.",
-      alreadyConfirmed: true,
-    },
-    { status: 409 },
-  );
-}
+    const quote =
+      quoteData as ConfirmationQuote;
 
-    // kaikki tarjoukset
-    const { data: offers } = await supabase
+    if (
+      quote.status === "confirmed" ||
+      quote.status === "suljettu"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyyntö on jo vahvistettu.",
+          alreadyConfirmed: true,
+        },
+        {
+          status: 409,
+        },
+      );
+    }
+
+    if (!quote.date) {
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyynnöltä puuttuu tapahtuman päivämäärä.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const {
+      data: offerData,
+      error: offersError,
+    } = await supabase
       .from("quote_partners")
-      .select("*")
+      .select(`
+        id,
+        partner_id,
+        service,
+        status,
+        offer_price,
+        offer_message,
+        expires_at
+      `)
       .eq("quote_id", quoteId);
 
-    // partnerit
-    const { data: partners } = await supabase
-      .from("partners")
-      .select("*");
+    if (offersError) {
+      console.error(
+        "QUOTE OFFERS LOAD ERROR:",
+        offersError,
+      );
 
-    if (!offers || !partners) {
-      return Response.json({ ok: true });
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouksia ei voitu tarkistaa.",
+        },
+        {
+          status: 500,
+        },
+      );
     }
 
-    // VOITTAJAT
-  const winners = offers.filter(
-  (o) =>
-    o.status === "selected" ||
-    o.status === "valittu"
-);
-// LISÄÄ TÄMÄ
+    const offers =
+      (offerData ??
+        []) as QuotePartnerOffer[];
 
-if (winners.length === 0) {
-  return Response.json(
-    { error: "Yhtään palveluntarjoajaa ei ole valittu." },
-    { status: 400 },
-  );
-}
-if (!quote.date) {
-  return Response.json(
-    {
-      error:
-        "Tarjouspyynnöltä puuttuu tapahtuman päivämäärä.",
-    },
-    { status: 400 },
-  );
-}
-
-// Sama partneri voi voittaa useamman palvelun,
-// mutta kalenteriin tehdään vain yksi päivämerkintä.
-const winnerPartnerIds = Array.from(
-  new Set(
-    winners
-      .map((winner) =>
-        String(winner.partner_id ?? ""),
-      )
-      .filter(Boolean),
-  ),
-);
-
-const {
-  data: existingCalendarEntries,
-  error: calendarCheckError,
-} = await supabase
-  .from("partner_calendar_entries")
-  .select("partner_id, status")
-  .eq("date", quote.date)
-  .in("partner_id", winnerPartnerIds);
-
-if (calendarCheckError) {
-  console.error(
-    "QUOTE CALENDAR CHECK ERROR:",
-    calendarCheckError,
-  );
-
-  return Response.json(
-    {
-      error:
-        "Palveluntarjoajien saatavuutta ei voitu tarkistaa.",
-    },
-    { status: 500 },
-  );
-}
-
-if (
-  existingCalendarEntries &&
-  existingCalendarEntries.length > 0
-) {
-  const unavailableIds = new Set(
-    existingCalendarEntries.map((entry) =>
-      String(entry.partner_id),
-    ),
-  );
-
-  const unavailableCompanies = partners
-    .filter((partner) =>
-      unavailableIds.has(
-        String(partner.id),
-      ),
-    )
-    .map(
-      (partner) =>
-        partner.company ||
-        "Palveluntarjoaja",
+    const winners = offers.filter(
+      (offer) =>
+        offer.status ===
+          "selected" ||
+        offer.status ===
+          "valittu",
     );
 
-  return Response.json(
-    {
-      error:
-        unavailableCompanies.length === 1
-          ? `${unavailableCompanies[0]} ei ole enää saatavilla tapahtuman päivänä.`
-          : `Seuraavat palveluntarjoajat eivät ole enää saatavilla tapahtuman päivänä: ${unavailableCompanies.join(
-              ", ",
-            )}.`,
-    },
-    { status: 409 },
-  );
-}
+    if (winners.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Yhtään palveluntarjoajaa ei ole valittu.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
-const {
-  data: createdCalendarEntries,
-  error: calendarInsertError,
-} = await supabase
-  .from("partner_calendar_entries")
-  .insert(
-    winnerPartnerIds.map((partnerId) => ({
-      partner_id: partnerId,
-      date: quote.date,
-      status: "booked",
-      note: `OmatJuhlat-varaus – ${
-  quote.event_type || "Tapahtuma"
-}${
-  quote.location
-    ? `, ${quote.location}`
-    : ""
-}`,
-    })),
-  )
-  .select("id");
+    const invalidWinner =
+      winners.find(
+        (winner) =>
+          !Number.isFinite(
+            Number(
+              winner.offer_price,
+            ),
+          ) ||
+          Number(
+            winner.offer_price,
+          ) <= 0,
+      );
 
-if (calendarInsertError) {
-  console.error(
-    "QUOTE CALENDAR INSERT ERROR:",
-    calendarInsertError,
-  );
+    if (invalidWinner) {
+      return NextResponse.json(
+        {
+          error:
+            "Yhden valitun tarjouksen hinta ei ole kelvollinen.",
+        },
+        {
+          status: 409,
+        },
+      );
+    }
 
-  const conflict =
-    calendarInsertError.code === "23505";
+    if (
+      winners.some((winner) =>
+        isExpired(
+          winner.expires_at,
+        ),
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Yksi valituista tarjouksista on vanhentunut. Palaa tarjouksiin ja tee uusi valinta.",
+        },
+        {
+          status: 409,
+        },
+      );
+    }
 
-  return Response.json(
-    {
-      error: conflict
-        ? "Yksi palveluntarjoajista ehti juuri varautua tapahtuman päivälle."
-        : "Varauksen lisääminen kalenteriin epäonnistui.",
-    },
-    {
-      status: conflict ? 409 : 500,
-    },
-  );
-}
-const { error: statusUpdateError } =
-  await supabase
-    .from("request_quotes")
-    .update({
-      status: "confirmed",
-    })
-    .eq("id", quoteId)
-    .eq("access_token", accessToken)
-    .neq("status", "confirmed");
+    const winnerPartnerIds =
+      Array.from(
+        new Set(
+          winners.map((winner) =>
+            String(
+              winner.partner_id,
+            ),
+          ),
+        ),
+      );
 
-if (statusUpdateError) {
-  console.error(
-    "QUOTE CONFIRMATION STATUS ERROR:",
-    statusUpdateError,
-  );
+    const {
+      data: partnerData,
+      error: partnersError,
+    } = await supabase
+      .from("partners")
+      .select(
+        "id, company, email",
+      )
+      .in(
+        "id",
+        winnerPartnerIds,
+      );
 
-  const createdEntryIds = (
-    createdCalendarEntries ?? []
-  ).map((entry) => entry.id);
-
-  // Jos vahvistus epäonnistui, palautetaan tämän
-  // pyynnön juuri luomat kalenterimerkinnät.
-  if (createdEntryIds.length > 0) {
-    const { error: rollbackError } =
-      await supabase
-        .from("partner_calendar_entries")
-        .delete()
-        .in("id", createdEntryIds);
-
-    if (rollbackError) {
+    if (partnersError) {
       console.error(
-        "QUOTE CALENDAR ROLLBACK ERROR:",
-        rollbackError,
+        "QUOTE PARTNERS LOAD ERROR:",
+        partnersError,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Valittujen palveluntarjoajien tietoja ei voitu hakea.",
+        },
+        {
+          status: 500,
+        },
       );
     }
+
+    const partners =
+      (partnerData ??
+        []) as ConfirmationPartner[];
+
+    const partnersById =
+      new Map(
+        partners.map((partner) => [
+          String(partner.id),
+          partner,
+        ]),
+      );
+
+    const missingPartner =
+      winnerPartnerIds.some(
+        (partnerId) =>
+          !partnersById.has(
+            partnerId,
+          ),
+      );
+
+    if (missingPartner) {
+      return NextResponse.json(
+        {
+          error:
+            "Yhden valitun palveluntarjoajan tietoja ei löytynyt.",
+        },
+        {
+          status: 409,
+        },
+      );
+    }
+
+    const {
+      data:
+        existingCalendarEntries,
+      error: calendarCheckError,
+    } = await supabase
+      .from(
+        "partner_calendar_entries",
+      )
+      .select("partner_id")
+      .eq("date", quote.date)
+      .in(
+        "partner_id",
+        winnerPartnerIds,
+      );
+
+    if (calendarCheckError) {
+      console.error(
+        "QUOTE CALENDAR CHECK ERROR:",
+        calendarCheckError,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Palveluntarjoajien saatavuutta ei voitu tarkistaa.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    if (
+      existingCalendarEntries &&
+      existingCalendarEntries.length >
+        0
+    ) {
+      const unavailableIds =
+        new Set(
+          existingCalendarEntries.map(
+            (entry) =>
+              String(
+                entry.partner_id,
+              ),
+          ),
+        );
+
+      const companies =
+        winnerPartnerIds
+          .filter((partnerId) =>
+            unavailableIds.has(
+              partnerId,
+            ),
+          )
+          .map(
+            (partnerId) =>
+              partnersById.get(
+                partnerId,
+              )?.company ||
+              "Palveluntarjoaja",
+          );
+
+      return NextResponse.json(
+        {
+          error:
+            companies.length === 1
+              ? `${companies[0]} ei ole enää saatavilla tapahtuman päivänä.`
+              : `Seuraavat palveluntarjoajat eivät ole enää saatavilla tapahtuman päivänä: ${companies.join(", ")}.`,
+        },
+        {
+          status: 409,
+        },
+      );
+    }
+
+    const {
+      data:
+        createdCalendarEntries,
+      error: calendarInsertError,
+    } = await supabase
+      .from(
+        "partner_calendar_entries",
+      )
+      .insert(
+        winnerPartnerIds.map(
+          (partnerId) => ({
+            partner_id: partnerId,
+            date: quote.date,
+            status: "booked",
+            note:
+              `OmatJuhlat-varaus – ${
+                quote.event_type ||
+                "Tapahtuma"
+              }${
+                quote.location
+                  ? `, ${quote.location}`
+                  : ""
+              }`,
+          }),
+        ),
+      )
+      .select("id");
+
+    if (calendarInsertError) {
+      console.error(
+        "QUOTE CALENDAR INSERT ERROR:",
+        calendarInsertError,
+      );
+
+      const conflict =
+        calendarInsertError.code ===
+        "23505";
+
+      return NextResponse.json(
+        {
+          error: conflict
+            ? "Yksi palveluntarjoajista ehti juuri varautua tapahtuman päivälle."
+            : "Varauksen lisääminen kalenteriin epäonnistui.",
+        },
+        {
+          status: conflict
+            ? 409
+            : 500,
+        },
+      );
+    }
+
+    const createdEntryIds =
+      (
+        createdCalendarEntries ??
+        []
+      ).map(
+        (entry) => entry.id,
+      );
+
+    const {
+      data: confirmedQuote,
+      error: statusUpdateError,
+    } = await supabase
+      .from("request_quotes")
+      .update({
+        status: "confirmed",
+      })
+      .eq("id", quoteId)
+      .eq(
+        "access_token",
+        accessToken,
+      )
+      .neq(
+        "status",
+        "confirmed",
+      )
+      .select("id")
+      .maybeSingle();
+
+    if (
+      statusUpdateError ||
+      !confirmedQuote
+    ) {
+      console.error(
+        "QUOTE STATUS UPDATE ERROR:",
+        statusUpdateError,
+      );
+
+      await deleteCalendarEntries(
+        createdEntryIds,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyyntö vahvistettiin jo toisessa istunnossa tai vahvistaminen epäonnistui.",
+          alreadyConfirmed:
+            !statusUpdateError,
+        },
+        {
+          status: statusUpdateError
+            ? 500
+            : 409,
+        },
+      );
+    }
+
+    const {
+      error: closeOffersError,
+    } = await supabase
+      .from("quote_partners")
+      .update({
+        status: "rejected",
+      })
+      .eq("quote_id", quoteId)
+      .in("status", [
+        "sent",
+        "offered",
+      ]);
+
+    if (closeOffersError) {
+      console.error(
+        "QUOTE OFFERS CLOSE ERROR:",
+        closeOffersError,
+      );
+
+      await supabase
+        .from("request_quotes")
+        .update({
+          status: quote.status,
+        })
+        .eq("id", quoteId);
+
+      await deleteCalendarEntries(
+        createdEntryIds,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Muiden tarjousten sulkeminen epäonnistui. Vahvistusta ei tallennettu.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+let releasedCompetingSelections =
+  0;
+
+try {
+  const releaseResult =
+    await releaseCompetingQuoteSelections({
+      partnerIds:
+        winnerPartnerIds,
+      eventDate: quote.date,
+      excludeQuoteId: quoteId,
+    });
+
+  releasedCompetingSelections =
+    releaseResult.releasedSelections;
+
+  if (
+    releasedCompetingSelections >
+    0
+  ) {
+    console.info(
+      "COMPETING QUOTE SELECTIONS RELEASED:",
+      {
+        releasedSelections:
+          releasedCompetingSelections,
+        affectedQuoteIds:
+          releaseResult.affectedQuoteIds,
+      },
+    );
   }
-
-  return Response.json(
-    {
-      error:
-        "Vahvistuksen tilan tallentaminen epäonnistui.",
-    },
-    { status: 500 },
+} catch (releaseError) {
+  // Asiakkaan vahvistus on jo onnistunut.
+  // Muiden alustavien valintojen vapautuksen
+  // virhe ei saa muuttaa onnistunutta varausta
+  // epäonnistuneeksi.
+  console.error(
+    "COMPETING QUOTE SELECTION RELEASE ERROR:",
+    releaseError,
   );
 }
-    // HÄVIÄJÄT
-    const losers = offers.filter(
-  (o) =>
-    o.status === "rejected" ||
-    o.status === "hävitty"
-);
-    // ✅ VOITTAJA-EMAIL
-    for (const win of winners) {
-      const partner = partners.find(
-        (p) => p.id === win.partner_id
+    const losingOffers =
+      offers.filter(
+        (offer) =>
+          !winners.some(
+            (winner) =>
+              winner.id ===
+              offer.id,
+          ) &&
+          Number.isFinite(
+            Number(
+              offer.offer_price,
+            ),
+          ) &&
+          Number(
+            offer.offer_price,
+          ) > 0,
       );
-      if (!partner) continue;
 
-await sendEmail({
-          from: "OmatJuhlat <noreply@omatjuhlat.fi>",
-        to: partner.email,
-        subject: "🎉 Voitit tarjouksen – OmatJuhlat",
-        html: `
-          <h2>Onneksi olkoon!</h2>
-          <p>Asiakas valitsi tarjouksesi.</p>
+    const losingPartnerIds =
+      Array.from(
+        new Set(
+          losingOffers.map(
+            (offer) =>
+              String(
+                offer.partner_id,
+              ),
+          ),
+        ),
+      ).filter(
+        (partnerId) =>
+          !winnerPartnerIds.includes(
+            partnerId,
+          ),
+      );
 
-          <p><strong>Palvelu:</strong> ${win.service}</p>
-          <p><strong>Hinta:</strong> ${win.offer_price} €</p>
+    let losingPartners:
+      ConfirmationPartner[] = [];
 
-          <h3>Asiakkaan tiedot</h3>
-          <p>${quote.name || ""}</p>
-          <p>${quote.email}</p>
-          <p>${quote.phone || ""}</p>
+    if (
+      losingPartnerIds.length > 0
+    ) {
+      const {
+        data:
+          losingPartnerData,
+        error:
+          losingPartnersError,
+      } = await supabase
+        .from("partners")
+        .select(
+          "id, company, email",
+        )
+        .in(
+          "id",
+          losingPartnerIds,
+        );
 
-          <p>Ota yhteyttä asiakkaaseen mahdollisimman pian.</p>
-        `,
-      });
+      if (losingPartnersError) {
+        console.error(
+          "LOSING PARTNERS LOAD ERROR:",
+          losingPartnersError,
+        );
+      } else {
+        losingPartners =
+          (losingPartnerData ??
+            []) as ConfirmationPartner[];
+      }
     }
 
-    // ❌ HÄVIÄJÄ-EMAIL
-    for (const lose of losers) {
-      const partner = partners.find(
-        (p) => p.id === lose.partner_id
-      );
-      if (!partner) continue;
+    let winnerEmailsSent = 0;
+    let loserEmailsSent = 0;
+    let customerEmailSent = false;
 
-await sendEmail({
-  from: "OmatJuhlat <noreply@omatjuhlat.fi>",
-        to: partner.email,
-        subject: "Kiitos tarjouksesta – OmatJuhlat",
-        html: `
-          <h3>Kiitos tarjouksestasi</h3>
-          <p>
-            Tällä kertaa asiakas valitsi toisen palveluntarjoajan.
-          </p>
-          <p>
-            Kiitos osallistumisesta – uusia tarjouspyyntöjä tulee pian!
-          </p>
-        `,
-      });
+    for (
+      const partnerId of
+      winnerPartnerIds
+    ) {
+      const partner =
+        partnersById.get(
+          partnerId,
+        );
+
+      if (!partner?.email) {
+        continue;
+      }
+
+      const partnerOffers =
+        winners.filter(
+          (winner) =>
+            String(
+              winner.partner_id,
+            ) === partnerId,
+        );
+
+      const sent =
+        await sendEmail(
+          createWinnerEmail({
+            partner: {
+              ...partner,
+              email: partner.email,
+            },
+            offers:
+              partnerOffers,
+            quote,
+          }),
+        );
+
+      if (sent) {
+        winnerEmailsSent++;
+      }
     }
-     // ✅ ASIAKAS-EMAIL (vahvistus)
-if (winners.length > 0 && quote?.email) {
-  const selected = winners[0];
-  const partner = partners.find(
-    (p) => p.id === selected.partner_id
-  );
 
-await sendEmail({
-  from: "OmatJuhlat <noreply@omatjuhlat.fi>",    to: quote.email,
-subject: "✅ Palveluntarjoajan valinta vahvistettu – OmatJuhlat",    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>🎉 Palveluntarjoajan valinta on vahvistettu</h2>
+    for (
+      const partner of
+      losingPartners
+    ) {
+      if (!partner.email) {
+        continue;
+      }
 
-<p>
-  Olet valinnut palveluntarjoajan tapahtumaasi.
-  Alla on yhteenveto valinnastasi.
-</p>
+      const sent =
+        await sendEmail(
+          createLoserEmail({
+            partner: {
+              ...partner,
+              email: partner.email,
+            },
+          }),
+        );
 
-<p>
-  Huomioithan, että varsinainen sopimus, maksaminen ja tapahtuman
-  yksityiskohdat sovitaan suoraan palveluntarjoajan kanssa.
-</p>
+      if (sent) {
+        loserEmailsSent++;
+      }
+    }
 
-        <hr />
+    if (quote.email) {
+      customerEmailSent =
+        await sendEmail(
+          createCustomerEmail({
+            quote: {
+              ...quote,
+              email: quote.email,
+            },
+            winners,
+            partnersById,
+          }),
+        );
+    }
 
-        <p><strong>📅 Päivämäärä:</strong> ${quote.date}</p>
-        <p><strong>📍 Paikkakunta:</strong> ${quote.location}</p>
-        <p><strong>👥 Vierasmäärä:</strong> ${quote.guests}</p>
+    return NextResponse.json({
+  success: true,
+  winnerEmailsSent,
+  loserEmailsSent,
+  customerEmailSent,
+  releasedCompetingSelections,
+});
 
-        <p style="font-size: 18px; margin-top: 12px;">
-          <strong>💰 Valittu hinta:</strong> ${selected.offer_price} €
-        </p>
+  } catch (error) {
+    console.error(
+      "QUOTE CONFIRMATION ERROR:",
+      error,
+    );
 
-        ${
-          selected.offer_message
-            ? `<p><strong>💬 Palveluntarjoajan viesti:</strong><br />${selected.offer_message}</p>`
-            : ""
-        }
-
-        <hr />
-
-        <p>
-          ✅ Olemme ilmoittaneet valitulle palveluntarjoajalle
-          <strong>${partner?.company || ""}</strong>.
-          Palveluntarjoaja on sinuun yhteydessä sopiakseen yksityiskohdista.
-          </p>
-
-        <p style="margin-top: 16px;">
-          Kiitos kun käytit <strong>OmatJuhlat</strong>‑palvelua!
-        </p>
-
-        <p style="color: #666; font-size: 14px;">
-          Jos sinulla on kysyttävää, vastaa tähän sähköpostiin.
-        </p>
-      </div>
-    `,
-  });
-}
-return Response.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    return Response.json(
-      { error: "Email error" },
-      { status: 500 }
+    return NextResponse.json(
+      {
+        error:
+          "Palvelimella tapahtui odottamaton virhe.",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }

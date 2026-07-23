@@ -1,422 +1,235 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import {
+  useEffect,
+  useState,
+} from "react";
 
-import ProfileHeader from "@/app/components/partner/ProfileHeader";
-import ProfileProgress from "@/app/components/partner/ProfileProgress";
-import BasicInfoCard from "@/app/components/partner/BasicInfoCard";
-import LocationCard from "@/app/components/partner/LocationCard";
-import ServicesCard from "@/app/components/partner/ServicesCard";
-import GalleryCard from "@/app/components/partner/GalleryCard";
-import ExtraInfoCard from "@/app/components/partner/ExtraInfoCard";
-import PreviewCard from "@/app/components/partner/PreviewCard";
+import Link from "next/link";
+import {
+  useRouter,
+} from "next/navigation";
+
+import PublicFooter from "@/components/layout/PublicFooter";
+import PublicHeader from "@/components/layout/PublicHeader";
+
+import {
+  supabase,
+} from "@/lib/supabase";
+
+type CompleteState =
+  | "checking"
+  | "login-required"
+  | "error";
+
 export default function PartnerCompleteClient() {
-  const searchParams = useSearchParams();
-  const partnerId = searchParams.get("partnerId");
+  const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [state, setState] =
+    useState<CompleteState>(
+      "checking",
+    );
 
-  const [progress, setProgress] = useState(0);
- const [existingSlug, setExistingSlug] = useState("");
-  const [form, setForm] = useState({
-    company: "",
-    contact_name: "",
-    email: "",
-    phone: "",
+  const [errorMessage, setErrorMessage] =
+    useState("");
 
-    description: "",
-
-    category: "",
-    services: "",
-
-    city: "",
-    address: "",
-    postal_code: "",
-
-    website: "",
-
-    logo_url: "",
-    cover_image_url: "",
-    gallery_urls: "",
-
-    min_guests: "",
-    max_guests: "",
-    avg_price_level: "",
-
-    parking: false,
-    accessibility: false,
-
-    instagram_url: "",
-    facebook_url: "",
-    tiktok_url: "",
-
-    opening_hours: "",
-    additional_info: "",
-  });
-
-  function updateField(name: string, value: any) {
-  setForm((prev) => {
-    const updated = {
-      ...prev,
-      [name]: value,
-    };
-
-    setProgress(calculateProfileProgress(updated));
-
-    return updated;
-  });
-}
-
-  function calculateProfileProgress(currentForm = form) {
-  let score = 0;
-
-  if (currentForm.company.trim()) score += 10;
-  if (currentForm.email.trim()) score += 10;
-  if (currentForm.phone.trim()) score += 10;
-  if (currentForm.logo_url.trim()) score += 15;
-
-  const hasImage =
-    currentForm.cover_image_url.trim() ||
-    currentForm.gallery_urls.trim();
-
-  if (hasImage) score += 15;
-
-  if (currentForm.category.trim()) score += 10;
-  if (currentForm.services.trim()) score += 10;
-  if (currentForm.description.trim()) score += 10;
-  if (currentForm.city.trim()) score += 5;
-  if (currentForm.address.trim()) score += 5;
-
-  return Math.min(score, 100);
-}
   useEffect(() => {
-    if (!partnerId) {
-      setLoading(false);
-      return;
+    let active = true;
+
+    async function continueOnboarding() {
+      try {
+        const {
+          data: { session },
+          error,
+        } =
+          await supabase.auth.getSession();
+
+        if (!active) {
+          return;
+        }
+
+        if (error) {
+          throw error;
+        }
+
+        if (!session) {
+          setState(
+            "login-required",
+          );
+
+          return;
+        }
+
+        router.replace(
+          "/partner/onboarding",
+        );
+      } catch (error) {
+        console.error(
+          "PARTNER COMPLETE SESSION ERROR:",
+          error,
+        );
+
+        if (!active) {
+          return;
+        }
+
+        setErrorMessage(
+          "Tilin tietoja ei voitu tarkistaa. Yritä uudelleen.",
+        );
+
+        setState("error");
+      }
     }
 
-    loadPartner();
-  }, [partnerId]);
+    void continueOnboarding();
 
-  async function loadPartner() {
-  if (!partnerId) {
-    setLoading(false);
-    return;
-  }
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
-  setLoading(true);
+  return (
+    <>
+      <PublicHeader />
 
-  try {
-    const { data, error } = await supabase
-      .from("partners")
-      .select(`
-        id,
-        company,
-        email,
-        phone,
-        description,
-        category,
-        services,
-        area,
-        address,
-        postal_code,
-        website,
-        logo_url,
-        cover_image_url,
-        images,
-        max_guests,
-        avg_price_level,
-        parking,
-        accessibility,
-        instagram_url,
-        facebook_url,
-        tiktok_url,
-        opening_hours,
-        profile_completed,
-        profile_completion,
-        slug
-      `)
-      .eq("id", partnerId)
-      .maybeSingle();
+      <main className="relative flex min-h-[calc(100vh-72px)] items-center overflow-hidden bg-[#fbf8f2] px-4 py-12 text-[#211b16] sm:px-6">
+        <div
+          aria-hidden="true"
+          className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#ead3ad]/35 blur-3xl"
+        />
 
-    if (error) {
-      console.error("Partnerin lataus epäonnistui:", error);
-      alert("Partnerin tietojen lataaminen epäonnistui.");
-      return;
-    }
+        <div
+          aria-hidden="true"
+          className="absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-[#edccd5]/30 blur-3xl"
+        />
 
-    if (!data) {
-      alert("Partneria ei löytynyt.");
-      return;
-    }
-    setExistingSlug(data.slug ?? "");
+        <div className="relative mx-auto w-full max-w-xl">
+          <section className="overflow-hidden rounded-3xl border border-[#e2d5c4] bg-white shadow-[0_24px_70px_rgba(73,53,31,0.14)]">
+            <div className="bg-gradient-to-br from-[#fffaf2] via-white to-[#f8eee5] px-6 py-9 text-center sm:px-9">
+              <StatusIcon
+                state={state}
+              />
 
-    setForm((prev) => ({
-      ...prev,
+              <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-[#a47c3c]">
+                OmatJuhlat Partner
+              </p>
 
-      company: data.company ?? "",
-      email: data.email ?? "",
-      phone: data.phone ?? "",
-      description: data.description ?? "",
+              <h1 className="mt-3 text-3xl font-bold text-[#211b16] sm:text-4xl">
+                {state === "checking"
+                  ? "Valmistellaan yritysprofiiliasi"
+                  : state ===
+                      "login-required"
+                    ? "Kirjaudu jatkaaksesi"
+                    : "Jatkaminen epäonnistui"}
+              </h1>
 
-      category: data.category ?? "",
-      services: data.services ?? "",
+              <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-[#70675e] sm:text-base">
+                {state === "checking"
+                  ? "Tarkistamme partneritilisi ja ohjaamme sinut turvallisesti profiilin käyttöönottoon."
+                  : state ===
+                      "login-required"
+                    ? "Yritysprofiilin tietoja voi muokata vain kirjautuneena partneritilille."
+                    : errorMessage}
+              </p>
+            </div>
 
-      city: data.area ?? "",
-      address: data.address ?? "",
-      postal_code: data.postal_code ?? "",
+            <div className="px-6 py-7 sm:px-9">
+              {state === "checking" && (
+                <div
+                  role="status"
+                  className="rounded-2xl border border-[#e8ded0] bg-[#fffaf2] p-5 text-center"
+                >
+                  <div
+                    aria-hidden="true"
+                    className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-[#eadfce] border-t-[#b48a45]"
+                  />
 
-      website: data.website ?? "",
+                  <p className="mt-4 text-sm font-bold text-[#62584f]">
+                    Tarkistetaan
+                    kirjautumistietoja...
+                  </p>
+                </div>
+              )}
 
-      logo_url: data.logo_url ?? "",
-      cover_image_url: data.cover_image_url ?? "",
-      gallery_urls: data.images ?? "",
+              {state ===
+                "login-required" && (
+                <div className="space-y-4">
+                  <Link
+                    href="/partner/login?next=/partner/onboarding"
+                    className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#b48a45] px-6 py-4 font-bold text-white shadow-[0_10px_24px_rgba(180,138,69,0.24)] transition hover:bg-[#9f783a]"
+                  >
+                    Kirjaudu partneritilille
+                  </Link>
 
-      max_guests:
-        data.max_guests !== null && data.max_guests !== undefined
-          ? String(data.max_guests)
-          : "",
+                  <p className="text-center text-xs leading-5 text-[#91877d]">
+                    Käytä hyväksymisen
+                    yhteydessä saamaasi
+                    partneritiliä.
+                  </p>
+                </div>
+              )}
 
-      avg_price_level: data.avg_price_level ?? "",
+              {state === "error" && (
+                <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.location.reload()
+                    }
+                    className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#b48a45] px-5 py-3 font-bold text-white transition hover:bg-[#9f783a]"
+                  >
+                    Yritä uudelleen
+                  </button>
 
-      parking: Boolean(data.parking),
-      accessibility: Boolean(data.accessibility),
+                  <Link
+                    href="/partner/login?next=/partner/onboarding"
+                    className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#ded3c4] bg-white px-5 py-3 font-bold text-[#62584f] transition hover:border-[#b48a45] hover:bg-[#fffaf2]"
+                  >
+                    Siirry kirjautumiseen
+                  </Link>
+                </div>
+              )}
+            </div>
+          </section>
 
-      instagram_url: data.instagram_url ?? "",
-      facebook_url: data.facebook_url ?? "",
-      tiktok_url: data.tiktok_url ?? "",
-
-      opening_hours: data.opening_hours ?? "",
-    }));
-
-    setProgress(calculateProfileProgress({
-  ...form,
-  company: data.company ?? "",
-  email: data.email ?? "",
-  phone: data.phone ?? "",
-  description: data.description ?? "",
-  category: data.category ?? "",
-  services: data.services ?? "",
-  city: data.area ?? "",
-  address: data.address ?? "",
-  logo_url: data.logo_url ?? "",
-  cover_image_url: data.cover_image_url ?? "",
-  gallery_urls: data.images ?? "",
-}));
-
-function createSlug(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ä/g, "a")
-    .replace(/ö/g, "o")
-    .replace(/å/g, "a")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-  } catch (error) {
-    console.error("Odottamaton latausvirhe:", error);
-    alert("Partnerin tietojen lataamisessa tapahtui virhe.");
-  } finally {
-    setLoading(false);
-  }
-}
-
-  async function saveProfile() {
-  if (!partnerId) {
-    alert("Partner ID puuttuu.");
-    return;
-  }
-
-  if (!form.company.trim()) {
-    alert("Lisää yrityksen nimi.");
-    return;
-  }
-
-  setSaving(true);
-
-  try {
-    const completion = calculateProfileProgress(form);
-
-    const hasImage = Boolean(
-      form.cover_image_url.trim() || form.gallery_urls.trim()
-    );
-
-    const profileCompleted = Boolean(
-      form.company.trim() &&
-        form.email.trim() &&
-        form.phone.trim() &&
-        form.logo_url.trim() &&
-        hasImage &&
-        form.category.trim() &&
-        form.services.trim()
-    );
-
-    const generatedSlug =
-      existingSlug ||
-      `${createSlug(form.company)}-${String(partnerId).slice(0, 8)}`;
-
-    const maxGuests =
-      form.max_guests.trim() === ""
-        ? null
-        : Number(form.max_guests);
-
-    if (
-      maxGuests !== null &&
-      (!Number.isFinite(maxGuests) || maxGuests < 1)
-    ) {
-      alert("Tarkista maksimivierasmäärä.");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("partners")
-      .update({
-        company: form.company.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        description: form.description.trim(),
-
-        category: form.category.trim(),
-        services: form.services
-          .split(",")
-          .map((service) => service.trim())
-          .filter(Boolean)
-          .join(","),
-
-        area: form.city.trim(),
-        address: form.address.trim(),
-        postal_code: form.postal_code.trim(),
-
-        website: form.website.trim(),
-
-        logo_url: form.logo_url.trim(),
-        cover_image_url: form.cover_image_url.trim(),
-        images: form.gallery_urls.trim(),
-
-        max_guests: maxGuests,
-        avg_price_level: form.avg_price_level,
-
-        parking: form.parking,
-        accessibility: form.accessibility,
-
-        instagram_url: form.instagram_url.trim(),
-        facebook_url: form.facebook_url.trim(),
-        tiktok_url: form.tiktok_url.trim(),
-
-        opening_hours: form.opening_hours.trim(),
-
-        profile_completion: completion,
-        profile_completed: profileCompleted,
-        slug: generatedSlug,
-      })
-      .eq("id", partnerId);
-
-    if (error) {
-      console.error("Profiilin tallennus epäonnistui:", error);
-      alert(`Profiilin tallennus epäonnistui: ${error.message}`);
-      return;
-    }
-
-    setProgress(completion);
-    setExistingSlug(generatedSlug);
-
-    if (profileCompleted) {
-      alert("Profiili tallennettiin ja se on valmis julkaistavaksi! 🎉");
-    } else {
-      alert(
-        `Profiili tallennettiin. Profiilin valmius on ${completion} %. Täytä vielä puuttuvat pakolliset tiedot.`
-      );
-    }
-  } catch (error) {
-    console.error("Odottamaton tallennusvirhe:", error);
-    alert("Profiilin tallentamisessa tapahtui odottamaton virhe.");
-  } finally {
-    setSaving(false);
-  }
-}
-
-  if (!partnerId) {
-    return (
-      <main style={{ padding: 40 }}>
-        <h2>Partner ID puuttuu.</h2>
+          <p className="mt-5 text-center text-xs leading-5 text-[#91877d]">
+            Partneritietoja ei avata pelkän
+            URL-tunnisteen perusteella.
+          </p>
+        </div>
       </main>
+
+      <PublicFooter />
+    </>
+  );
+}
+
+function StatusIcon({
+  state,
+}: {
+  state: CompleteState;
+}) {
+  if (state === "error") {
+    return (
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#edcaca] bg] bg-[#fff0f0] text-4xl">
+        ⚠️
+      </div>
     );
   }
 
-  if (loading) {
+  if (
+    state === "login-required"
+  ) {
     return (
-      <main style={{ padding: 40 }}>
-        <h2>Ladataan...</h2>
-      </main>
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#decba9] bg-[#fbf5e9] text-4xl">
+        🔐
+      </div>
     );
   }
 
   return (
-    <main
-      style={{
-        maxWidth: 1100,
-        margin: "40px auto",
-        padding: 20,
-      }}
-    >
-      <ProfileHeader
-        companyName={form.company}
-        onBack={() => history.back()}
-        onLogout={() => {}}
-      />
-
-      <ProfileProgress
-        currentStep={6}
-        totalSteps={6}
-      />
-
-      <BasicInfoCard
-        form={form}
-        onChange={updateField}
-      />
-
-      <LocationCard
-        form={form}
-        onChange={updateField}
-      />
-
-      <ServicesCard
-        form={form}
-        onChange={updateField}
-      />
-
-      <GalleryCard
-        form={form}
-        onChange={updateField}
-      />
-
-      <ExtraInfoCard
-        form={form}
-        onChange={updateField}
-      />
-
-      <PreviewCard form={form} />
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginTop: 32,
-        }}
-      >
-        <button
-          onClick={saveProfile}
-          disabled={saving}
-        >
-          {saving ? "Tallennetaan..." : "Tallenna profiili"}
-        </button>
-      </div>
-    </main>
+    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#b9dfd0] bg-[#edf8f3] text-4xl">
+      ✨
+    </div>
   );
 }

@@ -2,7 +2,10 @@ import {
   parseServiceAreas,
 } from "@/lib/locations";
 
-import { SERVICE_NAMES } from "./constants";
+import {
+  CANONICAL_SERVICE_LABELS,
+  SERVICE_NAMES,
+} from "./constants";
 
 import type {
   BrowsePartner,
@@ -25,18 +28,30 @@ export function cleanAndNormalizeServices(
     .replace(/[&/]/g, ",")
     .split(",")
     .map((service) =>
-      service.trim().toLowerCase(),
+      service
+        .trim()
+        .toLowerCase(),
     )
     .filter(Boolean);
 
+  const normalizedServices =
+    parts
+      .map(
+        (service) =>
+          SERVICE_NAMES[
+            service
+          ],
+      )
+      .filter(
+        (
+          service,
+        ): service is string =>
+          Boolean(service),
+      );
+
   return Array.from(
     new Set(
-      parts.map(
-        (service) =>
-          SERVICE_NAMES[service] ??
-          service.charAt(0).toUpperCase() +
-            service.slice(1),
-      ),
+      normalizedServices,
     ),
   );
 }
@@ -127,19 +142,20 @@ export function getBrowseAreas(
 export function getBrowseServices(
   partners: BrowsePartner[],
 ): string[] {
-  const services = partners.flatMap(
-    getPartnerServices,
-  );
+  const availableServices =
+    new Set(
+      partners.flatMap(
+        getPartnerServices,
+      ),
+    );
 
   return [
     "Kaikki",
-    ...Array.from(
-      new Set(services),
-    ).sort((first, second) =>
-      first.localeCompare(
-        second,
-        "fi",
-      ),
+    ...CANONICAL_SERVICE_LABELS.filter(
+      (service) =>
+        availableServices.has(
+          service,
+        ),
     ),
   ];
 }

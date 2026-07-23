@@ -3,12 +3,16 @@
 type Service = {
   id: string;
   label: string;
+  icon?: string;
 };
 
 type ServiceSelectorProps = {
-  services: Service[];
+  services: readonly Service[];
   selectedServices: string[];
-  onToggle: (serviceId: string) => void;
+
+  onToggle: (
+    serviceId: string,
+  ) => void;
 };
 
 export default function ServiceSelector({
@@ -17,84 +21,125 @@ export default function ServiceSelector({
   onToggle,
 }: ServiceSelectorProps) {
   return (
-    <section className="bg-white px-5 py-16 sm:px-8 lg:px-12">
-      <div className="mx-auto max-w-4xl">
+    <section className="border-y border-[#eee5d9] bg-white px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+      <div className="mx-auto max-w-5xl">
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[#9a773b]">
-            Valitse palvelut
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a47c3c]">
+            Vaihe 2/3
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold text-gray-950 sm:text-4xl">
-            Mitä tarvitset juhliisi?
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#211b16] sm:text-4xl">
+            Mitä palveluita tarvitset?
           </h2>
 
-          <p className="mt-4 text-gray-600">
-            Valitse yksi tai useampi palvelu. Voit muuttaa valintojasi ennen
-            lähettämistä.
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#70675e] sm:text-base">
+            Valitse yksi tai useampi
+            palvelu. Pyyntö kohdistetaan
+            vain valitsemiisi
+            palvelukategorioihin.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {services.map((service) => {
-            const selected = selectedServices.includes(service.id);
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map(
+            (service) => {
+              const selected =
+                selectedServices.includes(
+                  service.id,
+                );
 
-            return (
-              <button
-                key={service.id}
-                type="button"
-                onClick={() => onToggle(service.id)}
-                aria-pressed={selected}
-                className={[
-                  "flex min-h-20 w-full items-center justify-between rounded-2xl border p-5 text-left",
-                  "transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a96a] focus-visible:ring-offset-2",
-                  selected
-                    ? "border-[#c8a96a] bg-[#fffaf0] shadow-sm"
-                    : "border-gray-200 bg-white hover:border-[#dcc69a] hover:shadow-sm",
-                ].join(" ")}
-              >
-                <span
-                  className={[
-                    "font-semibold",
-                    selected ? "text-[#7f602d]" : "text-gray-900",
-                  ].join(" ")}
-                >
-                  {service.label}
-                </span>
-
-                <span
-                  aria-hidden="true"
-                  className={[
-                    "flex h-6 w-6 items-center justify-center rounded-lg border-2 transition",
+              return (
+                <button
+                  key={service.id}
+                  type="button"
+                  onClick={() =>
+                    onToggle(
+                      service.id,
+                    )
+                  }
+                  aria-pressed={
                     selected
-                      ? "border-[#c8a96a] bg-[#c8a96a] text-white"
-                      : "border-gray-300 bg-white",
-                  ].join(" ")}
+                  }
+                  className={`group relative flex min-h-32 w-full flex-col items-start justify-between overflow-hidden rounded-2xl border p-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b48a45] focus-visible:ring-offset-2 ${
+                    selected
+                      ? "border-[#c8a96a] bg-[#fff8e8] shadow-[0_10px_25px_rgba(180,138,69,0.13)]"
+                      : "border-[#e8ded0] bg-[#fffdf9] hover:-translate-y-0.5 hover:border-[#d8c7ad] hover:shadow-sm"
+                  }`}
                 >
-                  {selected && (
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 14 14"
-                      fill="none"
+                  <div className="flex w-full items-start justify-between gap-4">
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-12 w-12 items-center justify-center rounded-xl text-2xl transition ${
+                        selected
+                          ? "bg-white shadow-sm"
+                          : "bg-[#fbf5e9] group-hover:bg-white"
+                      }`}
                     >
-                      <path
-                        d="M3 7L5.7 9.7L11 4.4"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                      {service.icon ||
+                        "✨"}
+                    </span>
+
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                        selected
+                          ? "border-[#b48a45] bg-[#b48a45] text-white"
+                          : "border-[#d7ccbf] bg-white text-transparent"
+                      }`}
+                    >
+                      ✓
+                    </span>
+                  </div>
+
+                  <span
+                    className={`mt-5 font-bold ${
+                      selected
+                        ? "text-[#87652f]"
+                        : "text-[#3f362f]"
+                    }`}
+                  >
+                    {service.label}
+                  </span>
+
+                  {selected && (
+                    <span className="mt-2 text-xs font-semibold text-[#a47c3c]">
+                      Valittu
+                    </span>
                   )}
-                </span>
-              </button>
-            );
-          })}
+                </button>
+              );
+            },
+          )}
         </div>
 
-        <p className="mt-5 text-center text-sm text-gray-500">
-          Valittu: {selectedServices.length} palvelua
-        </p>
+        <div
+          aria-live="polite"
+          className={`mx-auto mt-6 flex max-w-md items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold ${
+            selectedServices.length >
+            0
+              ? "border-[#b9dfd0] bg-[#edf8f3] text-[#11634d]"
+              : "border-[#ead29d] bg-[#fff8e8] text-[#795a28]"
+          }`}
+        >
+          <span aria-hidden="true">
+            {selectedServices.length >
+            0
+              ? "✓"
+              : "○"}
+          </span>
+
+          {selectedServices.length ===
+          0
+            ? "Valitse vähintään yksi palvelu"
+            : `Valittu ${
+                selectedServices.length
+              } ${
+                selectedServices.length ===
+                1
+                  ? "palvelu"
+                  : "palvelua"
+              }`}
+        </div>
       </div>
     </section>
   );

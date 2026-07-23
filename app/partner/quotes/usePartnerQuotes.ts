@@ -109,22 +109,19 @@ export function usePartnerQuotes() {
         supabase
           .from("direct_requests")
           .select(`
-            id,
-            created_at,
-            email,
-            event_date,
-            guests,
-            partner_ids,
-            notes,
-            status,
-            customer_name,
-            phone,
-            location,
-            budget,
-            services,
-            event_type,
-            viewed
-          `)
+  id,
+  created_at,
+  event_date,
+  guests,
+  partner_ids,
+  notes,
+  status,
+  location,
+  budget,
+  services,
+  event_type,
+  viewed
+`)
           .contains("partner_ids", [partnerId])
           .order("created_at", {
             ascending: false,
@@ -219,21 +216,18 @@ export function usePartnerQuotes() {
       } = await supabase
         .from("request_quotes")
         .select(`
-          id,
-          status,
-          created_at,
-          name,
-          phone,
-          email,
-          location,
-          date,
-          guests,
-          budget,
-          services,
-          extraInfo,
-          event_type,
-          notes
-        `)
+  id,
+  status,
+  created_at,
+  location,
+  date,
+  guests,
+  budget,
+  services,
+  extraInfo,
+  event_type,
+  notes
+`)
         .in("id", quoteIds);
 
       if (requestQuoteError) {
@@ -273,9 +267,6 @@ export function usePartnerQuotes() {
                 quotePartner.expires_at,
               created_at:
                 quotePartner.created_at,
-              name: request.name,
-              phone: request.phone,
-              email: request.email,
               location: request.location,
               date: request.date,
               guests: request.guests,

@@ -20,7 +20,7 @@ export default function QuotePageHero({
       />
 
       <div className="relative mx-auto max-w-7xl px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="max-w-3xl">
+        <div className="max-w-4xl">
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#9a773b]">
               OmatJuhlat-tarjoukset
@@ -28,7 +28,7 @@ export default function QuotePageHero({
 
             {confirmed && (
               <span className="rounded-full border border-[#b9dfd0] bg-[#edf8f3] px-3 py-1 text-xs font-bold text-[#11634d]">
-                ✓ Valinta vahvistettu
+                ✓ Valinnat vahvistettu
               </span>
             )}
           </div>
@@ -40,20 +40,95 @@ export default function QuotePageHero({
             </span>
           </h1>
 
-          <p className="mt-5 max-w-2xl text-base leading-8 text-[#70675e] sm:text-lg">
-            Vertaa hintoja, palveluntarjoajien
-            arvosteluja ja tarjousten
-            voimassaoloaikoja. Voit valita
-            jokaiselle palvelulle sopivimman
-            vaihtoehdon.
-          </p>
+          {confirmed ? (
+            <div className="mt-6 max-w-3xl rounded-3xl border border-[#b9dfd0] bg-[#edf8f3] p-5 sm:p-6">
+              <h2 className="text-lg font-bold text-[#11634d]">
+                Valintasi on vahvistettu
+              </h2>
 
-          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-[#62584f]">
-            <span>✓ Turvallinen henkilökohtainen sivu</span>
-            <span>✓ Ei sitovaa varausta ennen vahvistusta</span>
-          </div>
+              <p className="mt-2 leading-7 text-[#41685d]">
+                Valituille palveluntarjoajille on
+                ilmoitettu ja tapahtumapäivä on
+                varattu heidän kalentereistaan.
+                Palveluntarjoajat ottavat sinuun
+                yhteyttä yksityiskohtien sopimiseksi.
+              </p>
+
+              <p className="mt-3 text-sm leading-6 text-[#5c7c70]">
+                Tähän tarjouspyyntöön ei voi enää
+                lisätä tai vaihtaa
+                palveluntarjoajia.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-[#70675e] sm:text-lg">
+                Vertaa saamiasi tarjouksia ja valitse
+                yksi palveluntarjoaja jokaiseen
+                tarvitsemaasi palveluun. Voit vielä
+                vaihtaa valintoja ennen lopullista
+                vahvistamista.
+              </p>
+
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+                <StepCard
+                  number="1"
+                  title="Valitse tarjoukset"
+                  description="Valitse sopivin tarjous jokaisesta tarvitsemastasi palvelusta."
+                />
+
+                <StepCard
+                  number="2"
+                  title="Tarkista valinnat"
+                  description="Varmista, että olet valinnut kaikki tarvitsemasi palvelut."
+                />
+
+                <StepCard
+                  number="3"
+                  title="Vahvista lopuksi"
+                  description="Vasta lopullinen vahvistus varaa päivän ja lähettää yhteystiedot."
+                />
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-[#ead29d] bg-[#fff8e8] p-4 text-sm leading-6 text-[#795a28]">
+                <strong>Hyvä tietää:</strong> Tarjouksen
+                valitseminen tällä sivulla on alustava
+                valinta. Päivää ei vielä varata eikä
+                yhteystietojasi lähetetä
+                palveluntarjoajalle. Saat tarkistaa
+                kaikki valintasi ennen lopullista
+                vahvistamista.
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>
+  );
+}
+
+function StepCard({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-[#e8ded0] bg-white/80 p-5 shadow-sm backdrop-blur">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#b48a45] text-sm font-black text-white">
+        {number}
+      </div>
+
+      <h2 className="mt-4 font-bold text-[#211b16]">
+        {title}
+      </h2>
+
+      <p className="mt-2 text-sm leading-6 text-[#70675e]">
+        {description}
+      </p>
+    </div>
   );
 }

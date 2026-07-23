@@ -22,7 +22,7 @@ export default function ConfirmationHero({
           href={backHref}
           className="inline-flex min-h-11 items-center rounded-xl border border-[#d8c7ad] bg-white/80 px-4 py-2 text-sm font-bold text-[#795a28] shadow-sm transition hover:-translate-y-0.5 hover:border-[#b48a45] hover:bg-white"
         >
-          ← Takaisin tarjouksiin
+          ← Palaa tarjouksiin ja muuta valintoja
         </Link>
 
         <div className="mt-7 max-w-3xl">
@@ -38,16 +38,33 @@ export default function ConfirmationHero({
           </h1>
 
           <p className="mt-5 max-w-2xl text-base leading-8 text-[#70675e] sm:text-lg">
-            Tarkista valitsemasi
-            palveluntarjoajat ja hinnat ennen
-            lopullista vahvistamista.
+            Tarkista kaikki valitsemasi
+            palveluntarjoajat, palvelut ja
+            hinnat ennen lopullista
+            vahvistamista.
           </p>
 
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#91877d]">
-            Vahvistamisen jälkeen välitämme
-            yhteystiedot osapuolille. Sopimus
-            ja maksaminen hoidetaan suoraan
-            palveluntarjoajan kanssa.
+          <div className="mt-6 max-w-2xl rounded-2xl border border-[#ead29d] bg-[#fff8e8] p-4">
+            <p className="text-sm font-bold text-[#795a28]">
+              Valinnat eivät ole vielä
+              lopullisia
+            </p>
+
+            <p className="mt-1 text-sm leading-6 text-[#806b48]">
+              Voit palata tarjouksiin,
+              valita lisää palveluita tai
+              vaihtaa saman palvelun
+              palveluntarjoajaa.
+            </p>
+          </div>
+
+          <p className="mt-5 max-w-2xl text-sm leading-6 text-[#91877d]">
+            Lopullisen vahvistamisen jälkeen
+            valintoja ei voi enää muuttaa.
+            Välitämme yhteystiedot
+            osapuolille, ja sopimus sekä
+            maksaminen hoidetaan suoraan
+            palveluntarjoajien kanssa.
           </p>
         </div>
       </div>

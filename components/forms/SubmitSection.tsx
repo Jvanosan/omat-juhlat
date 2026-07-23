@@ -1,7 +1,5 @@
 "use client";
 
-import Button from "@/components/ui/Button";
-
 type SubmitSectionProps = {
   loading: boolean;
   errorMsg: string;
@@ -17,75 +15,239 @@ export default function SubmitSection({
   servicesComplete,
   onSubmit,
 }: SubmitSectionProps) {
-  const readyToSubmit = eventComplete && servicesComplete;
+  const readyToSubmit =
+    eventComplete &&
+    servicesComplete;
 
   return (
-    <section className="bg-[#faf8f5] px-5 pb-16 sm:px-8 lg:px-12">
+    <section className="bg-[#fbf8f2] px-4 pb-16 pt-14 sm:px-6 sm:pb-20 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-8 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-center">
-            <div className="text-sm font-semibold text-gray-500">Vaihe 1</div>
-            <div className="mt-1 font-bold text-gray-900">
-              {eventComplete ? "✓ Tapahtuma" : "Tapahtuma"}
-            </div>
-          </div>
+        <div className="mb-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a47c3c]">
+            Vaihe 3/3
+          </p>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-center">
-            <div className="text-sm font-semibold text-gray-500">Vaihe 2</div>
-            <div className="mt-1 font-bold text-gray-900">
-              {servicesComplete ? "✓ Palvelut" : "Palvelut"}
-            </div>
-          </div>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#211b16] sm:text-4xl">
+            Tarkista ja lähetä
+          </h2>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-center">
-            <div className="text-sm font-semibold text-gray-500">Vaihe 3</div>
-            <div className="mt-1 font-bold text-gray-900">Lähetä</div>
-          </div>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#70675e] sm:text-base">
+            Kun tiedot ovat kunnossa,
+            lähetämme tarjouspyynnön
+            sopiville OmatJuhlat-
+            palveluntarjoajille.
+          </p>
+        </div>
+
+        <div
+          id="quote-submit-status"
+          className="mb-5 grid gap-3 sm:grid-cols-2"
+        >
+          <CompletionItem
+            complete={
+              eventComplete
+            }
+            title="Tapahtuman tiedot"
+            description={
+              eventComplete
+                ? "Pakolliset perustiedot on täytetty."
+                : "Täytä kaikki pakolliset tapahtumatiedot."
+            }
+          />
+
+          <CompletionItem
+            complete={
+              servicesComplete
+            }
+            title="Palveluvalinnat"
+            description={
+              servicesComplete
+                ? "Vähintään yksi palvelu on valittu."
+                : "Valitse vähintään yksi tarvitsemasi palvelu."
+            }
+          />
         </div>
 
         {errorMsg && (
           <div
             role="alert"
-            className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800"
+            className="mb-5 flex items-start gap-3 rounded-2xl border border-[#edcaca] bg-[#fff0f0] px-5 py-4 text-[#a33d3d]"
           >
-            {errorMsg}
+            <span
+              aria-hidden="true"
+              className="text-lg"
+            >
+              ⚠️
+            </span>
+
+            <div>
+              <p className="font-bold">
+                Tarkista tarjouspyyntö
+              </p>
+
+              <p className="mt-1 text-sm leading-6">
+                {errorMsg}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="rounded-3xl border border-[#eadfc7] bg-white p-6 text-center shadow-sm sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-950">
-            Valmis lähettämään tarjouspyynnön?
-          </h2>
+        <div className="overflow-hidden rounded-3xl border border-[#e2d5c4] bg-white shadow-[0_20px_60px_rgba(73,53,31,0.1)]">
+          <div className="bg-gradient-to-br from-[#fffaf2] via-white to-[#f8eee5] px-5 py-8 text-center sm:px-8 sm:py-10">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#decba9] bg-white text-2xl shadow-sm">
+              ✨
+            </div>
 
-          <p className="mx-auto mt-3 max-w-2xl leading-7 text-gray-600">
-            Saat tarjoukset sähköpostiisi ja voit vertailla niitä rauhassa ilman
-            sitoumuksia.
-          </p>
+            <h3 className="mt-5 text-2xl font-bold text-[#211b16] sm:text-3xl">
+              Valmis pyytämään
+              tarjoukset?
+            </h3>
 
-          <Button
-            size="lg"
-            fullWidth
-            loading={loading}
-            disabled={!readyToSubmit}
-            onClick={onSubmit}
-            className="mt-7"
-          >
-            ✨ Lähetä tarjouspyyntö
-          </Button>
-
-          {!readyToSubmit && (
-            <p className="mt-3 text-sm text-amber-700">
-              Täytä pakolliset tapahtumatiedot ja valitse vähintään yksi palvelu.
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#70675e] sm:text-base">
+              Saat henkilökohtaisen
+              turvallisen linkin, jonka
+              kautta voit seurata,
+              vertailla ja valita
+              saapuneita tarjouksia.
             </p>
-          )}
+          </div>
 
-          <div className="mt-6 grid gap-3 text-sm text-gray-600 sm:grid-cols-3">
-            <span>🔒 Tietosi käsitellään turvallisesti</span>
-            <span>📧 Saat tarjoukset sähköpostiisi</span>
-            <span>💬 Ei sitoumuksia</span>
+          <div className="px-5 py-7 sm:px-8">
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={loading}
+              className={`inline-flex min-h-14 w-full items-center justify-center rounded-2xl px-6 py-4 text-base font-bold text-white shadow-[0_10px_24px_rgba(180,138,69,0.24)] transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                readyToSubmit
+                  ? "bg-[#b48a45] hover:-translate-y-0.5 hover:bg-[#9f783a]"
+                  : "bg-[#9b8f82] hover:bg-[#83776c]"
+              }`}
+            >
+              {loading
+                ? "Lähetetään turvallisesti..."
+                : "Lähetä tarjouspyyntö"}
+            </button>
+
+            {!readyToSubmit &&
+              !errorMsg && (
+                <p className="mt-3 text-center text-sm font-semibold text-[#795a28]">
+                  Täydennä vielä yllä
+                  näkyvät puuttuvat tiedot.
+                </p>
+              )}
+
+            <div className="mt-7 grid gap-4 border-t border-[#eee5d9] pt-6 sm:grid-cols-3">
+              <TrustItem
+                icon="🔒"
+                title="Turvallinen"
+                description="Yhteystietojasi käsitellään luottamuksellisesti."
+              />
+
+              <TrustItem
+                icon="📧"
+                title="Helppo seurata"
+                description="Saat turvallisen asiakaslinkin sähköpostiisi."
+              />
+
+              <TrustItem
+                icon="🤝"
+                title="Ei sitoumuksia"
+                description="Tarjouspyyntö ei pakota hyväksymään tarjousta."
+              />
+            </div>
+
+            <p className="mt-6 text-center text-xs leading-5 text-[#91877d]">
+              Lähettämällä pyynnön
+              hyväksyt, että tietosi
+              välitetään vain pyyntöön
+              sopiville
+              palveluntarjoajille.
+            </p>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function CompletionItem({
+  complete,
+  title,
+  description,
+}: {
+  complete: boolean;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-2xl border p-4 ${
+        complete
+          ? "border-[#b9dfd0] bg-[#edf8f3]"
+          : "border-[#ead29d] bg-[#fff8e8]"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+          complete
+            ? "bg-[#168365] text-white"
+            : "bg-[#d6a94f] text-white"
+        }`}
+      >
+        {complete ? "✓" : "!"}
+      </span>
+
+      <div>
+        <p
+          className={`font-bold ${
+            complete
+              ? "text-[#11634d]"
+              : "text-[#795a28]"
+          }`}
+        >
+          {title}
+        </p>
+
+        <p
+          className={`mt-1 text-xs leading-5 ${
+            complete
+              ? "text-[#41685d]"
+              : "text-[#876e43]"
+          }`}
+        >
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function TrustItem({
+  icon,
+  title,
+  description,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="text-center">
+      <div
+        aria-hidden="true"
+        className="text-xl"
+      >
+        {icon}
+      </div>
+
+      <p className="mt-2 text-sm font-bold text-[#3f362f]">
+        {title}
+      </p>
+
+      <p className="mt-1 text-xs leading-5 text-[#91877d]">
+        {description}
+      </p>
+    </div>
   );
 }

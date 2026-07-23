@@ -392,9 +392,9 @@ export function useBrowsePage() {
     }
 
     const limitedValue = Math.min(
-      5000,
-      Math.max(1, numberValue),
-    );
+  10000,
+  Math.max(1, numberValue),
+);
 
     setGuests(String(limitedValue));
   }
@@ -495,12 +495,18 @@ export function useBrowsePage() {
     if (
       !Number.isInteger(guestCount) ||
       guestCount < 1 ||
-      guestCount > 5000
+      guestCount > 10000
     ) {
       alert(
-        "Vierasmäärän täytyy olla 1–5000.",
+        "Vierasmäärän täytyy olla 1–10 000.",
       );
+if (notes.trim().length > 2000) {
+  alert(
+    "Lisätiedot voivat olla enintään 2 000 merkkiä.",
+  );
 
+  return;
+}
       return;
     }
 

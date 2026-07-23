@@ -1,172 +1,162 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import type {
+  Dispatch,
+  SetStateAction,
+} from "react";
+
+import type {
+  HomeQuoteEvent,
+} from "@/app/useHomeQuote";
+
+import {
+  FINNISH_LOCATIONS,
+} from "@/lib/locations";
+
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
-
-export type QuoteEventData = {
-  date: string;
-  eventType: string;
-  location: string;
-  guests: string;
-  budget: string;
-  email: string;
-  notes: string;
-};
-
+import { EVENT_TYPES } from "@/lib/events";
 type QuoteFormProps = {
-  event: QuoteEventData;
-  setEvent: Dispatch<SetStateAction<QuoteEventData>>;
+  event: HomeQuoteEvent;
+
+  setEvent: Dispatch<
+    SetStateAction<HomeQuoteEvent>
+  >;
 };
 
-const EVENT_TYPES = [
-  "Syntymäpäivä",
-  "Häät",
-  "Valmistujaiset",
-  "Yritysjuhla",
-  "Ristiäiset",
-  "Muu juhla",
-];
-
-const LOCATIONS = [
-  "Helsinki",
-  "Espoo",
-  "Vantaa",
-  "Tampere",
-  "Turku",
-  "Oulu",
-  "Jyväskylä",
-  "Lahti",
-  "Kuopio",
-  "Joensuu",
-  "Pori",
-  "Vaasa",
-  "Rovaniemi",
-  "Seinäjoki",
-  "Lappeenranta",
-  "Kotka",
-  "Mikkeli",
-  "Hämeenlinna",
-  "Salo",
-  "Kokkola",
-  "Kajaani",
-  "Rauma",
-  "Porvoo",
-  "Hyvinkää",
-  "Järvenpää",
-  "Lohja",
-  "Kerava",
-  "Tuusula",
-  "Nurmijärvi",
-  "Ylöjärvi",
-  "Nokia",
-  "Kangasala",
-  "Riihimäki",
-  "Savonlinna",
-  "Imatra",
-  "Raahe",
-  "Iisalmi",
-  "Varkaus",
-  "Kemi",
-  "Tornio",
-  "Pietarsaari",
-  "Forssa",
-  "Valkeakoski",
-  "Kuusamo",
-  "Kempele",
-  "Sipoo",
-  "Kirkkonummi",
-  "Vihti",
-  "Lempäälä",
-  "Pirkkala",
-];
 
 export default function QuoteForm({
   event,
   setEvent,
 }: QuoteFormProps) {
-  const minimumDate = new Date(
-    Date.now() + 3 * 24 * 60 * 60 * 1000
-  )
-    .toISOString()
-    .split("T")[0];
+  const minimumDate =
+    getMinimumEventDate();
 
   return (
     <section
-      id="lomake"
-      className="bg-[#faf8f5] px-5 py-16 sm:px-8 lg:px-12"
+      id="tarjouspyynto"
+      className="scroll-mt-24 bg-[#fbf8f2] px-4 py-14 sm:px-6 sm:py-20 lg:px-8"
     >
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[#9a773b]">
-            Aloita tarjouspyyntö
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#decba9] bg-white px-4 py-2 text-sm font-bold text-[#87652f] shadow-sm">
+            <span aria-hidden="true">
+              ✨
+            </span>
+
+            Maksuton tarjouspyyntö
+          </div>
+
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.22em] text-[#a47c3c]">
+            Vaihe 1/3
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold text-gray-950 sm:text-4xl">
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#211b16] sm:text-4xl">
             Kerro tapahtumasi tiedot
           </h2>
 
-          <p className="mt-4 text-gray-600">
-            Täytä perustiedot. Voit tarkentaa palvelutoiveita seuraavaksi.
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#70675e] sm:text-base">
+            Täytä tapahtuman perustiedot.
+            Seuraavaksi valitset tarvitsemasi
+            palvelut ja tarkistat pyynnön
+            ennen lähettämistä.
           </p>
         </div>
 
-        <Card className="p-5 sm:p-8">
-          <div className="grid gap-6 md:grid-cols-2">
+        <Card className="overflow-hidden border-[#e2d5c4] bg-white p-0 shadow-[0_18px_50px_rgba(73,53,31,0.08)]">
+          <div className="border-b border-[#eee5d9] bg-[#fffaf2] px-5 py-5 sm:px-8">
+            <h3 className="text-lg font-bold text-[#211b16]">
+              Tapahtuman perustiedot
+            </h3>
+
+            <p className="mt-1 text-sm text-[#70675e]">
+              Tähdellä merkityt kentät ovat
+              pakollisia.
+            </p>
+          </div>
+
+          <div className="grid gap-6 p-5 sm:p-8 md:grid-cols-2">
             <Input
               id="event-date"
               label="Päivämäärä *"
               type="date"
               min={minimumDate}
               value={event.date}
-              onChange={(e) =>
-                setEvent((current) => ({
-                  ...current,
-                  date: e.target.value,
-                }))
+              onChange={(eventChange) =>
+                setEvent(
+                  (current) => ({
+                    ...current,
+                    date: eventChange
+                      .target.value,
+                  }),
+                )
               }
             />
 
             <Select
               id="event-type"
               label="Tapahtuman tyyppi *"
-              value={event.eventType}
-              onChange={(e) =>
-                setEvent((current) => ({
-                  ...current,
-                  eventType: e.target.value,
-                }))
+              value={
+                event.eventType
+              }
+              onChange={(eventChange) =>
+                setEvent(
+                  (current) => ({
+                    ...current,
+                    eventType:
+                      eventChange
+                        .target.value,
+                  }),
+                )
               }
             >
-              <option value="">Valitse tapahtuman tyyppi</option>
+              <option value="">
+                Valitse tapahtuman tyyppi
+              </option>
 
-              {EVENT_TYPES.map((eventType) => (
-                <option key={eventType} value={eventType}>
-                  {eventType}
-                </option>
-              ))}
+              {EVENT_TYPES.map(
+                (eventType) => (
+                  <option
+                    key={eventType}
+                    value={eventType}
+                  >
+                    {eventType}
+                  </option>
+                ),
+              )}
             </Select>
 
             <Select
               id="event-location"
               label="Paikkakunta *"
               value={event.location}
-              onChange={(e) =>
-                setEvent((current) => ({
-                  ...current,
-                  location: e.target.value,
-                }))
+              onChange={(eventChange) =>
+                setEvent(
+                  (current) => ({
+                    ...current,
+                    location:
+                      eventChange
+                        .target.value,
+                  }),
+                )
               }
             >
-              <option value="">Valitse paikkakunta</option>
+              <option value="">
+                Valitse paikkakunta
+              </option>
 
-              {LOCATIONS.map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
-              ))}
+              {FINNISH_LOCATIONS.map(
+                (location) => (
+                  <option
+                    key={location}
+                    value={location}
+                  >
+                    {location}
+                  </option>
+                ),
+              )}
             </Select>
 
             <Input
@@ -175,13 +165,18 @@ export default function QuoteForm({
               type="number"
               min={1}
               max={10000}
+              inputMode="numeric"
               value={event.guests}
-              placeholder="Kuinka monta vierasta?"
-              onChange={(e) =>
-                setEvent((current) => ({
-                  ...current,
-                  guests: e.target.value,
-                }))
+              placeholder="Esimerkiksi 80"
+              onChange={(eventChange) =>
+                setEvent(
+                  (current) => ({
+                    ...current,
+                    guests:
+                      eventChange
+                        .target.value,
+                  }),
+                )
               }
             />
 
@@ -190,53 +185,118 @@ export default function QuoteForm({
               label="Sähköposti *"
               type="email"
               autoComplete="email"
+              inputMode="email"
               value={event.email}
-              placeholder="esimerkki@domain.fi"
-              onChange={(e) =>
-                setEvent((current) => ({
-                  ...current,
-                  email: e.target.value,
-                }))
+              placeholder="sinä@esimerkki.fi"
+              onChange={(eventChange) =>
+                setEvent(
+                  (current) => ({
+                    ...current,
+                    email:
+                      eventChange
+                        .target.value,
+                  }),
+                )
               }
             />
 
             <Input
               id="event-budget"
-              label="Budjetti euroina (valinnainen)"
+              label="Kokonaisbudjetti (€)"
               type="number"
               min={0}
+              inputMode="numeric"
               value={event.budget}
               placeholder="Esimerkiksi 3000"
-              onChange={(e) =>
-                setEvent((current) => ({
-                  ...current,
-                  budget: e.target.value,
-                }))
+              onChange={(eventChange) =>
+                setEvent(
+                  (current) => ({
+                    ...current,
+                    budget:
+                      eventChange
+                        .target.value,
+                  }),
+                )
               }
             />
 
             <div className="md:col-span-2">
               <Textarea
                 id="event-notes"
-                label="Lisätiedot (valinnainen)"
-                maxLength={1000}
+                label="Lisätiedot"
+                maxLength={2000}
                 value={event.notes}
-                placeholder="Esimerkiksi juhlan teema, ruokavaliot tai erityistoiveet..."
-                onChange={(e) =>
-                  setEvent((current) => ({
-                    ...current,
-                    notes: e.target.value,
-                  }))
+                placeholder="Kerro esimerkiksi juhlan teemasta, ruokavalioista, aikataulusta tai muista erityistoiveista."
+                onChange={(eventChange) =>
+                  setEvent(
+                    (current) => ({
+                      ...current,
+                      notes:
+                        eventChange
+                          .target.value,
+                    }),
+                  )
                 }
               />
 
-              <p className="mt-2 text-right text-xs text-gray-500">
-                {event.notes.length}/1000
-              </p>
+              <div className="mt-2 flex flex-col gap-1 text-xs text-[#91877d] sm:flex-row sm:justify-between">
+                <span>
+                  Valinnainen kenttä
+                </span>
+
+                <span>
+                  {event.notes.length}/
+                  2000 merkkiä
+                </span>
+              </div>
             </div>
           </div>
         </Card>
+
+        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#d7e1ef] bg-[#f3f7fc] p-4">
+          <span
+            aria-hidden="true"
+            className="text-lg"
+          >
+            ℹ️
+          </span>
+
+          <p className="text-sm leading-6 text-[#4c627e]">
+            Tapahtumapäivän tulee olla
+            vähintään kolmen päivän päässä,
+            jotta palveluntarjoajilla on aikaa
+            valmistella tarjous.
+          </p>
+        </div>
       </div>
     </section>
   );
+}
+
+function getMinimumEventDate() {
+  const minimumDate = new Date();
+
+  minimumDate.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  minimumDate.setDate(
+    minimumDate.getDate() + 3,
+  );
+
+  const year =
+    minimumDate.getFullYear();
+
+  const month = String(
+    minimumDate.getMonth() + 1,
+  ).padStart(2, "0");
+
+  const day = String(
+    minimumDate.getDate(),
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }

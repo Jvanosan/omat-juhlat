@@ -199,7 +199,7 @@ export default function RequestForm({
               type="number"
               required
               min={1}
-              max={5000}
+              max={10000}
               inputMode="numeric"
               placeholder="Esimerkiksi 80"
               value={guests}
@@ -227,7 +227,7 @@ export default function RequestForm({
             <textarea
               id="request-notes"
               placeholder="Kerro esimerkiksi juhlan tyylistä, aikataulusta tai erityistoiveista."
-              maxLength={1000}
+              maxLength={2000}
               rows={6}
               value={notes}
               onChange={(event) =>
@@ -237,7 +237,7 @@ export default function RequestForm({
             />
 
             <p className="mt-2 text-right text-xs font-medium text-[#91877d]">
-              {1000 - notes.length} merkkiä jäljellä
+              {2000 - notes.length} merkkiä jäljellä
             </p>
           </div>
 

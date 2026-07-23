@@ -3,7 +3,7 @@
 import PartnerCard from "@/components/partner/PartnerCard";
 
 import OfferForm from "./OfferForm";
-
+import CustomerContactCard from "./CustomerContactCard";
 import {
   formatOfferPrice,
   LockedOfferMessage,
@@ -90,6 +90,25 @@ export default function CategoryRequestCard({
 
   const editing =
     hasOffer && !locked;
+const normalizedOfferStatus =
+  request.quotePartnerStatus
+    ?.trim()
+    .toLowerCase() ?? "";
+
+const normalizedRequestStatus =
+  request.requestStatus
+    ?.trim()
+    .toLowerCase() ?? "";
+
+const customerContactAvailable =
+  (
+    normalizedOfferStatus ===
+      "selected" ||
+    normalizedOfferStatus ===
+      "valittu"
+  ) &&
+  normalizedRequestStatus ===
+    "confirmed";
 
   const requestedServices =
     request.service ||
@@ -254,6 +273,12 @@ export default function CategoryRequestCard({
               }
             />
           )}
+          {customerContactAvailable && (
+  <CustomerContactCard
+    requestType="category"
+    requestId={request.id}
+  />
+)}
         </div>
 
         {!locked && (

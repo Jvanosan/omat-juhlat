@@ -32,10 +32,17 @@ export default function ConfirmationAction({
         </h2>
 
         <p className="mx-auto mt-2 max-w-xl leading-7 text-[#41685d]">
-          Palveluntarjoajille on ilmoitettu
-          valinnasta. He ottavat sinuun
-          yhteyttä yksityiskohtien
+          Palveluntarjoajille on
+          ilmoitettu valinnasta. He
+          ottavat sinuun yhteyttä
+          tapahtuman yksityiskohtien
           sopimiseksi.
+        </p>
+
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#618077]">
+          Vahvistettuja valintoja ei voi
+          enää muuttaa tämän
+          tarjouspyynnön kautta.
         </p>
 
         <Link
@@ -48,6 +55,9 @@ export default function ConfirmationAction({
     );
   }
 
+  const hasSelections =
+    selectedCount > 0;
+
   return (
     <section className="rounded-3xl border border-[#e1cfad] bg-white p-5 shadow-[0_18px_50px_rgba(73,53,31,0.09)] sm:p-8">
       <div className="text-center">
@@ -56,26 +66,58 @@ export default function ConfirmationAction({
         </p>
 
         <h2 className="mt-2 text-2xl font-bold text-[#211b16]">
-          Valmis vahvistamaan?
+          {hasSelections
+            ? "Valmis vahvistamaan?"
+            : "Valitse vähintään yksi palvelu"}
         </h2>
 
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#70675e]">
-          Vahvistat {selectedCount}{" "}
-          {selectedCount === 1
-            ? "palveluntarjoajan"
-            : "palveluntarjoajaa"}
-          . Vahvistamisen jälkeen valintaa
-          ei voi vaihtaa tällä sivulla.
-        </p>
+        {hasSelections ? (
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#70675e]">
+            Olet vahvistamassa{" "}
+            <strong className="text-[#211b16]">
+              {selectedCount}{" "}
+              {selectedCount === 1
+                ? "palveluntarjoajan"
+                : "palveluntarjoajaa"}
+            </strong>
+            . Tarkista vielä kaikki
+            valinnat ja hinnat ennen
+            jatkamista.
+          </p>
+        ) : (
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#70675e]">
+            Palaa tarjoussivulle ja
+            valitse vähintään yksi
+            tarjous ennen lopullista
+            vahvistamista.
+          </p>
+        )}
       </div>
 
-      <div className="mt-6 rounded-2xl border border-[#ead29d] bg-[#fff8e8] p-4 text-sm leading-6 text-[#795a28]">
-        <strong>Huomio:</strong> OmatJuhlat
-        välittää yhteystiedot. Varsinainen
-        sopimus, maksaminen, peruutusehdot ja
-        tapahtuman yksityiskohdat sovitaan
-        suoraan palveluntarjoajan kanssa.
-      </div>
+      {hasSelections && (
+        <div className="mt-6 rounded-2xl border border-[#ead29d] bg-[#fff8e8] p-4 text-sm leading-6 text-[#795a28]">
+          <p className="font-bold">
+            Vahvistus on lopullinen
+          </p>
+
+          <p className="mt-1">
+            Vahvistamisen jälkeen
+            valintoja ei voi enää vaihtaa
+            tai täydentää tämän
+            tarjouspyynnön kautta.
+            OmatJuhlat välittää
+            yhteystiedot osapuolille.
+          </p>
+
+          <p className="mt-2">
+            Varsinainen sopimus,
+            maksaminen, peruutusehdot ja
+            tapahtuman yksityiskohdat
+            sovitaan suoraan
+            palveluntarjoajien kanssa.
+          </p>
+        </div>
+      )}
 
       {errorMessage && (
         <div
@@ -91,23 +133,26 @@ export default function ConfirmationAction({
         onClick={onConfirm}
         disabled={
           confirming ||
-          selectedCount === 0
+          !hasSelections
         }
-        className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#b48a45] px-6 py-4 text-base font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#9f783a] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+        aria-busy={confirming}
+        className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#b48a45] px-6 py-4 text-base font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#9f783a] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
       >
         {confirming
-          ? "Vahvistetaan valintaa..."
-          : "Vahvista palveluntarjoajien valinta"}
+          ? "Vahvistetaan valintoja..."
+          : selectedCount === 1
+            ? "Vahvista valittu palveluntarjoaja"
+            : `Vahvista ${selectedCount} palveluntarjoajaa`}
       </button>
 
-      {selectedCount === 0 && (
-        <Link
-          href={backHref}
-          className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[#d8c7ad] bg-white px-5 py-3 font-bold text-[#795a28] transition hover:border-[#b48a45] hover:bg-[#fffdf9]"
-        >
-          Palaa valitsemaan tarjous
-        </Link>
-      )}
+      <Link
+        href={backHref}
+        className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[#d8c7ad] bg-white px-5 py-3 text-center font-bold text-[#795a28] transition hover:border-[#b48a45] hover:bg-[#fffdf9]"
+      >
+        {hasSelections
+          ? "← Palaa tarjouksiin ja muuta valintoja"
+          : "← Palaa valitsemaan tarjous"}
+      </Link>
     </section>
   );
 }

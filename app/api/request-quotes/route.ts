@@ -1,129 +1,425 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+
+import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { createClient } from "@supabase/supabase-js";
+
+import {
+  isEventType,
+} from "@/lib/events";
+
+import {
+  FINNISH_LOCATIONS,
+} from "@/lib/locations";
+
+import {
+  SERVICE_OPTIONS,
+  type ServiceCategoryId,
+} from "@/lib/services";
+
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+const serviceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const resendApiKey =
+  process.env.RESEND_API_KEY;
+
+if (!supabaseUrl || !serviceRoleKey) {
+  throw new Error(
+    "Supabase-palvelimen ympäristömuuttujat puuttuvat.",
+  );
+}
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  supabaseUrl,
+  serviceRoleKey,
   {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
-  }
+  },
 );
-const resend = new Resend(process.env.RESEND_API_KEY!);
 
-const ALLOWED_SERVICES = [
-  "juhlatila",
-  "catering",
-  "dj",
-  "band",
-  "photographer",
-  "decor",
-] as const;
+const resend = resendApiKey
+  ? new Resend(resendApiKey)
+  : null;
 
-const SERVICE_ALIASES: Record<string, string> = {
-  juhlatila: "juhlatila",
-  "juhla tila": "juhlatila",
-  "juhla-tila": "juhlatila",
-  juhlatilat: "juhlatila",
+const ALLOWED_SERVICE_IDS =
+  SERVICE_OPTIONS.map(
+    (service) => service.id,
+  );
 
-  catering: "catering",
-  ravintola: "catering",
-  ruokailu: "catering",
-  pitopalvelu: "catering",
+const SERVICE_ALIASES =
+  createServiceAliases();
 
-  dj: "dj",
-  musiikki: "dj",
-  "dj musiikki": "dj",
-  "dj & musiikki": "dj",
-  "dj / musiikki": "dj",
-
-  band: "band",
-  bändi: "band",
-  yhtye: "band",
-  "bändi / live-musiikki": "band",
-  "live-musiikki": "band",
-
-  photographer: "photographer",
-  valokuvaaja: "photographer",
-  valokuvaus: "photographer",
-  kuvaaja: "photographer",
-
-  decor: "decor",
-  somistus: "decor",
-  koristelu: "decor",
-  "somistus / koristelu": "decor",
+type PartnerServiceOptions = {
+  categories?: unknown;
+  options?: unknown;
 };
 
-function normalizeService(value: unknown): string {
-  const normalized = String(value ?? "")
+type PartnerRow = {
+  id: string;
+  company: string | null;
+  email: string | null;
+  category: string | null;
+  service_options:
+    | PartnerServiceOptions
+    | null;
+  area: string | null;
+  min_guests: number | null;
+  max_guests: number | null;
+};
+
+type QuotePartnerRow = {
+  quote_id: string | number;
+  partner_id: string;
+  service: ServiceCategoryId;
+  status: "sent";
+};
+
+function createServiceAliases() {
+  const aliases =
+    new Map<string, ServiceCategoryId>();
+
+  for (const service of SERVICE_OPTIONS) {
+    aliases.set(
+      service.id.toLowerCase(),
+      service.id,
+    );
+
+    aliases.set(
+      service.label
+        .trim()
+        .toLowerCase(),
+      service.id,
+    );
+  }
+
+  // Väliaikainen yhteensopivuus vanhoille
+  // saman palvelun tunnuksille.
+  aliases.set("juhlatila", "venue");
+  aliases.set("photographer", "photography");
+  aliases.set("valokuvaaja", "photography");
+  aliases.set("valokuvaus", "photography");
+  aliases.set("decor", "decoration");
+  aliases.set("somistus", "decoration");
+  aliases.set("koristelu", "decoration");
+  aliases.set("kuljetus", "transport");
+
+  return aliases;
+}
+
+function normalizeService(
+  value: unknown,
+): ServiceCategoryId | null {
+  const normalized = String(
+    value ?? "",
+  )
     .trim()
     .toLowerCase();
 
-  return SERVICE_ALIASES[normalized] ?? normalized;
+  return (
+    SERVICE_ALIASES.get(normalized) ??
+    null
+  );
 }
 
-function parsePartnerServices(value: unknown): string[] {
-  if (!value) return [];
+function parseRequestedServices(
+  value: unknown,
+): ServiceCategoryId[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const services = value
+    .filter(
+      (service): service is string =>
+        typeof service === "string",
+    )
+    .map(normalizeService)
+    .filter(
+      (
+        service,
+      ): service is ServiceCategoryId =>
+        service !== null,
+    );
+
+  return Array.from(new Set(services));
+}
+
+function parsePartnerCategories(
+  partner: PartnerRow,
+): ServiceCategoryId[] {
+  const rawCategories: unknown[] = [];
+
+  const serviceOptions =
+    partner.service_options;
+
+  if (
+    serviceOptions &&
+    typeof serviceOptions === "object" &&
+    Array.isArray(
+      serviceOptions.categories,
+    )
+  ) {
+    rawCategories.push(
+      ...serviceOptions.categories,
+    );
+  }
+
+  if (partner.category) {
+    rawCategories.push(
+      partner.category,
+    );
+  }
 
   return Array.from(
     new Set(
-      String(value)
-        .replace(/[\[\]()"']/g, "")
-        .split(/[,;&/]+/)
+      rawCategories
         .map(normalizeService)
-        .filter(Boolean)
+        .filter(
+          (
+            service,
+          ): service is ServiceCategoryId =>
+            service !== null,
+        ),
+    ),
+  );
+}
+
+function parsePartnerAreas(
+  value: unknown,
+): string[] {
+  if (!value) {
+    return [];
+  }
+
+  return String(value)
+    .split(/[,;]+/)
+    .map((area) =>
+      area.trim().toLocaleLowerCase(
+        "fi",
+      ),
+    )
+    .filter(Boolean);
+}
+
+function isValidEmail(
+  email: string,
+): boolean {
+  return (
+    email.length <= 254 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      email,
     )
   );
 }
 
-function parsePartnerAreas(value: unknown): string[] {
-  if (!value) return [];
-
-  return String(value)
-    .split(/[,;]+/)
-    .map((area) => area.trim().toLowerCase())
-    .filter(Boolean);
+function isValidLocation(
+  location: string,
+): boolean {
+  return (
+    FINNISH_LOCATIONS as readonly string[]
+  ).includes(location);
 }
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+function isCanonicalDate(
+  value: string,
+): boolean {
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(
+      value,
+    )
+  ) {
+    return false;
+  }
+
+  const [
+    year,
+    month,
+    day,
+  ] = value
+    .split("-")
+    .map(Number);
+
+  const parsedDate = new Date(
+    Date.UTC(
+      year,
+      month - 1,
+      day,
+    ),
+  );
+
+  return (
+    parsedDate.getUTCFullYear() ===
+      year &&
+    parsedDate.getUTCMonth() ===
+      month - 1 &&
+    parsedDate.getUTCDate() === day
+  );
 }
 
-function escapeHtml(value: unknown) {
+function getMinimumEventDate(): string {
+  const formatter =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone: "Europe/Helsinki",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      },
+    );
+
+  const parts =
+    formatter.formatToParts(
+      new Date(),
+    );
+
+  const year = Number(
+    parts.find(
+      (part) =>
+        part.type === "year",
+    )?.value,
+  );
+
+  const month = Number(
+    parts.find(
+      (part) =>
+        part.type === "month",
+    )?.value,
+  );
+
+  const day = Number(
+    parts.find(
+      (part) =>
+        part.type === "day",
+    )?.value,
+  );
+
+  const minimumDate = new Date(
+    Date.UTC(
+      year,
+      month - 1,
+      day + 3,
+    ),
+  );
+
+  return minimumDate
+    .toISOString()
+    .slice(0, 10);
+}
+
+function escapeHtml(
+  value: unknown,
+): string {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "'",
+      "&#039;",
+    );
 }
-export async function POST(request: Request) {
+
+function getSiteUrl(
+  request: Request,
+): string {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL
+      ?.trim()
+      .replace(/\/+$/, "");
+
+  return (
+    configuredUrl ||
+    new URL(request.url).origin
+  );
+}
+
+export async function POST(
+  request: Request,
+) {
   try {
-    const body = await request.json();
+    let body: unknown;
 
-    const date = String(body.date ?? "").trim();
-    const eventType = String(body.eventType ?? "").trim();
-    const location = String(body.location ?? "").trim();
-    const email = String(body.email ?? "").trim().toLowerCase();
-    const notes = String(body.notes ?? "").trim();
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Lähetetty tieto ei ole kelvollisessa muodossa.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
-    const guests = Number(body.guests);
+    if (
+      !body ||
+      typeof body !== "object" ||
+      Array.isArray(body)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyynnön tiedot puuttuvat.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const requestBody =
+      body as Record<string, unknown>;
+
+    const date = String(
+      requestBody.date ?? "",
+    ).trim();
+
+    const eventType = String(
+      requestBody.eventType ?? "",
+    ).trim();
+
+    const location = String(
+      requestBody.location ?? "",
+    ).trim();
+
+    const email = String(
+      requestBody.email ?? "",
+    )
+      .trim()
+      .toLowerCase();
+
+    const notes = String(
+      requestBody.notes ?? "",
+    ).trim();
+
+    const guests = Number(
+      requestBody.guests,
+    );
+
     const budget =
-      body.budget === "" ||
-      body.budget === null ||
-      body.budget === undefined
+      requestBody.budget === "" ||
+      requestBody.budget === null ||
+      requestBody.budget ===
+        undefined
         ? null
-        : Number(body.budget);
+        : Number(
+            requestBody.budget,
+          );
 
-    const services = Array.isArray(body.services)
-      ? Array.from(
-          new Set(body.services.map(normalizeService).filter(Boolean))
-        )
-      : [];
+    const services =
+      parseRequestedServices(
+        requestBody.services,
+      );
 
     if (
       !date ||
@@ -137,334 +433,564 @@ export async function POST(request: Request) {
           error:
             "Täytä päivämäärä, tapahtumatyyppi, paikkakunta, sähköposti ja valitse vähintään yksi palvelu.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!isCanonicalDate(date)) {
+      return NextResponse.json(
+        {
+          error:
+            "Päivämäärä ei ole kelvollinen.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      date < getMinimumEventDate()
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Valitse päivä vähintään kolmen päivän päähän.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!isEventType(eventType)) {
+      return NextResponse.json(
+        {
+          error:
+            "Valitse kelvollinen tapahtumatyyppi.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!isValidLocation(location)) {
+      return NextResponse.json(
+        {
+          error:
+            "Valitse kelvollinen paikkakunta.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
     if (!isValidEmail(email)) {
       return NextResponse.json(
-        { error: "Anna kelvollinen sähköpostiosoite." },
-        { status: 400 }
+        {
+          error:
+            "Anna kelvollinen sähköpostiosoite.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
-    if (!Number.isInteger(guests) || guests < 1 || guests > 10000) {
+    if (
+      !Number.isInteger(guests) ||
+      guests < 1 ||
+      guests > 10000
+    ) {
       return NextResponse.json(
-        { error: "Vierasmäärän täytyy olla 1–10 000." },
-        { status: 400 }
+        {
+          error:
+            "Vierasmäärän täytyy olla 1–10 000.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
     if (
       budget !== null &&
-      (!Number.isFinite(budget) || budget < 0)
+      (
+        !Number.isFinite(budget) ||
+        budget < 0
+      )
     ) {
       return NextResponse.json(
-        { error: "Budjetti ei voi olla negatiivinen." },
-        { status: 400 }
+        {
+          error:
+            "Budjetin täytyy olla 0 tai sitä suurempi.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
-    const invalidService = services.find(
-      (service) =>
-        !ALLOWED_SERVICES.includes(
-          service as (typeof ALLOWED_SERVICES)[number]
-        )
-    );
-
-    if (invalidService) {
+    if (notes.length > 2000) {
       return NextResponse.json(
-        { error: `Tuntematon palvelu: ${invalidService}` },
-        { status: 400 }
+        {
+          error:
+            "Lisätiedot voivat olla enintään 2 000 merkkiä.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
-    const selectedDate = new Date(`${date}T00:00:00`);
-
-    if (Number.isNaN(selectedDate.getTime())) {
-      return NextResponse.json(
-        { error: "Päivämäärä ei ole kelvollinen." },
-        { status: 400 }
-      );
-    }
-
-    const earliestDate = new Date();
-    earliestDate.setHours(0, 0, 0, 0);
-    earliestDate.setDate(earliestDate.getDate() + 3);
-
-    if (selectedDate < earliestDate) {
-      return NextResponse.json(
-        { error: "Valitse päivä vähintään kolmen päivän päähän." },
-        { status: 400 }
-      );
-    }
-
-const accessToken = randomUUID();
-
-const { data: quote, error: quoteError } = await supabase
-      .from("request_quotes")
-      .insert({
-  date,
-  event_type: eventType,
-  location,
-  guests,
-  email,
-  budget,
-  services,
-  status: "avoin",
-  notes: notes || null,
-  access_token: accessToken,
-})
-.select("id, access_token")
-.single();
-
-    if (quoteError || !quote) {
-      console.error("REQUEST QUOTE INSERT ERROR:", quoteError);
-
-      return NextResponse.json(
-        { error: "Tarjouspyynnön tallentaminen epäonnistui." },
-        { status: 500 }
-      );
-    }
-
-    const { data: partners, error: partnersError } = await supabase
-      .from("partners")
-      .select(
-        "id, company, email, services, area, max_guests, status"
+    if (
+      services.some(
+        (service) =>
+          !ALLOWED_SERVICE_IDS.includes(
+            service,
+          ),
       )
-.eq("status", "approved")
-.eq("profile_completed", true);
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Valitse vain listassa olevia palveluita.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const {
+      data: partnerData,
+      error: partnersError,
+    } = await supabase
+      .from("partners")
+      .select(`
+        id,
+        company,
+        email,
+        category,
+        service_options,
+        area,
+        min_guests,
+        max_guests
+      `)
+      .eq("status", "approved")
+      .eq(
+        "profile_completed",
+        true,
+      );
+
     if (partnersError) {
-      console.error("PARTNERS SELECT ERROR:", partnersError);
+      console.error(
+        "REQUEST QUOTE PARTNERS ERROR:",
+        partnersError,
+      );
 
       return NextResponse.json(
         {
           error:
-            "Tarjouspyyntö tallennettiin, mutta partnereita ei voitu hakea.",
-          quoteId: quote.id,
+            "Palveluntarjoajien hakeminen epäonnistui.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        },
       );
     }
-const partnerIds = (partners ?? []).map(
-  (partner) => String(partner.id),
-);
 
-const unavailablePartnerIds =
-  new Set<string>();
+    const partners =
+      (partnerData ??
+        []) as PartnerRow[];
 
-if (partnerIds.length > 0) {
-  const {
-    data: calendarEntries,
-    error: calendarError,
-  } = await supabase
-    .from("partner_calendar_entries")
-    .select("partner_id")
-    .eq("date", date)
-    .in("partner_id", partnerIds)
-    .in("status", [
-      "unavailable",
-      "booked",
-    ]);
+    const partnerIds =
+      partners.map(
+        (partner) => partner.id,
+      );
 
-  if (calendarError) {
-    console.error(
-      "REQUEST QUOTE CALENDAR ERROR:",
-      calendarError,
-    );
+    const unavailablePartnerIds =
+      new Set<string>();
 
-    return NextResponse.json(
-      {
-        error:
-          "Tarjouspyyntö tallennettiin, mutta palveluntarjoajien saatavuutta ei voitu tarkistaa.",
-        quoteId: quote.id,
-      },
-      { status: 500 },
-    );
-  }
+    if (partnerIds.length > 0) {
+      const {
+        data: calendarEntries,
+        error: calendarError,
+      } = await supabase
+        .from(
+          "partner_calendar_entries",
+        )
+        .select("partner_id")
+        .eq("date", date)
+        .in(
+          "partner_id",
+          partnerIds,
+        )
+        .in("status", [
+          "unavailable",
+          "booked",
+        ]);
 
-  for (const entry of calendarEntries ?? []) {
-    unavailablePartnerIds.add(
-      String(entry.partner_id),
-    );
-  }
-}
-    const requestedLocation = location.toLowerCase();
-
-    const quotePartnerRows: Array<{
-      quote_id: number | string;
-      partner_id: string;
-      service: string;
-      status: string;
-    }> = [];
-
-    for (const partner of partners ?? []) {
-  if (
-    unavailablePartnerIds.has(
-      String(partner.id),
-    )
-  ) {
-    continue;
-  }
-
-  const partnerServices = parsePartnerServices(partner.services);
-      const partnerAreas = parsePartnerAreas(partner.area);
-
-      const areaMatches =
-        partnerAreas.includes(requestedLocation) ||
-        partnerAreas.includes("suomi") ||
-        partnerAreas.includes("koko suomi");
-
-      const capacityMatches =
-        partner.max_guests === null ||
-        partner.max_guests === undefined ||
-        Number(partner.max_guests) >= guests;
-
-      if (!areaMatches || !capacityMatches) continue;
-
-      const requestedServices: string[] = Array.isArray(services)
-  ? services.filter(
-      (service): service is string => typeof service === "string"
-    )
-  : [];
-
-const matchedServices = requestedServices.filter((service) =>
-  partnerServices.includes(service)
-);
-
-      for (const service of matchedServices) {
-        quotePartnerRows.push({
-          quote_id: quote.id,
-          partner_id: partner.id,
-          service,
-          status: "sent",
-        });
-      }
-    }
-
-    if (quotePartnerRows.length > 0) {
-      const { error: assignmentsError } = await supabase
-        .from("quote_partners")
-        .upsert(quotePartnerRows, {
-          onConflict: "quote_id,partner_id,service",
-          ignoreDuplicates: true,
-        });
-
-      if (assignmentsError) {
+      if (calendarError) {
         console.error(
-          "QUOTE PARTNERS INSERT ERROR:",
-          assignmentsError
+          "REQUEST QUOTE CALENDAR ERROR:",
+          calendarError,
         );
 
         return NextResponse.json(
           {
             error:
-              "Tarjouspyyntö tallennettiin, mutta sitä ei voitu yhdistää partnereihin.",
-            quoteId: quote.id,
+              "Palveluntarjoajien saatavuutta ei voitu tarkistaa.",
           },
-          { status: 500 }
+          {
+            status: 500,
+          },
+        );
+      }
+
+      for (
+        const entry of
+        calendarEntries ?? []
+      ) {
+        unavailablePartnerIds.add(
+          String(entry.partner_id),
         );
       }
     }
 
+    const requestedLocation =
+      location.toLocaleLowerCase(
+        "fi",
+      );
 
+    const matchedAssignments: Array<{
+      partnerId: string;
+      service: ServiceCategoryId;
+    }> = [];
 
-let confirmationEmailSent = false;
+    for (const partner of partners) {
+      if (
+        unavailablePartnerIds.has(
+          partner.id,
+        )
+      ) {
+        continue;
+      }
 
-try {
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  new URL(request.url).origin;
+      const partnerAreas =
+        parsePartnerAreas(
+          partner.area,
+        );
 
-  const quoteUrl =
-    `${siteUrl}/quote/${quote.id}` +
-    `?token=${encodeURIComponent(accessToken)}`;
+      const areaMatches =
+        partnerAreas.includes(
+          requestedLocation,
+        ) ||
+        partnerAreas.includes(
+          "suomi",
+        ) ||
+        partnerAreas.includes(
+          "koko suomi",
+        );
 
-  const { error: emailError } = await resend.emails.send({
-    from: "OmatJuhlat <noreply@omatjuhlat.fi>",
-    to: email,
-    subject: "✅ Tarjouspyyntö vastaanotettu – OmatJuhlat",
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Tarjouspyyntösi on vastaanotettu ✅</h2>
+      const minimumGuests =
+        partner.min_guests === null
+          ? null
+          : Number(
+              partner.min_guests,
+            );
 
-        <p>
-          <strong>Tapahtuma:</strong>
-          ${escapeHtml(eventType)}
-        </p>
+      const maximumGuests =
+        partner.max_guests === null
+          ? null
+          : Number(
+              partner.max_guests,
+            );
 
-        <p>
-          <strong>Päivämäärä:</strong>
-          ${escapeHtml(date)}
-        </p>
+      const minimumCapacityMatches =
+        minimumGuests === null ||
+        !Number.isFinite(
+          minimumGuests,
+        ) ||
+        guests >= minimumGuests;
 
-        <p>
-          Palveluntarjoajat käsittelevät pyyntöäsi ja
-          saat pian tarjouksia.
-        </p>
+      const maximumCapacityMatches =
+        maximumGuests === null ||
+        !Number.isFinite(
+          maximumGuests,
+        ) ||
+        guests <= maximumGuests;
 
-        <p style="margin: 24px 0;">
-          <a
-            href="${quoteUrl}"
-            style="
-              display: inline-block;
-              padding: 12px 20px;
-              border-radius: 10px;
-              background: #10b981;
-              color: #ffffff;
-              font-weight: bold;
-              text-decoration: none;
-            "
-          >
-            Avaa tarjouspyyntösi
-          </a>
-        </p>
+      if (
+        !areaMatches ||
+        !minimumCapacityMatches ||
+        !maximumCapacityMatches
+      ) {
+        continue;
+      }
 
-        <p style="color: #6b7280; font-size: 14px;">
-          Tämä linkki on henkilökohtainen. Älä jaa sitä muille.
-        </p>
+      const partnerCategories =
+        parsePartnerCategories(
+          partner,
+        );
 
-        <p>Kiitos, kun käytit OmatJuhlat-palvelua 💙</p>
-      </div>
-    `,
-  });
+      const matchedServices =
+        services.filter(
+          (service) =>
+            partnerCategories.includes(
+              service,
+            ),
+        );
 
-  if (emailError) {
-    console.error(
-      "REQUEST CONFIRMATION EMAIL ERROR:",
-      emailError,
-    );
-  } else {
-    confirmationEmailSent = true;
-  }
-} catch (emailError) {
-  console.error(
-    "REQUEST CONFIRMATION EMAIL ERROR:",
-    emailError,
-  );
-}
+      for (
+        const service of
+        matchedServices
+      ) {
+        matchedAssignments.push({
+          partnerId: partner.id,
+          service,
+        });
+      }
+    }
 
+    const accessToken =
+      randomUUID();
 
-return NextResponse.json(
-  {
-    success: true,
-    quoteId: quote.id,
-    accessToken,
-    confirmationEmailSent,
-    matchedPartners: new Set(
-      quotePartnerRows.map((row) => row.partner_id),
-    ).size,
-    createdAssignments: quotePartnerRows.length,
-  },
-  { status: 201 },
-);
+    const {
+      data: quote,
+      error: quoteError,
+    } = await supabase
+      .from("request_quotes")
+      .insert({
+        date,
+        event_type: eventType,
+        location,
+        guests,
+        email,
+        budget,
+        services,
+        status: "avoin",
+        notes: notes || null,
+        access_token: accessToken,
+      })
+      .select(
+        "id, access_token",
+      )
+      .single();
 
-  } catch (error) {
-    console.error("REQUEST QUOTES API ERROR:", error);
+    if (quoteError || !quote) {
+      console.error(
+        "REQUEST QUOTE INSERT ERROR:",
+        quoteError,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyynnön tallentaminen epäonnistui.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    const quotePartnerRows:
+      QuotePartnerRow[] =
+      matchedAssignments.map(
+        (assignment) => ({
+          quote_id: quote.id,
+          partner_id:
+            assignment.partnerId,
+          service:
+            assignment.service,
+          status: "sent",
+        }),
+      );
+
+    if (
+      quotePartnerRows.length > 0
+    ) {
+      const {
+        error: assignmentsError,
+      } = await supabase
+        .from("quote_partners")
+        .upsert(
+          quotePartnerRows,
+          {
+            onConflict:
+              "quote_id,partner_id,service",
+            ignoreDuplicates: true,
+          },
+        );
+
+      if (assignmentsError) {
+        console.error(
+          "QUOTE PARTNERS INSERT ERROR:",
+          assignmentsError,
+        );
+
+        const {
+          error: cleanupError,
+        } = await supabase
+          .from("request_quotes")
+          .delete()
+          .eq("id", quote.id);
+
+        if (cleanupError) {
+          console.error(
+            "REQUEST QUOTE CLEANUP ERROR:",
+            cleanupError,
+          );
+        }
+
+        return NextResponse.json(
+          {
+            error:
+              "Tarjouspyyntöä ei voitu yhdistää palveluntarjoajiin. Yritä uudelleen.",
+          },
+          {
+            status: 500,
+          },
+        );
+      }
+    }
+
+    const matchedPartnerCount =
+      new Set(
+        matchedAssignments.map(
+          (assignment) =>
+            assignment.partnerId,
+        ),
+      ).size;
+
+    let confirmationEmailSent =
+      false;
+
+    if (resend) {
+      try {
+        const siteUrl =
+          getSiteUrl(request);
+
+        const quoteUrl =
+          `${siteUrl}/quote/${quote.id}` +
+          `?token=${encodeURIComponent(
+            accessToken,
+          )}`;
+
+        const matchMessage =
+          matchedPartnerCount > 0
+            ? `Tarjouspyyntö lähetettiin ${matchedPartnerCount} sopivalle palveluntarjoajalle. Saat ilmoituksen, kun tarjouksia saapuu.`
+            : "Tarjouspyyntö tallennettiin, mutta sopivia palveluntarjoajia ei löytynyt vielä.";
+
+        const {
+          error: emailError,
+        } =
+          await resend.emails.send({
+            from:
+              "OmatJuhlat <noreply@omatjuhlat.fi>",
+            to: email,
+            subject:
+              "Tarjouspyyntö vastaanotettu – OmatJuhlat",
+            html: `
+              <div style="margin:0;background:#fbf8f2;padding:32px 16px;font-family:Arial,sans-serif;color:#211b16;">
+                <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e8ded0;border-radius:20px;padding:32px;">
+                  <p style="margin:0 0 8px;color:#9a773b;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">
+                    OmatJuhlat
+                  </p>
+
+                  <h1 style="margin:0 0 20px;font-size:26px;">
+                    Tarjouspyyntösi on vastaanotettu
+                  </h1>
+
+                  <p>
+                    <strong>Tapahtuma:</strong>
+                    ${escapeHtml(eventType)}
+                  </p>
+
+                  <p>
+                    <strong>Päivämäärä:</strong>
+                    ${escapeHtml(date)}
+                  </p>
+
+                  <p>
+                    <strong>Paikkakunta:</strong>
+                    ${escapeHtml(location)}
+                  </p>
+
+                  <p style="margin-top:20px;line-height:1.7;color:#62584f;">
+                    ${escapeHtml(matchMessage)}
+                  </p>
+
+                  <p style="margin:28px 0;">
+                    <a
+                      href="${escapeHtml(quoteUrl)}"
+                      style="display:inline-block;padding:14px 22px;border-radius:12px;background:#b48a45;color:#ffffff;font-weight:700;text-decoration:none;"
+                    >
+                      Avaa tarjouspyyntösi
+                    </a>
+                  </p>
+
+                  <p style="margin:0;color:#91877d;font-size:13px;line-height:1.6;">
+                    Tämä linkki on henkilökohtainen. Älä jaa sitä muille.
+                  </p>
+                </div>
+              </div>
+            `,
+          });
+
+        if (emailError) {
+          console.error(
+            "REQUEST CONFIRMATION EMAIL ERROR:",
+            emailError,
+          );
+        } else {
+          confirmationEmailSent =
+            true;
+        }
+      } catch (emailError) {
+        console.error(
+          "REQUEST CONFIRMATION EMAIL ERROR:",
+          emailError,
+        );
+      }
+    }
 
     return NextResponse.json(
-      { error: "Palvelimella tapahtui odottamaton virhe." },
-      { status: 500 }
+      {
+        success: true,
+        quoteId: quote.id,
+        accessToken:
+          quote.access_token ??
+          accessToken,
+        confirmationEmailSent,
+        matchedPartners:
+          matchedPartnerCount,
+        createdAssignments:
+          quotePartnerRows.length,
+      },
+      {
+        status: 201,
+      },
+    );
+  } catch (error) {
+    console.error(
+      "REQUEST QUOTES API ERROR:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "Palvelimella tapahtui odottamaton virhe.",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }

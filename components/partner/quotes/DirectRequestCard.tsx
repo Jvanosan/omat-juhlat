@@ -3,7 +3,7 @@
 import PartnerCard from "@/components/partner/PartnerCard";
 
 import OfferForm from "./OfferForm";
-
+import CustomerContactCard from "./CustomerContactCard";
 import {
   formatOfferPrice,
   LockedOfferMessage,
@@ -79,6 +79,16 @@ export default function DirectRequestCard({
 
   const editing =
     Boolean(offer) && !locked;
+
+  const customerContactAvailable =
+  offer?.status
+    ?.trim()
+    .toLowerCase() ===
+    "accepted" &&
+  request.status
+    ?.trim()
+    .toLowerCase() ===
+    "accepted";
 
   return (
     <PartnerCard
@@ -227,6 +237,12 @@ export default function DirectRequestCard({
               }
             />
           )}
+          {customerContactAvailable && (
+  <CustomerContactCard
+    requestType="direct"
+    requestId={request.id}
+  />
+)}
         </div>
 
         {!locked && (

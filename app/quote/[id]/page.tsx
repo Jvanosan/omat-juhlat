@@ -6,9 +6,10 @@ import OfferSort from "@/components/quote/customer/OfferSort";
 import QuoteEventDetails from "@/components/quote/customer/QuoteEventDetails";
 import QuotePageHero from "@/components/quote/customer/QuotePageHero";
 import QuoteStats from "@/components/quote/customer/QuoteStats";
+import SelectionConfirmationBar from "@/components/quote/customer/SelectionConfirmationBar";
 import ServiceOffersSection from "@/components/quote/customer/ServiceOffersSection";
 import WaitingForOffers from "@/components/quote/customer/WaitingForOffers";
-import PublicFooter from "@/components/layout/PublicFooter";
+
 import {
   QuoteAccessDenied,
   QuoteErrorState,
@@ -22,23 +23,30 @@ export default function QuotePage() {
     loading,
     accessDenied,
     errorMessage,
+    selectionMessage,
 
     quote,
     quoteStatus,
 
     receivedOffers,
+    selectedOfferCount,
     pendingRequestCount,
     offersByService,
     serviceCount,
     selectableOfferCount,
 
+    confirmationHref,
+
     sortBy,
     setSortBy,
 
     selectingOfferId,
+    removingOfferId,
 
     reload,
     selectOffer,
+    removeSelectedOffer,
+    closeSelectionMessage,
   } = useCustomerQuote();
 
   if (loading) {
@@ -46,7 +54,6 @@ export default function QuotePage() {
       <>
         <PublicHeader />
         <QuoteLoadingState />
-        <PublicFooter />
       </>
     );
   }
@@ -56,7 +63,6 @@ export default function QuotePage() {
       <>
         <PublicHeader />
         <QuoteAccessDenied />
-        <PublicFooter />
       </>
     );
   }
@@ -72,10 +78,13 @@ export default function QuotePage() {
             void reload()
           }
         />
-        <PublicFooter />
       </>
     );
   }
+
+  const quoteConfirmed =
+    quoteStatus === "confirmed" ||
+    quoteStatus === "suljettu";
 
   return (
     <>
@@ -114,6 +123,42 @@ export default function QuotePage() {
             </div>
           )}
 
+          {selectionMessage && (
+            <div
+              role="status"
+              className="flex flex-col gap-4 rounded-2xl border border-[#b9dfd0] bg-[#edf8f3] p-5 text-[#11634d] sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  className="text-xl"
+                >
+                  ✓
+                </span>
+
+                <div>
+                  <p className="font-bold">
+                    Valinnat päivitetty
+                  </p>
+
+                  <p className="mt-1 text-sm leading-6 text-[#41685d]">
+                    {selectionMessage}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  closeSelectionMessage
+                }
+                className="shrink-0 rounded-xl border border-[#9fcfbe] bg-white px-4 py-2 text-sm font-bold text-[#11634d] transition hover:bg-[#f7fffb]"
+              >
+                Sulje
+              </button>
+            </div>
+          )}
+
           {quote && (
             <QuoteEventDetails
               quote={quote}
@@ -124,16 +169,15 @@ export default function QuotePage() {
             receivedOffers={
               receivedOffers.length
             }
-            serviceCount={serviceCount}
+            serviceCount={
+              serviceCount
+            }
             selectableOffers={
               selectableOfferCount
             }
           />
 
-          {(quoteStatus ===
-            "confirmed" ||
-            quoteStatus ===
-              "suljettu") && (
+          {quoteConfirmed && (
             <div className="flex items-start gap-3 rounded-2xl border border-[#b9dfd0] bg-[#edf8f3] p-5 text-[#11634d]">
               <span
                 aria-hidden="true"
@@ -148,11 +192,14 @@ export default function QuotePage() {
                 </p>
 
                 <p className="mt-1 text-sm leading-6 text-[#41685d]">
-                  Palveluntarjoajalle on
-                  ilmoitettu valinnasta.
-                  Sopiminen ja maksaminen
-                  hoidetaan suoraan
-                  palveluntarjoajan kanssa.
+                  Palveluntarjoajille on
+                  ilmoitettu valinnasta ja
+                  tapahtumapäivä on varattu.
+                  Valintoja ei voi enää
+                  muuttaa. Sopiminen ja
+                  maksaminen hoidetaan
+                  suoraan palveluntarjoajien
+                  kanssa.
                 </p>
               </div>
             </div>
@@ -183,10 +230,20 @@ export default function QuotePage() {
                 selectingOfferId={
                   selectingOfferId
                 }
+                removingOfferId={
+                  removingOfferId
+                }
                 onSelectOffer={(
                   offer,
                 ) =>
                   void selectOffer(
+                    offer,
+                  )
+                }
+                onRemoveOffer={(
+                  offer,
+                ) =>
+                  void removeSelectedOffer(
                     offer,
                   )
                 }
@@ -200,9 +257,18 @@ export default function QuotePage() {
             kautta voit palata tarjouksiin
             myöhemmin.
           </div>
+
+          <SelectionConfirmationBar
+            selectedCount={
+              selectedOfferCount
+            }
+            confirmationHref={
+              confirmationHref
+            }
+            quoteStatus={quoteStatus}
+          />
         </div>
       </main>
-      <PublicFooter />
     </>
   );
 }

@@ -13,30 +13,49 @@ import {
   isSelectedOffer,
 } from "./quoteUtils";
 
-export default function CustomerOfferCard({
-  offer,
-  selectingOfferId,
-  onSelect,
-}: {
+type CustomerOfferCardProps = {
   offer: CustomerOffer;
   selectingOfferId: string | null;
+  removingOfferId: string | null;
+  serviceHasSelection: boolean;
+  selectedOfferId: string | null;
+
   onSelect: (
     offer: CustomerOffer,
   ) => void;
-}) {
+
+  onRemove: (
+    offer: CustomerOffer,
+  ) => void;
+};
+
+export default function CustomerOfferCard({
+  offer,
+  selectingOfferId,
+  removingOfferId,
+  serviceHasSelection,
+  selectedOfferId,
+  onSelect,
+  onRemove,
+}: CustomerOfferCardProps) {
+  const offerId =
+    String(offer.id);
+
   const selected =
     isSelectedOffer(offer);
 
-  const expired = isOfferExpired(
-    offer.expires_at,
-  );
+  const expired =
+    isOfferExpired(
+      offer.expires_at,
+    );
 
   const selectable =
     isSelectableOffer(offer);
 
-  const images = getPartnerImages(
-    offer.partner?.images,
-  );
+  const images =
+    getPartnerImages(
+      offer.partner?.images,
+    );
 
   const companyName =
     offer.partner?.company ||
@@ -49,12 +68,24 @@ export default function CustomerOfferCard({
     offer.partner?.reviewCount ?? 0;
 
   const selecting =
-  selectingOfferId ===
-  String(offer.id);
+    selectingOfferId === offerId;
 
-  const anotherOfferSelecting =
-    selectingOfferId !== null &&
-    !selecting;
+  const removing =
+    removingOfferId === offerId;
+
+  const processing =
+    selectingOfferId !== null ||
+    removingOfferId !== null;
+
+  const anotherOfferProcessing =
+    processing &&
+    !selecting &&
+    !removing;
+
+  const replacesSelection =
+    serviceHasSelection &&
+    selectedOfferId !== null &&
+    selectedOfferId !== offerId;
 
   return (
     <article
@@ -85,21 +116,10 @@ export default function CustomerOfferCard({
             </span>
           )}
 
-          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-            {selected && (
-              <StatusBadge
-                label="✓ Valittu"
-                classes="border-[#72bca2] bg-[#168365] text-white"
-              />
-            )}
-
-            {expired && !selected && (
-              <StatusBadge
-                label="Vanhentunut"
-                classes="border-[#edcaca] bg-[#fff0f0] text-[#a33d3d]"
-              />
-            )}
-          </div>
+          <OfferBadges
+            selected={selected}
+            expired={expired}
+          />
         </div>
       ) : (
         <div className="relative flex h-44 items-center justify-center bg-gradient-to-br from-[#f6ecdc] to-[#f5e8ea]">
@@ -116,21 +136,10 @@ export default function CustomerOfferCard({
             </p>
           </div>
 
-          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-            {selected && (
-              <StatusBadge
-                label="✓ Valittu"
-                classes="border-[#72bca2] bg-[#168365] text-white"
-              />
-            )}
-
-            {expired && !selected && (
-              <StatusBadge
-                label="Vanhentunut"
-                classes="border-[#edcaca] bg-[#fff0f0] text-[#a33d3d]"
-              />
-            )}
-          </div>
+          <OfferBadges
+            selected={selected}
+            expired={expired}
+          />
         </div>
       )}
 
@@ -207,7 +216,9 @@ export default function CustomerOfferCard({
             }`}
           >
             <span aria-hidden="true">
-              {expired ? "⌛" : "📅"}
+              {expired
+                ? "⌛"
+                : "📅"}
             </span>
 
             <p>
@@ -223,37 +234,110 @@ export default function CustomerOfferCard({
         )}
 
         {selected && (
-          <div className="mt-5 rounded-2xl border border-[#b9dfd0] bg-[#edf8f3] p-4 text-sm font-semibold text-[#11634d]">
-            ✓ Olet valinnut tämän tarjouksen.
-          </div>
+          <>
+            <div className="mt-5 rounded-2xl border border-[#b9dfd0] bg-[#edf8f3] p-4 text-sm text-[#11634d]">
+              <p className="font-bold">
+                ✓ Tämä tarjous on valittu alustavasti
+              </p>
+
+              <p className="mt-1 leading-6 text-[#41685d]">
+                Päivää ei ole vielä
+                varattu eikä yhteystietojasi
+                ole lähetetty. Voit vaihtaa
+                tai poistaa valinnan ennen
+                lopullista vahvistamista.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                onRemove(offer)
+              }
+              disabled={processing}
+              className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[#d99e9e] bg-white px-5 py-3 text-sm font-bold text-[#a33d3d] transition hover:border-[#c77f7f] hover:bg-[#fff0f0] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {removing
+                ? "Poistetaan valintaa..."
+                : anotherOfferProcessing
+                  ? "Odota hetki..."
+                  : "Poista valinta"}
+            </button>
+          </>
         )}
 
-        {selectable && !selected && (
-          <button
-            type="button"
-            onClick={() =>
-              onSelect(offer)
-            }
-            disabled={
-              selectingOfferId !== null
-            }
-            className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#b48a45] px-6 py-4 font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#9f783a] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {selecting
-              ? "Valitaan tarjousta..."
-              : anotherOfferSelecting
-                ? "Odota hetki..."
-                : "Valitse tämä tarjous"}
-          </button>
-        )}
+        {selectable &&
+          !selected && (
+            <>
+              {replacesSelection && (
+                <p className="mt-5 text-center text-sm font-semibold text-[#795a28]">
+                  Tämän valitseminen
+                  korvaa nykyisen saman
+                  palvelun valinnan.
+                </p>
+              )}
 
-        {expired && !selected && (
-          <p className="mt-5 text-center text-sm font-semibold text-[#a33d3d]">
-            Tätä tarjousta ei voi enää valita.
-          </p>
-        )}
+              <button
+                type="button"
+                onClick={() =>
+                  onSelect(offer)
+                }
+                disabled={processing}
+                className={`mt-4 inline-flex min-h-14 w-full items-center justify-center rounded-2xl px-6 py-4 font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 ${
+                  replacesSelection
+                    ? "bg-[#795a28] hover:bg-[#63491f]"
+                    : "bg-[#b48a45] hover:bg-[#9f783a]"
+                }`}
+              >
+                {selecting
+                  ? replacesSelection
+                    ? "Vaihdetaan valintaa..."
+                    : "Valitaan tarjousta..."
+                  : anotherOfferProcessing
+                    ? "Odota hetki..."
+                    : replacesSelection
+                      ? "Vaihda tähän tarjoukseen"
+                      : "Valitse tämä tarjous"}
+              </button>
+            </>
+          )}
+
+        {expired &&
+          !selected && (
+            <p className="mt-5 text-center text-sm font-semibold text-[#a33d3d]">
+              Tätä tarjousta ei voi enää
+              valita.
+            </p>
+          )}
       </div>
     </article>
+  );
+}
+
+function OfferBadges({
+  selected,
+  expired,
+}: {
+  selected: boolean;
+  expired: boolean;
+}) {
+  return (
+    <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+      {selected && (
+        <StatusBadge
+          label="✓ Valittu alustavasti"
+          classes="border-[#72bca2] bg-[#168365] text-white"
+        />
+      )}
+
+      {expired &&
+        !selected && (
+          <StatusBadge
+            label="Vanhentunut"
+            classes="border-[#edcaca] bg-[#fff0f0] text-[#a33d3d]"
+          />
+        )}
+    </div>
   );
 }
 
