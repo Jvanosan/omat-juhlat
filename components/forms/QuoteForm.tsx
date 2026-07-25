@@ -200,25 +200,33 @@ export default function QuoteForm({
               }
             />
 
-            <Input
-              id="event-budget"
-              label="Kokonaisbudjetti (€)"
-              type="number"
-              min={0}
-              inputMode="numeric"
-              value={event.budget}
-              placeholder="Esimerkiksi 3000"
-              onChange={(eventChange) =>
-                setEvent(
-                  (current) => ({
-                    ...current,
-                    budget:
-                      eventChange
-                        .target.value,
-                  }),
-                )
-              }
-            />
+            <div>
+  <Input
+    id="event-budget"
+    label="Koko tapahtuman budjetti (€)"
+    type="number"
+    min={0}
+    inputMode="numeric"
+    value={event.budget}
+    placeholder="Esimerkiksi 5000"
+    onChange={(eventChange) =>
+      setEvent(
+        (current) => ({
+          ...current,
+          budget:
+            eventChange
+              .target.value,
+        }),
+      )
+    }
+  />
+
+  <p className="mt-2 text-xs leading-5 text-[#91877d]">
+    Valinnainen. Ilmoita arvio kaikkien
+    valitsemiesi palveluiden yhteisestä
+    kokonaisbudjetista.
+  </p>
+</div>
 
             <div className="md:col-span-2">
               <Textarea

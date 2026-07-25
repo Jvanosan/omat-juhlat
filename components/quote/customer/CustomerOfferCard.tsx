@@ -13,18 +13,20 @@ import {
   isSelectedOffer,
 } from "./quoteUtils";
 
+
 type CustomerOfferCardProps = {
   offer: CustomerOffer;
   selectingOfferId: string | null;
-  removingOfferId: string | null;
-  serviceHasSelection: boolean;
-  selectedOfferId: string | null;
+
+  removingOfferId?: string | null;
+  serviceHasSelection?: boolean;
+  selectedOfferId?: string | null;
 
   onSelect: (
     offer: CustomerOffer,
   ) => void;
 
-  onRemove: (
+  onRemove?: (
     offer: CustomerOffer,
   ) => void;
 };
@@ -32,13 +34,13 @@ type CustomerOfferCardProps = {
 export default function CustomerOfferCard({
   offer,
   selectingOfferId,
-  removingOfferId,
-  serviceHasSelection,
-  selectedOfferId,
+  removingOfferId = null,
+  serviceHasSelection = false,
+  selectedOfferId = null,
   onSelect,
   onRemove,
 }: CustomerOfferCardProps) {
-  const offerId =
+const offerId =
     String(offer.id);
 
   const selected =
@@ -249,20 +251,22 @@ export default function CustomerOfferCard({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                onRemove(offer)
-              }
-              disabled={processing}
-              className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[#d99e9e] bg-white px-5 py-3 text-sm font-bold text-[#a33d3d] transition hover:border-[#c77f7f] hover:bg-[#fff0f0] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {removing
-                ? "Poistetaan valintaa..."
-                : anotherOfferProcessing
-                  ? "Odota hetki..."
-                  : "Poista valinta"}
-            </button>
+{onRemove && (
+  <button
+    type="button"
+    onClick={() =>
+      onRemove(offer)
+    }
+    disabled={processing}
+    className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[#d99e9e] bg-white px-5 py-3 text-sm font-bold text-[#a33d3d] transition hover:border-[#c77f7f] hover:bg-[#fff0f0] disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    {removing
+      ? "Poistetaan valintaa..."
+      : anotherOfferProcessing
+        ? "Odota hetki..."
+        : "Poista valinta"}
+  </button>
+)}
           </>
         )}
 

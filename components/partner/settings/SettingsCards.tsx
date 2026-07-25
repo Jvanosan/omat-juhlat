@@ -63,7 +63,7 @@ export function AccountSettingsCard({
               ? "Julkaistu"
               : "Ei vielä julkaistu"
           }
-          positive={published}
+          positive={Boolean(published)}
         />
       </dl>
 

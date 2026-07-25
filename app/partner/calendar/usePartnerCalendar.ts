@@ -155,10 +155,11 @@ export function usePartnerCalendar() {
           }),
 
         loadPartnerBookings({
-          partnerId: currentPartnerId,
-          rangeStart: rangeStartKey,
-          rangeEnd: rangeEndKey,
-        }),
+  accessToken:
+    session.access_token,
+  rangeStart: rangeStartKey,
+  rangeEnd: rangeEndKey,
+}),
       ]);
 
       if (calendarResult.error) {

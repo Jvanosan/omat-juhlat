@@ -5,7 +5,7 @@ type ImagesStepProps = {
   coverImageUrl: string;
   galleryUrls: string[];
   onLogoChange: (value: string) => void;
-  onCoverImageChange: (value: string) => void;
+  onCoverChange: (value: string) => void;
   onGalleryChange: (value: string[]) => void;
 };
 
@@ -39,7 +39,7 @@ export default function ImagesStep({
   coverImageUrl,
   galleryUrls,
   onLogoChange,
-  onCoverImageChange,
+  onCoverChange,
   onGalleryChange,
 }: ImagesStepProps) {
   const updateGalleryImage = (index: number, value: string) => {
@@ -144,7 +144,7 @@ export default function ImagesStep({
             style={inputStyle}
             placeholder="https://..."
             value={coverImageUrl}
-            onChange={(event) => onCoverImageChange(event.target.value)}
+           onChange={(event) => onCoverChange(event.target.value)}
           />
         </div>
 

@@ -11,7 +11,7 @@ export type CalendarBookingDetails = {
   requestId: string;
 
   customerName: string | null;
-  customerEmail: string;
+  customerEmail: string | null;
   customerPhone: string | null;
 
   eventType: string | null;
@@ -31,11 +31,8 @@ export type CalendarEntry = {
   created_at: string;
   updated_at: string;
 
-  // Tätä ei tallenneta
-  // partner_calendar_entries-tauluun.
-  // Tiedot yhdistetään vain vahvistetusta
-  // varauksesta kalenteria ladattaessa.
-  booking?: CalendarBookingDetails | null;
+  
+  bookings?: CalendarBookingDetails[];
 };
 
 export type CalendarDay = {

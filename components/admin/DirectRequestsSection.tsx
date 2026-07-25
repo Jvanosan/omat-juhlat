@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type {
   AdminDirectRequestSummary,
-} from "./direct-request-detail/types";
+} from "./types";
 
 type DirectRequestsSectionProps = {
   requests:

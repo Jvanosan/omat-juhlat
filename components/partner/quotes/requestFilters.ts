@@ -131,13 +131,15 @@ export function filterDirectRequests(
           request,
         ) === filter,
     )
-    .sort(
-      (first, second) =>
-        compareRequestDates(
-          first.event_date,
-          second.event_date,
-        ),
-    );
+
+.sort(
+  (first, second) =>
+    compareRequestDates(
+      first.event_date,
+      second.event_date,
+      filter === "accepted",
+    ),
+);
 }
 
 export function filterCategoryRequests(
@@ -153,12 +155,13 @@ export function filterCategoryRequests(
         ) === filter,
     )
     .sort(
-      (first, second) =>
-        compareRequestDates(
-          first.date,
-          second.date,
-        ),
-    );
+  (first, second) =>
+    compareRequestDates(
+      first.date,
+      second.date,
+      filter === "accepted",
+    ),
+);
 }
 
 export function getRequestFilterCounts(
@@ -238,10 +241,41 @@ function normalizeStatus(
       .toLowerCase() ?? ""
   );
 }
+export function isPastRequestDate(
+  value: string | null,
+): boolean {
+  if (!value) {
+    return false;
+  }
 
+  const dateValue =
+    getDateValue(value);
+
+  if (
+    dateValue ===
+    Number.MAX_SAFE_INTEGER
+  ) {
+    return false;
+  }
+
+  const today = new Date();
+
+  today.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  return (
+    dateValue <
+    today.getTime()
+  );
+}
 function compareRequestDates(
   firstValue: string | null,
   secondValue: string | null,
+  prioritizeUpcoming = false,
 ): number {
   const firstDate =
     getDateValue(firstValue);
@@ -249,9 +283,51 @@ function compareRequestDates(
   const secondDate =
     getDateValue(secondValue);
 
+  if (!prioritizeUpcoming) {
+    return firstDate - secondDate;
+  }
+
+  const today = new Date();
+
+  today.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const todayValue =
+    today.getTime();
+
+  const firstIsPast =
+    firstDate <
+    todayValue;
+
+  const secondIsPast =
+    secondDate <
+    todayValue;
+
+  if (
+    firstIsPast !==
+    secondIsPast
+  ) {
+    return firstIsPast
+      ? 1
+      : -1;
+  }
+
+  if (
+    firstIsPast &&
+    secondIsPast
+  ) {
+    return (
+      secondDate -
+      firstDate
+    );
+  }
+
   return firstDate - secondDate;
 }
-
 function getDateValue(
   value: string | null,
 ): number {

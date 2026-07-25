@@ -180,7 +180,9 @@ export default function OfferCard({ offer }: OfferCardProps) {
             <PartnerDetail label="Kategoria" value={partner?.category} />
             <PartnerDetail
               label="Palvelut"
-              value={formatPartnerServices(partner?.services)}
+              value={formatPartnerServices(
+  partner?.services ?? null,
+)}
             />
           </div>
 
