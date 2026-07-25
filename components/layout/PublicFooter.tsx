@@ -84,21 +84,39 @@ export default function PublicFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-[#e8ded0] pt-6">
-          <div className="flex flex-col gap-3 text-xs leading-5 text-[#91877d] sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              © {currentYear} OmatJuhlat.
-              Kaikki oikeudet pidätetään.
-            </p>
+       <div className="mt-12 border-t border-[#e8ded0] pt-6">
+  <div className="flex flex-col gap-5 text-xs leading-5 text-[#91877d] sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <p>
+        © {currentYear} OmatJuhlat.
+        Kaikki oikeudet pidätetään.
+      </p>
 
-            <p className="max-w-2xl sm:text-right">
-              OmatJuhlat toimii asiakkaiden ja
-              palveluntarjoajien yhdistäjänä.
-              Sopimukset ja maksut hoidetaan
-              suoraan palveluntarjoajan kanssa.
-            </p>
-          </div>
-        </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+        <Link
+          href="/tietosuoja"
+          className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
+        >
+          Tietosuojaseloste
+        </Link>
+
+        <a
+          href="mailto:tietosuoja@omatjuhlat.fi"
+          className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
+        >
+          Tietosuoja-asiat
+        </a>
+      </div>
+    </div>
+
+    <p className="max-w-2xl sm:text-right">
+      OmatJuhlat toimii asiakkaiden ja
+      palveluntarjoajien yhdistäjänä.
+      Sopimukset ja maksut hoidetaan
+      suoraan palveluntarjoajan kanssa.
+    </p>
+  </div>
+</div>
       </div>
     </footer>
   );
