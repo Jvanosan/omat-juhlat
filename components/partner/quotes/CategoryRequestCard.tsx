@@ -1,21 +1,19 @@
 "use client";
 
 import PartnerCard from "@/components/partner/PartnerCard";
-import {
-  isPastRequestDate,
-} from "./requestFilters";
-import OfferForm from "./OfferForm";
+
 import CustomerContactCard from "./CustomerContactCard";
+import OfferForm from "./OfferForm";
+
 import {
   formatOfferPrice,
   LockedOfferMessage,
   OfferDetailItem,
 } from "./OfferCardElements";
 
-import type {
-  CategoryRequest,
-  OfferDraft,
-} from "./types";
+import {
+  isPastRequestDate,
+} from "./requestFilters";
 
 import {
   formatDate,
@@ -26,23 +24,33 @@ import {
   toDateInputValue,
 } from "./quoteUtils";
 
+import type {
+  CategoryRequest,
+  OfferDraft,
+} from "./types";
+
 type CategoryRequestCardProps = {
   request: CategoryRequest;
   expanded: boolean;
   draft: OfferDraft;
   minimumExpiry: string;
   saving: boolean;
+
   onToggle: () => void;
   onCancel: () => void;
+
   onPriceChange: (
     value: string,
   ) => void;
+
   onMessageChange: (
     value: string,
   ) => void;
+
   onExpiryChange: (
     value: string,
   ) => void;
+
   onSubmit: () => void;
 };
 
@@ -68,7 +76,12 @@ export default function CategoryRequestCard({
     ) &&
     numericOfferPrice > 0;
 
-  const expired =
+  const pastRequest =
+    isPastRequestDate(
+      request.date,
+    );
+
+  const offerExpired =
     hasOffer &&
     !isOfferLocked(
       request.quotePartnerStatus,
@@ -77,46 +90,54 @@ export default function CategoryRequestCard({
       request.offerExpiresAt,
     );
 
-  const displayedStatus = expired
-    ? "expired"
-    : hasOffer
-      ? request.quotePartnerStatus
-      : "new";
+  const displayedStatus =
+    pastRequest && !hasOffer
+      ? "expired"
+      : offerExpired
+        ? "expired"
+        : hasOffer
+          ? request.quotePartnerStatus
+          : "new";
 
+  /*
+   * Menneeseen tapahtumaan ei voi enää
+   * lähettää tai muokata tarjousta.
+   */
   const locked =
-    hasOffer &&
-    (isOfferLocked(
-      request.quotePartnerStatus,
-    ) ||
-      expired);
+    pastRequest ||
+    (
+      hasOffer &&
+      (
+        isOfferLocked(
+          request.quotePartnerStatus,
+        ) ||
+        offerExpired
+      )
+    );
 
   const editing =
     hasOffer && !locked;
-const normalizedOfferStatus =
-  request.quotePartnerStatus
-    ?.trim()
-    .toLowerCase() ?? "";
 
-const normalizedRequestStatus =
-  request.requestStatus
-    ?.trim()
-    .toLowerCase() ?? "";
+  const normalizedOfferStatus =
+    request.quotePartnerStatus
+      ?.trim()
+      .toLowerCase() ?? "";
 
-const customerContactAvailable =
-  (
-    normalizedOfferStatus ===
-      "selected" ||
-    normalizedOfferStatus ===
-      "valittu"
-  ) &&
-  normalizedRequestStatus ===
-    "confirmed";
+  const normalizedRequestStatus =
+    request.requestStatus
+      ?.trim()
+      .toLowerCase() ?? "";
 
-const pastAcceptedRequest =
-  customerContactAvailable &&
-  isPastRequestDate(
-    request.date,
-  );
+  const customerContactAvailable =
+    (
+      normalizedOfferStatus ===
+        "selected" ||
+      normalizedOfferStatus ===
+        "valittu"
+    ) &&
+    normalizedRequestStatus ===
+      "confirmed";
+
   const requestedServices =
     request.service ||
     request.services;
@@ -125,41 +146,47 @@ const pastAcceptedRequest =
     request.notes ||
     request.extraInfo;
 
+  const hasBudget =
+    request.budget !== null &&
+    request.budget !== undefined &&
+    String(
+      request.budget,
+    ).trim() !== "";
+
   return (
     <PartnerCard
       as="article"
       className={`transition ${
-  pastAcceptedRequest
-    ? "border-[#d6d3d1] bg-[#f3f2f0] opacity-75 grayscale-[25%]"
-    : expanded
-      ? "border-[#d7b775] shadow-[0_16px_40px_rgba(73,53,31,0.1)]"
-      : "hover:border-[#d8c7ad]"
-}`}
+        pastRequest
+          ? "border-[#aaa6a1]! bg-[#e7e5e2]! grayscale"
+          : expanded
+            ? "border-[#d7b775] shadow-[0_16px_40px_rgba(73,53,31,0.1)]"
+            : "hover:border-[#d8c7ad]"
+      }`}
     >
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-[#cdddf1] bg-[#f1f6fd] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3564a8]">
+              Kategoriapyyntö
+            </span>
 
-<div className="mb-4 flex flex-wrap items-center gap-2">
-  <span className="rounded-full border border-[#cdddf1] bg-[#f1f6fd] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3564a8]">
-    Kategoriapyyntö
-  </span>
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-bold ${getStatusClasses(
+                displayedStatus,
+              )}`}
+            >
+              {getStatusLabel(
+                displayedStatus,
+              )}
+            </span>
 
-  <span
-    className={`rounded-full border px-3 py-1 text-xs font-bold ${getStatusClasses(
-      displayedStatus,
-    )}`}
-  >
-    {getStatusLabel(
-      displayedStatus,
-    )}
-  </span>
-
-  {pastAcceptedRequest && (
-    <span className="rounded-full border border-[#c9c6c2] bg-[#e7e5e2] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#68635e]">
-      Tapahtuma päättynyt
-    </span>
-  )}
-</div>
+            {pastRequest && (
+              <span className="rounded-full border border-[#68635e] bg-[#68635e] px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                Tapahtuma päättynyt
+              </span>
+            )}
+          </div>
 
           <h3 className="text-xl font-bold text-[#211b16] sm:text-2xl">
             {request.event_type ||
@@ -194,43 +221,39 @@ const pastAcceptedRequest =
               icon="📍"
             />
 
-
-<OfferDetailItem
-  label="Koko tapahtuman budjetti"
-  value={
-    request.budget !== null &&
-    String(
-      request.budget,
-    ).trim() !== ""
-      ? formatOfferPrice(
-          request.budget,
-        )
-      : "Ei ilmoitettu"
-  }
-  icon="💶"
-/>
+            <OfferDetailItem
+              label="Koko tapahtuman budjetti"
+              value={
+                hasBudget
+                  ? formatOfferPrice(
+                      request.budget,
+                    )
+                  : "Ei ilmoitettu"
+              }
+              icon="💶"
+            />
           </dl>
-          {request.budget !== null &&
-  String(
-    request.budget,
-  ).trim() !== "" && (
-    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#ead29d] bg-[#fff8e8] p-4 text-sm leading-6 text-[#795a28]">
-      <span aria-hidden="true">
-        ℹ️
-      </span>
 
-      <p>
-        <strong>
-          Huomio:
-        </strong>{" "}
-        Tämä on asiakkaan ilmoittama
-        arvio koko tapahtuman ja kaikkien
-        valittujen palveluiden budjetista.
-        Summaa ei ole varattu vain sinun
-        tarjoamallesi palvelulle.
-      </p>
-    </div>
-  )}
+          {hasBudget && (
+            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#c9c6c2] bg-[#f1f0ee] p-4 text-sm leading-6 text-[#625e59]">
+              <span aria-hidden="true">
+                ℹ️
+              </span>
+
+              <p>
+                <strong>
+                  Huomio:
+                </strong>{" "}
+                Tämä on asiakkaan
+                ilmoittama arvio koko
+                tapahtuman ja kaikkien
+                valittujen palveluiden
+                budjetista. Summaa ei ole
+                varattu vain sinun
+                tarjoamallesi palvelulle.
+              </p>
+            </div>
+          )}
 
           {requestedServices && (
             <div className="mt-5">
@@ -245,35 +268,33 @@ const pastAcceptedRequest =
           )}
 
           {additionalInformation && (
-            <div className="mt-5 rounded-2xl border border-[#e8ded0] bg-[#fffdf9] p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-[#91877d]">
+            <div className="mt-5 rounded-2xl border border-[#d2cfca] bg-white/70 p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#77716b]">
                 Asiakkaan lisätiedot
               </p>
 
               <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#62584f]">
-                {
-                  additionalInformation
-                }
+                {additionalInformation}
               </p>
             </div>
           )}
 
           {hasOffer && (
-            <div className="mt-5 rounded-2xl border border-[#cdddf1] bg-[#f1f6fd] p-5">
+            <div className="mt-5 rounded-2xl border border-[#c7c5c2] bg-white/70 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="font-bold text-[#284f87]">
+                <p className="font-bold text-[#3f3b37]">
                   Lähettämäsi tarjous
                 </p>
 
                 {!locked && (
-                  <span className="text-xs font-semibold text-[#56739a]">
+                  <span className="text-xs font-semibold text-[#706b65]">
                     Voit vielä muokata
                     tarjousta
                   </span>
                 )}
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-x-7 gap-y-2 text-sm text-[#3f536e]">
+              <div className="mt-3 flex flex-wrap gap-x-7 gap-y-2 text-sm text-[#514c47]">
                 <p>
                   <strong>
                     Hinta:
@@ -298,28 +319,34 @@ const pastAcceptedRequest =
               </div>
 
               {request.offerMessage && (
-                <p className="mt-3 whitespace-pre-line border-t border-[#dce7f5] pt-3 text-sm leading-6 text-[#4f6178]">
-                  {
-                    request.offerMessage
-                  }
+                <p className="mt-3 whitespace-pre-line border-t border-[#d8d5d1] pt-3 text-sm leading-6 text-[#5d5853]">
+                  {request.offerMessage}
                 </p>
               )}
             </div>
           )}
 
-          {locked && (
-            <LockedOfferMessage
-              status={
-                displayedStatus
-              }
+          {pastRequest ? (
+            <div className="mt-5 rounded-2xl border border-[#b9b6b2] bg-[#d8d6d3] p-4 text-sm font-semibold text-[#514d48]">
+              Tämä tapahtuma on päättynyt.
+              Tarjousta ei voi enää muokata.
+            </div>
+          ) : (
+            locked && (
+              <LockedOfferMessage
+                status={
+                  displayedStatus
+                }
+              />
+            )
+          )}
+
+          {customerContactAvailable && (
+            <CustomerContactCard
+              requestType="category"
+              requestId={request.id}
             />
           )}
-          {customerContactAvailable && (
-  <CustomerContactCard
-    requestType="category"
-    requestId={request.id}
-  />
-)}
         </div>
 
         {!locked && (
