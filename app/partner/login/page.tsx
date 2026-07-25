@@ -264,9 +264,18 @@ export default function PartnerLoginPage() {
                 htmlFor="partner-password"
                 className="block"
               >
-                <span className="mb-2 block text-sm font-bold text-[#3f362f]">
-                  Salasana
-                </span>
+                <div className="mb-2 flex items-center justify-between gap-4">
+  <span className="text-sm font-bold text-[#3f362f]">
+    Salasana
+  </span>
+
+  <Link
+    href="/partner/forgot-password"
+    className="text-xs font-bold text-[#87652f] transition hover:text-[#5f451f]"
+  >
+    Unohditko salasanan?
+  </Link>
+</div>
 
                 <div className="relative">
                   <input
