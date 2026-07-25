@@ -66,7 +66,7 @@ export async function GET(request: Request) {
       });
     }
 
-    // Tarkistetaan vain julkiset ja hyväksytyt partnerit.
+    
     const {
       data: publicPartners,
       error: partnersError,
