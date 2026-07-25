@@ -106,6 +106,12 @@ export default function PublicFooter() {
         >
           Tietosuoja-asiat
         </a>
+        <Link
+  href="/kayttoehdot"
+  className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
+>
+  Käyttöehdot
+</Link>
       </div>
     </div>
 
