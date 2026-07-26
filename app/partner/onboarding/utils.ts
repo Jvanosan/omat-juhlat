@@ -197,23 +197,21 @@ function validatePricing(
 export function calculateCompletion(
   form: OnboardingForm,
 ) {
-  const requiredItems = [
-    Boolean(
-      form.company.companyName.trim(),
-    ),
-    Boolean(
-      form.company.email.trim(),
-    ),
-    Boolean(
-      form.company.phone.trim(),
-    ),
-    Boolean(form.logoUrl.trim()),
-    hasProfileImage(form),
-    form.selectedCategories.length >
-      0,
-    hasSelectedService(form),
-  ];
-
+const requiredItems = [
+  Boolean(
+    form.company.companyName.trim(),
+  ),
+  Boolean(
+    form.company.email.trim(),
+  ),
+  Boolean(
+    form.company.phone.trim(),
+  ),
+  hasProfileImage(form),
+  form.selectedCategories.length >
+    0,
+  hasSelectedService(form),
+];
   const completedItems =
     requiredItems.filter(
       Boolean,
@@ -293,17 +291,9 @@ export function validateStep(
     }
 
     case 1:
-      if (!form.logoUrl.trim()) {
-        return {
-          valid: false,
-          message:
-            "Lisää yrityksen logo.",
-        };
-      }
-
-      if (!hasProfileImage(form)) {
-        return {
-          valid: false,
+  if (!hasProfileImage(form)) {
+    return {
+      valid: false,
           message:
             "Lisää vähintään yksi yrityksen tai palvelun kuva.",
         };

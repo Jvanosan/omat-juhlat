@@ -93,8 +93,8 @@ export default function ImagesStep({
       >
         <div>
           <label htmlFor="partner-logo" style={labelStyle}>
-            Logon URL
-          </label>
+  Logon URL (valinnainen)
+</label>
 
           <input
             id="partner-logo"
