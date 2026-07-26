@@ -1,4 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
+
+import type {
+  ReactNode,
+} from "react";
 
 export default function PublicFooter() {
   const currentYear =
@@ -12,25 +17,38 @@ export default function PublicFooter() {
             <Link
               href="/"
               aria-label="OmatJuhlat – etusivu"
-              className="text-2xl font-black tracking-tight"
+              className="inline-flex rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b48a45] focus-visible:ring-offset-2"
             >
-              Omat
-              <span className="text-[#b48a45]">
-                Juhlat
-              </span>
+              <Image
+                src="/omatjuhlat-logo-glass.svg"
+                alt="OmatJuhlat"
+                width={620}
+                height={160}
+                unoptimized
+                className="h-auto w-[210px] sm:w-[240px]"
+              />
             </Link>
 
-            <p className="mt-4 max-w-md leading-7 text-[#70675e]">
+            <p className="mt-5 max-w-md leading-7 text-[#70675e]">
               Löydä juhlapalvelut, vertaile
-              tarjouksia ja valitse tapahtumaasi
-              sopivat palveluntarjoajat helposti
+              tarjouksia ja valitse
+              tapahtumaasi sopivat
+              palveluntarjoajat helposti
               yhdestä paikasta.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-[#62584f]">
-              <span>✓ Maksuton tarjouspyyntö</span>
-              <span>✓ Vahvistetut yritykset</span>
-              <span>✓ Turvalliset asiakaslinkit</span>
+              <span>
+                ✓ Maksuton tarjouspyyntö
+              </span>
+
+              <span>
+                ✓ Vahvistetut yritykset
+              </span>
+
+              <span>
+                ✓ Turvalliset asiakaslinkit
+              </span>
             </div>
           </div>
 
@@ -84,45 +102,47 @@ export default function PublicFooter() {
           </div>
         </div>
 
-       <div className="mt-12 border-t border-[#e8ded0] pt-6">
-  <div className="flex flex-col gap-5 text-xs leading-5 text-[#91877d] sm:flex-row sm:items-start sm:justify-between">
-    <div>
-      <p>
-        © {currentYear} OmatJuhlat.
-        Kaikki oikeudet pidätetään.
-      </p>
+        <div className="mt-12 border-t border-[#e8ded0] pt-6">
+          <div className="flex flex-col gap-5 text-xs leading-5 text-[#91877d] sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p>
+                © {currentYear} OmatJuhlat.
+                Kaikki oikeudet pidätetään.
+              </p>
 
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
-        <Link
-          href="/tietosuoja"
-          className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
-        >
-          Tietosuojaseloste
-        </Link>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                <Link
+                  href="/tietosuoja"
+                  className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
+                >
+                  Tietosuojaseloste
+                </Link>
 
-        <a
-          href="mailto:tietosuoja@omatjuhlat.fi"
-          className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
-        >
-          Tietosuoja-asiat
-        </a>
-        <Link
-  href="/kayttoehdot"
-  className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
->
-  Käyttöehdot
-</Link>
-      </div>
-    </div>
+                <a
+                  href="mailto:tietosuoja@omatjuhlat.fi"
+                  className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
+                >
+                  Tietosuoja-asiat
+                </a>
 
-    <p className="max-w-2xl sm:text-right">
-      OmatJuhlat toimii asiakkaiden ja
-      palveluntarjoajien yhdistäjänä.
-      Sopimukset ja maksut hoidetaan
-      suoraan palveluntarjoajan kanssa.
-    </p>
-  </div>
-</div>
+                <Link
+                  href="/kayttoehdot"
+                  className="font-bold text-[#795a28] transition hover:text-[#b48a45]"
+                >
+                  Käyttöehdot
+                </Link>
+              </div>
+            </div>
+
+            <p className="max-w-2xl sm:text-right">
+              OmatJuhlat toimii asiakkaiden
+              ja palveluntarjoajien
+              yhdistäjänä. Sopimukset ja
+              maksut hoidetaan suoraan
+              palveluntarjoajan kanssa.
+            </p>
+          </div>
+        </div>
       </div>
     </footer>
   );
@@ -133,7 +153,7 @@ function FooterLink({
   children,
 }: {
   href: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Link

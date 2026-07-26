@@ -7,12 +7,15 @@ import {
   type ReactNode,
 } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function PublicHeader() {
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
+
+  const [menuOpen, setMenuOpen] =
+    useState(false);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -36,7 +39,9 @@ export default function PublicHeader() {
     );
 
     document
-      .getElementById("tarjouspyynto")
+      .getElementById(
+        "tarjouspyynto",
+      )
       ?.scrollIntoView({
         behavior: "smooth",
         block: "start",
@@ -46,16 +51,21 @@ export default function PublicHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#e8ded0] bg-[#fffdf9]/95 text-[#211b16] shadow-[0_6px_24px_rgba(73,53,31,0.06)] backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex min-h-18 items-center justify-between gap-4 py-3">
+        <div className="flex min-h-18 items-center justify-between gap-3 py-3 sm:gap-4">
           <Link
             href="/"
             aria-label="OmatJuhlat – etusivu"
-            className="shrink-0 text-xl font-black tracking-tight text-[#211b16] sm:text-2xl"
+            className="inline-flex shrink-0 items-center rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b48a45] focus-visible:ring-offset-2"
           >
-            Omat
-            <span className="text-[#b48a45]">
-              Juhlat
-            </span>
+            <Image
+              src="/omatjuhlat-logo-glass.svg"
+              alt="OmatJuhlat"
+              width={620}
+              height={160}
+              priority
+              unoptimized
+              className="h-auto w-[140px] sm:w-[180px] lg:w-[195px]"
+            />
           </Link>
 
           <nav
@@ -64,21 +74,28 @@ export default function PublicHeader() {
           >
             <DesktopLink
               href="/"
-              active={pathname === "/"}
+              active={
+                pathname === "/"
+              }
             >
               Etusivu
             </DesktopLink>
 
             <DesktopLink
               href="/browse"
-              active={pathname === "/browse"}
+              active={
+                pathname ===
+                "/browse"
+              }
             >
               Selaa palveluita
             </DesktopLink>
 
             <Link
               href="/#tarjouspyynto"
-              onClick={handleQuoteClick}
+              onClick={
+                handleQuoteClick
+              }
               className="ml-2 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#b48a45] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#9f783a] hover:shadow-md"
             >
               Pyydä tarjoukset
@@ -99,11 +116,13 @@ export default function PublicHeader() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
             <Link
               href="/#tarjouspyynto"
-              onClick={handleQuoteClick}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#b48a45] px-3.5 py-2 text-sm font-bold text-white sm:px-4"
+              onClick={
+                handleQuoteClick
+              }
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#b48a45] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#9f783a] sm:px-4 sm:text-sm"
             >
               Pyydä tarjous
             </Link>
@@ -115,14 +134,21 @@ export default function PublicHeader() {
                   ? "Sulje valikko"
                   : "Avaa valikko"
               }
-              aria-expanded={menuOpen}
+              aria-expanded={
+                menuOpen
+              }
               aria-controls="mobile-navigation"
               onClick={() =>
-                setMenuOpen((current) => !current)
+                setMenuOpen(
+                  (current) =>
+                    !current,
+                )
               }
               className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#ded3c4] bg-white text-xl text-[#3c332b] transition hover:bg-[#fff9ef]"
             >
-              {menuOpen ? "✕" : "☰"}
+              {menuOpen
+                ? "✕"
+                : "☰"}
             </button>
           </div>
         </div>
@@ -136,38 +162,55 @@ export default function PublicHeader() {
             <div className="grid gap-2">
               <MobileLink
                 href="/"
-                active={pathname === "/"}
+                active={
+                  pathname === "/"
+                }
               >
                 🏠 Etusivu
               </MobileLink>
 
               <MobileLink
                 href="/browse"
-                active={pathname === "/browse"}
+                active={
+                  pathname ===
+                  "/browse"
+                }
               >
-                🔍 Selaa palveluita
+                🔍 Selaa
+                palveluita
               </MobileLink>
 
               <Link
                 href="/#tarjouspyynto"
-                onClick={handleQuoteClick}
+                onClick={
+                  handleQuoteClick
+                }
                 className="rounded-xl px-4 py-3 font-semibold text-[#51463d] transition hover:bg-[#f8efe2]"
               >
-                ✨ Pyydä tarjoukset
+                ✨ Pyydä
+                tarjoukset
               </Link>
 
               <MobileLink
                 href="/partner/apply"
-                active={pathname === "/partner/apply"}
+                active={
+                  pathname ===
+                  "/partner/apply"
+                }
               >
-                🤝 Ryhdy partneriksi
+                🤝 Ryhdy
+                partneriksi
               </MobileLink>
 
               <MobileLink
                 href="/partner/login"
-                active={pathname === "/partner/login"}
+                active={
+                  pathname ===
+                  "/partner/login"
+                }
               >
-                🔐 Partnerikirjautuminen
+                🔐
+                Partnerikirjautuminen
               </MobileLink>
             </div>
           </nav>
@@ -189,7 +232,11 @@ function DesktopLink({
   return (
     <Link
       href={href}
-      aria-current={active ? "page" : undefined}
+      aria-current={
+        active
+          ? "page"
+          : undefined
+      }
       className={`inline-flex min-h-11 items-center rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
         active
           ? "bg-[#f4eadb] text-[#795a28]"
@@ -213,7 +260,11 @@ function MobileLink({
   return (
     <Link
       href={href}
-      aria-current={active ? "page" : undefined}
+      aria-current={
+        active
+          ? "page"
+          : undefined
+      }
       className={`rounded-xl px-4 py-3 font-semibold transition ${
         active
           ? "bg-[#f4eadb] text-[#795a28]"
