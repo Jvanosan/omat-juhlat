@@ -102,9 +102,6 @@ export function useAdminDashboard() {
         router.replace("/login");
         return;
       }
-
-      // Tämä suojattu API toimii samalla
-      // palvelinpuolen admin-tarkistuksena.
       const partnersResponse = await fetch(
         "/api/admin/partners",
         {
@@ -301,9 +298,12 @@ if (!directRequestsResponse.ok) {
   }, [loadDashboard]);
 
   async function updatePartnerStatus(
-    partnerId: string,
-    status: PartnerStatus
-  ) {
+  partnerId: string,
+  status: PartnerStatus,
+  options?: {
+    resendInvite?: boolean;
+  },
+) {
     if (processingPartnerId) return;
 
     try {
@@ -323,9 +323,12 @@ if (!directRequestsResponse.ok) {
               `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            partnerId,
-            status,
-          }),
+  partnerId,
+  status,
+  resendInvite:
+    options?.resendInvite ===
+    true,
+}),
         }
       );
 
@@ -349,10 +352,16 @@ if (!directRequestsResponse.ok) {
       );
 
       alert(
-        status === "approved"
-          ? "Partneri hyväksyttiin."
-          : "Partneri hylättiin."
-      );
+  options?.resendInvite
+    ? result.emailSent
+      ? "Partnerikutsu lähetettiin uudelleen."
+      : "Kutsua ei lähetetty."
+    : status === "approved"
+      ? result.emailSent
+        ? "Partneri hyväksyttiin ja kutsu lähetettiin."
+        : "Partneri hyväksyttiin."
+      : "Partneri hylättiin.",
+);
     } catch (error) {
       console.error(
         "ADMIN PARTNER STATUS ERROR:",

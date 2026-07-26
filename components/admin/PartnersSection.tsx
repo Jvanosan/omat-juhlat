@@ -9,15 +9,18 @@ import type {
   AdminPartner,
   PartnerStatus,
 } from "./types";
-
+type PartnerStatusOptions = {
+  resendInvite?: boolean;
+};
 type PartnersSectionProps = {
   partners: AdminPartner[];
   processingId: string | null;
 
-  onUpdateStatus: (
-    partnerId: string,
-    status: PartnerStatus,
-  ) => void;
+onUpdateStatus: (
+  partnerId: string,
+  status: PartnerStatus,
+  options?: PartnerStatusOptions,
+) => void;
 };
 
 type PartnerFilter =
@@ -118,7 +121,24 @@ export default function PartnersSection({
       );
     }
   }
+function resendInvite(
+  partner: AdminPartner,
+) {
+  const confirmed =
+    window.confirm(
+      `Lähetetäänkö uusi kirjautumiskutsu yritykselle "${partner.company}"?`,
+    );
 
+  if (confirmed) {
+    onUpdateStatus(
+      partner.id,
+      "approved",
+      {
+        resendInvite: true,
+      },
+    );
+  }
+}
   return (
     <section
       id="partners-section"
@@ -270,6 +290,9 @@ export default function PartnersSection({
                         "rejected",
                       )
                     }
+                    onResendInvite={() =>
+  resendInvite(partner)
+}
                   />
                 ),
               )}
@@ -381,6 +404,9 @@ export default function PartnersSection({
                                   "rejected",
                                 )
                               }
+                              onResendInvite={() =>
+  resendInvite(partner)
+}
                             />
                           </td>
                         </tr>
@@ -402,11 +428,13 @@ function PartnerMobileCard({
   processing,
   onApprove,
   onReject,
+  onResendInvite,
 }: {
   partner: AdminPartner;
   processing: boolean;
   onApprove: () => void;
   onReject: () => void;
+  onResendInvite: () => void;
 }) {
   return (
     <article className="rounded-2xl border border-[#e8ded0] bg-[#fffdf9] p-5 shadow-sm">
@@ -460,6 +488,7 @@ function PartnerMobileCard({
           processing={processing}
           onApprove={onApprove}
           onReject={onReject}
+          onResendInvite={onResendInvite}
           fullWidth
         />
       </div>
@@ -472,14 +501,35 @@ function PartnerActions({
   processing,
   onApprove,
   onReject,
+  onResendInvite,
   fullWidth = false,
 }: {
   status: string;
   processing: boolean;
   onApprove: () => void;
   onReject: () => void;
+  onResendInvite: () => void;
   fullWidth?: boolean;
 }) {
+  if (status === "approved") {
+    return (
+      <button
+        type="button"
+        disabled={processing}
+        onClick={onResendInvite}
+        className={`inline-flex min-h-10 items-center justify-center rounded-xl border border-[#cdddf1] bg-[#f1f6fd] px-4 py-2 text-xs font-bold text-[#3564a8] transition hover:bg-[#e4eefb] disabled:cursor-not-allowed disabled:opacity-50 ${
+          fullWidth
+            ? "w-full"
+            : ""
+        }`}
+      >
+        {processing
+          ? "Lähetetään..."
+          : "Lähetä kutsu uudelleen"}
+      </button>
+    );
+  }
+
   if (status !== "pending") {
     return (
       <span className="inline-flex min-h-10 items-center text-xs font-semibold text-[#91877d]">

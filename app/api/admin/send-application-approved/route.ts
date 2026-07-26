@@ -1,9 +1,28 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import {
+  isAuthorizedAdmin,
+} from "@/lib/server/adminAuth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
+  const authorized =
+  await isAuthorizedAdmin(
+    request,
+  );
+
+if (!authorized) {
+  return NextResponse.json(
+    {
+      error:
+        "Sinulla ei ole oikeutta lähettää hyväksymisviestiä.",
+    },
+    {
+      status: 403,
+    },
+  );
+}
   try {
     const body = await request.json();
 
@@ -19,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: "OmatJuhlat <onboarding@resend.dev>",
+      from: "OmatJuhlat <noreply@omatjuhlat.fi>",
       to: email,
       subject: "Partnerihakemuksesi on hyväksytty – OmatJuhlat",
       html: `

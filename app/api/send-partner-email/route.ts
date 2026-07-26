@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     await resend.emails.send({
-      from: "OmatJuhlat <onboarding@resend.dev>",
+      from: "OmatJuhlat <noreply@omatjuhlat.fi>",
       to,
       subject: "Uusi tarjouspyyntö – OmatJuhlat",
       html: `

@@ -622,7 +622,7 @@ export async function POST(
         } =
           await resend.emails.send({
             from:
-              "OmatJuhlat <onboarding@resend.dev>",
+              "OmatJuhlat <noreply@omatjuhlat.fi>",
             to: adminEmail,
             subject:
               "Uusi suora tarjouspyyntö",
@@ -668,7 +668,7 @@ export async function POST(
         } =
           await resend.emails.send({
             from:
-              "OmatJuhlat <onboarding@resend.dev>",
+              "OmatJuhlat <noreply@omatjuhlat.fi>",
             to: email,
             subject:
               "Tarjouspyyntösi on vastaanotettu – OmatJuhlat",

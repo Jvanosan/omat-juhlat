@@ -159,16 +159,16 @@ export default function AdminPage() {
             processingId={
               processingQuoteId
             }
-            onUpdateStatus={(
-              quoteId,
-              status,
-            ) =>
-              void updateQuoteStatus(
-                quoteId,
-                status,
-              )
-            }
-          />
+onUpdateStatus={(
+  quoteId,
+  status,
+) =>
+  void updateQuoteStatus(
+    quoteId,
+    status,
+  )
+}
+/>
 
           <DirectRequestsSection
             requests={
@@ -226,16 +226,18 @@ export default function AdminPage() {
             processingId={
               processingPartnerId
             }
-            onUpdateStatus={(
-              partnerId,
-              status,
-            ) =>
-              void updatePartnerStatus(
-                partnerId,
-                status,
-              )
-            }
-          />
+onUpdateStatus={(
+  partnerId,
+  status,
+  options,
+) =>
+  void updatePartnerStatus(
+    partnerId,
+    status,
+    options,
+  )
+}
+/>
         </div>
 
         <div className="mt-8 flex justify-center">
