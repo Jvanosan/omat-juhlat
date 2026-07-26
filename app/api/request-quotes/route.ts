@@ -51,8 +51,9 @@ const ALLOWED_SERVICE_IDS =
   SERVICE_OPTIONS.map(
     (service) => service.id,
   );
-
-const SERVICE_ALIASES =
+const QUOTE_REQUEST_COOLDOWN_MINUTES =
+  15;
+  const SERVICE_ALIASES =
   createServiceAliases();
 
 type PartnerServiceOptions = {
@@ -98,8 +99,6 @@ function createServiceAliases() {
     );
   }
 
-  // Väliaikainen yhteensopivuus vanhoille
-  // saman palvelun tunnuksille.
   aliases.set("juhlatila", "venue");
   aliases.set("photographer", "photography");
   aliases.set("valokuvaaja", "photography");
@@ -547,7 +546,7 @@ export async function POST(
       );
     }
 
-    if (
+        if (
       services.some(
         (service) =>
           !ALLOWED_SERVICE_IDS.includes(
@@ -562,6 +561,81 @@ export async function POST(
         },
         {
           status: 400,
+        },
+      );
+    }
+
+    if (!resend) {
+      console.error(
+        "REQUEST QUOTE EMAIL SERVICE IS NOT CONFIGURED",
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Sähköpostipalvelu ei ole juuri nyt käytettävissä. Yritä myöhemmin uudelleen.",
+        },
+        {
+          status: 503,
+        },
+      );
+    }
+
+    const cooldownStart =
+      new Date(
+        Date.now() -
+          QUOTE_REQUEST_COOLDOWN_MINUTES *
+            60 *
+            1000,
+      ).toISOString();
+
+    const {
+      data: recentRequests,
+      error: rateLimitError,
+    } = await supabase
+      .from("request_quotes")
+      .select("id")
+      .eq("email", email)
+      .gte(
+        "created_at",
+        cooldownStart,
+      )
+      .limit(1);
+
+    if (rateLimitError) {
+      console.error(
+        "REQUEST QUOTE RATE LIMIT ERROR:",
+        rateLimitError,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Tarjouspyynnön lähetysrajoitusta ei voitu tarkistaa.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    if (
+      recentRequests &&
+      recentRequests.length > 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Tällä sähköpostiosoitteella lähetettiin juuri tarjouspyyntö. Odota 15 minuuttia ennen uuden pyynnön lähettämistä.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              QUOTE_REQUEST_COOLDOWN_MINUTES *
+                60,
+            ),
+          },
         },
       );
     }
@@ -860,7 +934,7 @@ export async function POST(
       }
     }
 
-    const matchedPartnerCount =
+        const matchedPartnerCount =
       new Set(
         matchedAssignments.map(
           (assignment) =>
@@ -868,106 +942,157 @@ export async function POST(
         ),
       ).size;
 
-    let confirmationEmailSent =
-      false;
+    const createdQuoteId =
+      quote.id;
 
-    if (resend) {
-      try {
-        const siteUrl =
-          getSiteUrl(request);
+    async function rollbackCreatedQuote() {
+      const {
+        error: assignmentsCleanupError,
+      } = await supabase
+        .from("quote_partners")
+        .delete()
+        .eq(
+  "quote_id",
+  createdQuoteId,
+);
 
-        const quoteUrl =
-          `${siteUrl}/quote/${quote.id}` +
-          `?token=${encodeURIComponent(
-            accessToken,
-          )}`;
+      if (assignmentsCleanupError) {
+        console.error(
+          "REQUEST QUOTE ASSIGNMENTS CLEANUP ERROR:",
+          assignmentsCleanupError,
+        );
+      }
 
-        const matchMessage =
-          matchedPartnerCount > 0
-            ? `Tarjouspyyntö lähetettiin ${matchedPartnerCount} sopivalle palveluntarjoajalle. Saat ilmoituksen, kun tarjouksia saapuu.`
-            : "Tarjouspyyntö tallennettiin, mutta sopivia palveluntarjoajia ei löytynyt vielä.";
+      const {
+        error: quoteCleanupError,
+      } = await supabase
+        .from("request_quotes")
+        .delete()
+        .eq(
+  "id",
+  createdQuoteId,
+);
 
-        const {
-          error: emailError,
-        } =
-          await resend.emails.send({
-            from:
-              "OmatJuhlat <noreply@omatjuhlat.fi>",
-            to: email,
-            subject:
-              "Tarjouspyyntö vastaanotettu – OmatJuhlat",
-            html: `
-              <div style="margin:0;background:#fbf8f2;padding:32px 16px;font-family:Arial,sans-serif;color:#211b16;">
-                <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e8ded0;border-radius:20px;padding:32px;">
-                  <p style="margin:0 0 8px;color:#9a773b;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">
-                    OmatJuhlat
-                  </p>
+      if (quoteCleanupError) {
+        console.error(
+          "REQUEST QUOTE CLEANUP ERROR:",
+          quoteCleanupError,
+        );
+      }
+    }
 
-                  <h1 style="margin:0 0 20px;font-size:26px;">
-                    Tarjouspyyntösi on vastaanotettu
-                  </h1>
+    try {
+      const siteUrl =
+        getSiteUrl(request);
 
-                  <p>
-                    <strong>Tapahtuma:</strong>
-                    ${escapeHtml(eventType)}
-                  </p>
+      const quoteUrl =
+        `${siteUrl}/quote/${quote.id}` +
+        `?token=${encodeURIComponent(
+          accessToken,
+        )}`;
 
-                  <p>
-                    <strong>Päivämäärä:</strong>
-                    ${escapeHtml(date)}
-                  </p>
+      const matchMessage =
+        matchedPartnerCount > 0
+          ? `Tarjouspyyntö lähetettiin ${matchedPartnerCount} sopivalle palveluntarjoajalle. Saat ilmoituksen, kun tarjouksia saapuu.`
+          : "Tarjouspyyntö tallennettiin, mutta sopivia palveluntarjoajia ei löytynyt vielä.";
 
-                  <p>
-                    <strong>Paikkakunta:</strong>
-                    ${escapeHtml(location)}
-                  </p>
+      const {
+        error: emailError,
+      } =
+        await resend.emails.send({
+          from:
+            "OmatJuhlat <noreply@omatjuhlat.fi>",
+          to: email,
+          subject:
+            "Tarjouspyyntö vastaanotettu – OmatJuhlat",
+          html: `
+            <div style="margin:0;background:#fbf8f2;padding:32px 16px;font-family:Arial,sans-serif;color:#211b16;">
+              <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e8ded0;border-radius:20px;padding:32px;">
+                <p style="margin:0 0 8px;color:#9a773b;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">
+                  OmatJuhlat
+                </p>
 
-                  <p style="margin-top:20px;line-height:1.7;color:#62584f;">
-                    ${escapeHtml(matchMessage)}
-                  </p>
+                <h1 style="margin:0 0 20px;font-size:26px;">
+                  Tarjouspyyntösi on vastaanotettu
+                </h1>
 
-                  <p style="margin:28px 0;">
-                    <a
-                      href="${escapeHtml(quoteUrl)}"
-                      style="display:inline-block;padding:14px 22px;border-radius:12px;background:#b48a45;color:#ffffff;font-weight:700;text-decoration:none;"
-                    >
-                      Avaa tarjouspyyntösi
-                    </a>
-                  </p>
+                <p>
+                  <strong>Tapahtuma:</strong>
+                  ${escapeHtml(eventType)}
+                </p>
 
-                  <p style="margin:0;color:#91877d;font-size:13px;line-height:1.6;">
-                    Tämä linkki on henkilökohtainen. Älä jaa sitä muille.
-                  </p>
-                </div>
+                <p>
+                  <strong>Päivämäärä:</strong>
+                  ${escapeHtml(date)}
+                </p>
+
+                <p>
+                  <strong>Paikkakunta:</strong>
+                  ${escapeHtml(location)}
+                </p>
+
+                <p style="margin-top:20px;line-height:1.7;color:#62584f;">
+                  ${escapeHtml(matchMessage)}
+                </p>
+
+                <p style="margin:28px 0;">
+                  <a
+                    href="${escapeHtml(quoteUrl)}"
+                    style="display:inline-block;padding:14px 22px;border-radius:12px;background:#b48a45;color:#ffffff;font-weight:700;text-decoration:none;"
+                  >
+                    Avaa tarjouspyyntösi
+                  </a>
+                </p>
+
+                <p style="margin:0;color:#91877d;font-size:13px;line-height:1.6;">
+                  Tämä linkki on henkilökohtainen. Älä jaa sitä muille.
+                </p>
               </div>
-            `,
-          });
+            </div>
+          `,
+        });
 
-        if (emailError) {
-          console.error(
-            "REQUEST CONFIRMATION EMAIL ERROR:",
-            emailError,
-          );
-        } else {
-          confirmationEmailSent =
-            true;
-        }
-      } catch (emailError) {
+      if (emailError) {
         console.error(
           "REQUEST CONFIRMATION EMAIL ERROR:",
           emailError,
         );
+
+        await rollbackCreatedQuote();
+
+        return NextResponse.json(
+          {
+            error:
+              "Vahvistusviestin lähettäminen epäonnistui. Tarkista sähköpostiosoite ja yritä uudelleen.",
+          },
+          {
+            status: 502,
+          },
+        );
       }
+    } catch (emailError) {
+      console.error(
+        "REQUEST CONFIRMATION EMAIL ERROR:",
+        emailError,
+      );
+
+      await rollbackCreatedQuote();
+
+      return NextResponse.json(
+        {
+          error:
+            "Vahvistusviestin lähettäminen epäonnistui. Tarkista sähköpostiosoite ja yritä uudelleen.",
+        },
+        {
+          status: 502,
+        },
+      );
     }
 
     return NextResponse.json(
       {
         success: true,
-        quoteId: quote.id,
-        accessToken:
-          quote.access_token ??
-          accessToken,
-        confirmationEmailSent,
+        confirmationEmailSent: true,
         matchedPartners:
           matchedPartnerCount,
         createdAssignments:
@@ -977,7 +1102,7 @@ export async function POST(
         status: 201,
       },
     );
-  } catch (error) {
+      } catch (error) {
     console.error(
       "REQUEST QUOTES API ERROR:",
       error,

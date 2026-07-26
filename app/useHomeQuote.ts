@@ -29,12 +29,10 @@ const DEFAULT_EVENT: HomeQuoteEvent = {
 };
 
 type QuoteApiResponse = {
-  quoteId?: number | string;
-  accessToken?: string;
-  matchedPartners?: number;
+  success?: boolean;
+  confirmationEmailSent?: boolean;
   error?: string;
 };
-
 const EMAIL_PATTERN =
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -293,24 +291,18 @@ if (
       }
 
       if (
-        !result.quoteId ||
-        !result.accessToken
+        !result.success ||
+        !result.confirmationEmailSent
       ) {
         setErrorMsg(
-          "Tarjouspyyntö tallennettiin, mutta turvallista asiakaslinkkiä ei saatu.",
+          "Tarjouspyyntöä ei voitu viimeistellä, koska sähköpostiviestiä ei voitu lähettää. Tarkista sähköpostiosoite ja yritä uudelleen.",
         );
 
         return;
       }
 
       router.push(
-        `/quote/${encodeURIComponent(
-          String(
-            result.quoteId,
-          ),
-        )}?token=${encodeURIComponent(
-          result.accessToken,
-        )}`,
+        "/quote/request-sent",
       );
     } catch (error) {
       console.error(
