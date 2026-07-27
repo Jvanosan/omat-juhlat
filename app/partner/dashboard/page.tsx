@@ -372,7 +372,9 @@ function ProfileStatusCard({
                 ? "Profiili julkaistu"
                 : rejected
                   ? "Profiili vaatii korjauksia"
-                  : "Profiili tarkistuksessa"}
+                  : completion < 100
+  ? "Profiili ei ole vielä valmis"
+  : "Profiili tarkistuksessa"}
           </p>
 
           <p className="mt-1 text-sm leading-6 text-[#70675e]">
@@ -383,8 +385,8 @@ function ProfileStatusCard({
                 : rejected
                   ? "Tarkista profiilin tiedot ja lähetä se uudelleen tarkistettavaksi."
                   : completion < 100
-                    ? `Täydennä vielä profiilisi. Valmius on ${completion} %.`
-                    : "Profiilisi odottaa adminin hyväksyntää."}
+  ? "Täytä pakolliset tiedot, jotta profiilisi näkyy Browse-sivulla ja voit vastaanottaa asiakkaiden tarjouspyyntöjä."
+  : "Profiilisi odottaa adminin hyväksyntää."}
           </p>
         </div>
       </div>
