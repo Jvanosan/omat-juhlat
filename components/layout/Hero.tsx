@@ -45,14 +45,17 @@ export default function Hero() {
           </p>
 
           <h1 className="text-4xl font-bold tracking-tight text-gray-950 sm:text-5xl lg:text-6xl">
-            Suunnittele unelmiesi juhlat{" "}
-            <span className="text-[#b48a45]">yhdestä paikasta</span>
-          </h1>
+  Löydä juhlapalvelut unelmiesi juhliin{" "}
+  <span className="text-[#b48a45]">
+    yhdestä paikasta
+  </span>
+</h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-gray-600 sm:text-lg">
-            Löydä juhlatilat, catering, kuvaajat, DJ:t ja muut tarvitsemasi
-            palvelut helposti yhdellä tarjouspyynnöllä.
-          </p>
+  Löydä juhlatilat, catering, valokuvaajat, DJ:t ja muut
+  juhlapalvelut. Lähetä yksi tarjouspyyntö ja vertaile
+  tarjouksia helposti.
+</p>
         </div>
 
         <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-2">
