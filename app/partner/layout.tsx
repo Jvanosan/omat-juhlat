@@ -18,13 +18,21 @@ import PartnerSidebar from "@/components/partner/PartnerSidebar";
 type PartnerLayoutProps = {
   children: ReactNode;
 };
-
 const DASHBOARD_SECTIONS = new Set([
   "dashboard",
   "profile",
   "quotes",
   "calendar",
   "settings",
+]);
+
+const PROTECTED_SECTIONS = new Set([
+  "dashboard",
+  "profile",
+  "quotes",
+  "calendar",
+  "settings",
+  "onboarding",
 ]);
 
 export default function PartnerLayout({
@@ -48,104 +56,139 @@ export default function PartnerLayout({
   const usesDashboardLayout =
     pathname === "/partner" ||
     DASHBOARD_SECTIONS.has(section);
+const requiresPartnerAccess =
+  pathname === "/partner" ||
+  PROTECTED_SECTIONS.has(section);
 
   useEffect(() => {
-    if (!usesDashboardLayout) {
-      setCheckingSession(false);
-      setAuthorized(false);
+  if (!requiresPartnerAccess) {
+    setCheckingSession(false);
+    setAuthorized(false);
+    return;
+  }
+
+  let active = true;
+
+  function redirectToLogin() {
+    if (!active) {
       return;
     }
 
-    let active = true;
+    setAuthorized(false);
+    setCheckingSession(false);
 
-    async function checkSession() {
-      const {
-        data,
-        error,
-      } =
-        await supabase.auth.getSession();
+    const nextPath =
+      encodeURIComponent(pathname);
+
+    router.replace(
+      `/partner/login?next=${nextPath}`,
+    );
+  }
+
+  async function authorizeUser(
+    userId: string,
+  ) {
+    try {
+      const partnerExists =
+        await hasPartnerProfile(userId);
 
       if (!active) {
         return;
       }
 
-      if (error || !data.session) {
-        setAuthorized(false);
-        setCheckingSession(false);
-
-        const nextPath =
-          encodeURIComponent(pathname);
-
-        router.replace(
-          `/partner/login?next=${nextPath}`,
-        );
-
+      if (!partnerExists) {
+        redirectToLogin();
         return;
       }
 
       setAuthorized(true);
       setCheckingSession(false);
-    }
-
-    void checkSession();
-
-    const {
-      data: authListener,
-    } =
-      supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          if (
-            !active ||
-            !usesDashboardLayout
-          ) {
-            return;
-          }
-
-          if (!session) {
-            setAuthorized(false);
-
-            const nextPath =
-              encodeURIComponent(
-                pathname,
-              );
-
-            router.replace(
-              `/partner/login?next=${nextPath}`,
-            );
-
-            return;
-          }
-
-          setAuthorized(true);
-          setCheckingSession(false);
-        },
+    } catch (authorizationError) {
+      console.error(
+        "PARTNER AUTHORIZATION ERROR:",
+        authorizationError,
       );
 
-    return () => {
-      active = false;
-
-      authListener.subscription.unsubscribe();
-    };
-  }, [
-    pathname,
-    router,
-    usesDashboardLayout,
-  ]);
-
-  // Julkinen yritysprofiili sekä kirjautumis-,
-  // hakemus-, täydennys- ja onboarding-sivut
-  // eivät tarvitse partnerin kirjautumista tai
-  // hallintapaneelin rakennetta.
-  if (!usesDashboardLayout) {
-    return children;
+      redirectToLogin();
+    }
   }
 
-  if (
-    checkingSession ||
-    !authorized
-  ) {
-    return <PartnerSessionLoading />;
+  async function checkSession() {
+    const {
+      data,
+      error,
+    } =
+      await supabase.auth.getSession();
+
+    if (!active) {
+      return;
+    }
+
+    if (error || !data.session) {
+      redirectToLogin();
+      return;
+    }
+
+    await authorizeUser(
+      data.session.user.id,
+    );
   }
+
+  setCheckingSession(true);
+  setAuthorized(false);
+
+  void checkSession();
+
+  const {
+    data: authListener,
+  } =
+    supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (
+          !active ||
+          !requiresPartnerAccess
+        ) {
+          return;
+        }
+
+        if (!session) {
+          redirectToLogin();
+          return;
+        }
+
+        setCheckingSession(true);
+        setAuthorized(false);
+
+        void authorizeUser(
+          session.user.id,
+        );
+      },
+    );
+
+  return () => {
+    active = false;
+    authListener.subscription.unsubscribe();
+  };
+}, [
+  pathname,
+  requiresPartnerAccess,
+  router,
+]);
+
+  if (!requiresPartnerAccess) {
+  return children;
+}
+
+if (
+  checkingSession ||
+  !authorized
+) {
+  return <PartnerSessionLoading />;
+}
+
+if (!usesDashboardLayout) {
+  return children;
+}
 
   return (
     <div className="min-h-screen bg-[#fbf8f2] text-[#211b16]">
@@ -176,7 +219,26 @@ export default function PartnerLayout({
     </div>
   );
 }
+async function hasPartnerProfile(
+  userId: string,
+): Promise<boolean> {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("partners")
+    .select("id")
+    .eq("auth_user_id", userId)
+    .limit(1);
 
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(
+    data && data.length > 0,
+  );
+}
 function PartnerSessionLoading() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#fbf8f2] px-5 text-[#211b16]">
