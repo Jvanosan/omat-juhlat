@@ -42,9 +42,10 @@ export default function PartnerLoginPage() {
     useState("");
 
   useEffect(() => {
-    let active = true;
+  let active = true;
 
-    async function checkSession() {
+  async function checkSession() {
+    try {
       const {
         data: { session },
       } =
@@ -54,7 +55,21 @@ export default function PartnerLoginPage() {
         return;
       }
 
-      if (session) {
+      if (!session) {
+        setCheckingSession(false);
+        return;
+      }
+
+      const partnerExists =
+        await hasPartnerProfile(
+          session.user.id,
+        );
+
+      if (!active) {
+        return;
+      }
+
+      if (partnerExists) {
         router.replace(
           getSafeDestination(),
         );
@@ -62,15 +77,33 @@ export default function PartnerLoginPage() {
         return;
       }
 
+      setError(
+        "Kirjautunut käyttäjä ei ole partneritili. Kirjaudu sisään partneritilisi tunnuksilla.",
+      );
+
       setCheckingSession(false);
+    } catch (sessionError) {
+      console.error(
+        "PARTNER SESSION CHECK ERROR:",
+        sessionError,
+      );
+
+      if (active) {
+        setError(
+          "Partneritilin tarkistaminen epäonnistui. Yritä uudelleen.",
+        );
+
+        setCheckingSession(false);
+      }
     }
+  }
 
-    void checkSession();
+  void checkSession();
 
-    return () => {
-      active = false;
-    };
-  }, [router]);
+  return () => {
+    active = false;
+  };
+}, [router]);
 
   async function login(
     event: FormEvent<HTMLFormElement>,
@@ -101,22 +134,45 @@ export default function PartnerLoginPage() {
       setLoading(true);
 
       const {
-        error: loginError,
-      } =
-        await supabase.auth.signInWithPassword(
-          {
-            email: cleanEmail,
-            password,
-          },
-        );
+  data: loginData,
+  error: loginError,
+} =
+  await supabase.auth.signInWithPassword(
+    {
+      email: cleanEmail,
+      password,
+    },
+  );
 
       if (loginError) {
-        throw loginError;
-      }
+  throw loginError;
+}
 
-      router.replace(
-        getSafeDestination(),
-      );
+const userId =
+  loginData.user?.id;
+
+if (!userId) {
+  throw new Error(
+    "Kirjautuneen käyttäjän tunnus puuttuu.",
+  );
+}
+
+const partnerExists =
+  await hasPartnerProfile(userId);
+
+if (!partnerExists) {
+  await supabase.auth.signOut();
+
+  setError(
+    "Tällä käyttäjällä ei ole partneriprofiilia. Käytä hyväksytyn partneritilisi tunnuksia.",
+  );
+
+  return;
+}
+
+router.replace(
+  getSafeDestination(),
+);
 
       router.refresh();
     } catch (loginError) {
@@ -380,7 +436,26 @@ function Feature({
     </div>
   );
 }
+async function hasPartnerProfile(
+  userId: string,
+): Promise<boolean> {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("partners")
+    .select("id")
+    .eq("auth_user_id", userId)
+    .limit(1);
 
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(
+    data && data.length > 0,
+  );
+}
 function getSafeDestination() {
   if (
     typeof window === "undefined"
