@@ -23,31 +23,74 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    "https://www.omatjuhlat.fi",
+  ),
+
   title: {
-    default: "OmatJuhlat – Löydä palvelut juhlaasi",
+    default:
+      "OmatJuhlat – Juhlapalvelut ja tarjoukset helposti",
     template: "%s | OmatJuhlat",
   },
+
   description:
-    "Löydä juhlatilat, catering, kuvaajat, DJ:t ja muut juhlapalvelut yhdellä tarjouspyynnöllä.",
+    "Löydä juhlatila, catering, valokuvaaja, DJ ja muut juhlapalvelut. Lähetä yksi maksuton tarjouspyyntö ja vertaile tarjouksia helposti.",
+
   applicationName: "OmatJuhlat",
+
   keywords: [
     "juhlapalvelut",
+    "juhlatila",
     "juhlatilat",
     "catering",
-    "DJ",
+    "pitopalvelu",
     "valokuvaaja",
+    "DJ",
     "häät",
-    "juhlat",
+    "juhlien järjestäminen",
+    "tarjouspyyntö",
   ],
+
+  creator: "OmatJuhlat",
+  publisher: "OmatJuhlat",
+
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
+
   openGraph: {
-    title: "OmatJuhlat",
+    title:
+      "OmatJuhlat – Juhlapalvelut ja tarjoukset helposti",
     description:
-      "Suunnittele juhlasi ja vertaile palveluntarjoajien tarjouksia helposti.",
+      "Löydä juhlatilat, catering, kuvaajat, DJ:t ja muut juhlapalvelut yhdellä maksuttomalla tarjouspyynnöllä.",
+    url: "https://www.omatjuhlat.fi",
+    siteName: "OmatJuhlat",
     locale: "fi_FI",
     type: "website",
   },
-};
 
+  twitter: {
+    card: "summary",
+    title:
+      "OmatJuhlat – Juhlapalvelut ja tarjoukset helposti",
+    description:
+      "Löydä juhlapalvelut ja vertaile tarjouksia helposti yhdellä tarjouspyynnöllä.",
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+};
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
