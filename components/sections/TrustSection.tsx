@@ -5,8 +5,7 @@ const ITEMS = [
     icon: "🔒",
     title: "Turvallinen palvelu",
     description:
-      "Tietosi välitetään vain valitsemillesi palveluntarjoajille.",
-  },
+"Tarjouspyyntösi välitetään vain siihen sopiville tai itse valitsemillesi palveluntarjoajille."  },
   {
     icon: "💚",
     title: "Maksuton",
@@ -17,7 +16,7 @@ const ITEMS = [
     icon: "⭐",
     title: "Ei sitoumuksia",
     description:
-      "Saat vertailla tarjoukset rauhassa ja päätät itse hyväksytkö ne.",
+     "Voit vertailla tarjouksia rauhassa ja päätät itse, hyväksytkö ne." ,
   },
 ];
 
@@ -25,7 +24,11 @@ export default function TrustSection() {
   return (
     <section className="bg-[#faf8f5] px-5 py-16 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-6 md:grid-cols-3">
+  <h2 className="sr-only">
+    OmatJuhlat-palvelun edut
+  </h2>
+
+  <div className="grid gap-6 md:grid-cols-3">
           {ITEMS.map((item) => (
             <Card key={item.title} className="text-center">
               <div className="text-4xl">{item.icon}</div>

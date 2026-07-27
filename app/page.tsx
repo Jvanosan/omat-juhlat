@@ -1,91 +1,84 @@
-"use client";
+import type {
+  Metadata,
+} from "next";
 
-import Hero from "@/components/layout/Hero";
-import PublicFooter from "@/components/layout/PublicFooter";
-import PublicHeader from "@/components/layout/PublicHeader";
+import HomePageClient from "./HomePageClient";
 
-import QuoteForm from "@/components/forms/QuoteForm";
-import ServiceSelector from "@/components/forms/ServiceSelector";
-import SubmitSection from "@/components/forms/SubmitSection";
+const SITE_URL =
+  "https://www.omatjuhlat.fi";
 
-import {
-  HOME_SERVICES,
-} from "@/components/home/constants";
+const pageDescription =
+  "Löydä juhlatilat, catering, valokuvaajat, DJ:t ja muut juhlapalvelut. Lähetä yksi maksuton tarjouspyyntö ja vertaile tarjouksia helposti.";
 
-import HowItWorks from "@/components/sections/HowItWorks";
-import PartnerCTA from "@/components/sections/PartnerCTA";
-import TrustSection from "@/components/sections/TrustSection";
+export const metadata: Metadata = {
+  title:
+    "Juhlapalvelut ja tarjoukset helposti",
 
-import {
-  useHomeQuote,
-} from "./useHomeQuote";
+  description: pageDescription,
+
+  alternates: {
+    canonical: "/",
+  },
+
+  openGraph: {
+    title:
+      "OmatJuhlat – Juhlapalvelut ja tarjoukset helposti",
+    description: pageDescription,
+    url: "/",
+    siteName: "OmatJuhlat",
+    locale: "fi_FI",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary",
+    title:
+      "OmatJuhlat – Juhlapalvelut ja tarjoukset helposti",
+    description: pageDescription,
+  },
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "OmatJuhlat",
+      url: `${SITE_URL}/`,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/icon.png`,
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: `${SITE_URL}/`,
+      name: "OmatJuhlat",
+      description: pageDescription,
+      inLanguage: "fi-FI",
+      publisher: {
+        "@id": `${SITE_URL}/#organization`,
+      },
+    },
+  ],
+};
 
 export default function HomePage() {
-  const {
-    event,
-    setEvent,
-    selectedServices,
-    loading,
-    errorMsg,
-    toggleService,
-    submit,
-  } = useHomeQuote();
-
-  const eventComplete = Boolean(
-    event.date &&
-      event.eventType &&
-      event.location &&
-      event.guests.trim() &&
-      event.email.trim(),
-  );
-
-  const servicesComplete =
-    selectedServices.length > 0;
-
   return (
     <>
-      <PublicHeader />
+      <script
+        id="omatjuhlat-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            structuredData,
+          ).replace(/</g, "\\u003c"),
+        }}
+      />
 
-      <main className="min-h-screen bg-[#fbf8f2] text-[#211b16]">
-        <Hero />
-
-        <HowItWorks />
-
-        <QuoteForm
-          event={event}
-          setEvent={setEvent}
-        />
-
-        <ServiceSelector
-          services={HOME_SERVICES}
-          selectedServices={
-            selectedServices
-          }
-          onToggle={
-            toggleService
-          }
-        />
-
-        <SubmitSection
-          loading={loading}
-          errorMsg={errorMsg}
-          eventComplete={
-            eventComplete
-          }
-          servicesComplete={
-            servicesComplete
-          }
-          onSubmit={() =>
-            void submit()
-          }
-        />
-
-        <TrustSection />
-
-        <PartnerCTA />
-      </main>
-
-      <PublicFooter />
+      <HomePageClient />
     </>
   );
 }
