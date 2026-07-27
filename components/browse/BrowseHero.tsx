@@ -27,17 +27,17 @@ export default function BrowseHero() {
           </p>
 
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-[#211b16] sm:text-5xl lg:text-6xl">
-            Löydä oikeat palvelut{" "}
-            <span className="text-[#b48a45]">
-              tapahtumaasi
-            </span>
-          </h1>
+  Löydä sopivat juhlapalvelut{" "}
+  <span className="text-[#b48a45]">
+    tapahtumaasi
+  </span>
+</h1>
 
           <p className="mt-6 max-w-xl text-base leading-8 text-[#70675e] sm:text-lg">
-            Vertaa palveluntarjoajia, tarkista heidän
-            saatavuutensa ja lähetä tarjouspyyntö suoraan
-            valitsemillesi yrityksille.
-          </p>
+  Vertaa juhlatiloja, catering-palveluita, valokuvaajia,
+  DJ-palveluita ja muita palveluntarjoajia. Tarkista saatavuus
+  ja lähetä tarjouspyyntö valitsemillesi yrityksille.
+</p>
 
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-[#62584f]">
             <span>✓ Maksuton käyttää</span>
