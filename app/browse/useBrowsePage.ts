@@ -101,15 +101,46 @@ export function useBrowsePage() {
     [],
   );
 
-  const areas = useMemo(
-    () => getBrowseAreas(partners),
-    [partners],
-  );
+    const areas = useMemo(() => {
+    const availableAreas =
+      getBrowseAreas(partners);
 
-  const services = useMemo(
-    () => getBrowseServices(partners),
-    [partners],
-  );
+    if (
+      areaFilter !== "Kaikki" &&
+      !availableAreas.includes(
+        areaFilter,
+      )
+    ) {
+      return [
+        ...availableAreas,
+        areaFilter,
+      ];
+    }
+
+    return availableAreas;
+  }, [partners, areaFilter]);
+
+  const services = useMemo(() => {
+    const availableServices =
+      getBrowseServices(partners);
+
+    if (
+      serviceFilter !== "Kaikki" &&
+      !availableServices.includes(
+        serviceFilter,
+      )
+    ) {
+      return [
+        ...availableServices,
+        serviceFilter,
+      ];
+    }
+
+    return availableServices;
+  }, [
+    partners,
+    serviceFilter,
+  ]);
 
   const groupedPartners = useMemo(
     () =>
@@ -193,6 +224,24 @@ export function useBrowsePage() {
   }, []);
 
   useEffect(() => {
+    const requestedArea =
+      searchParams
+        .get("area")
+        ?.trim();
+
+    const requestedService =
+      searchParams
+        .get("service")
+        ?.trim();
+
+    setAreaFilter(
+      requestedArea || "Kaikki",
+    );
+
+    setServiceFilter(
+      requestedService || "Kaikki",
+    );
+
     const partnerId =
       searchParams.get("select");
 
@@ -200,19 +249,28 @@ export function useBrowsePage() {
       return;
     }
 
-    setSelectedPartners((current) => {
-      if (current.includes(partnerId)) {
-        return current;
-      }
+    setSelectedPartners(
+      (current) => {
+        if (
+          current.includes(partnerId)
+        ) {
+          return current;
+        }
 
-      return [...current, partnerId];
-    });
+        return [
+          ...current,
+          partnerId,
+        ];
+      },
+    );
 
     const url = new URL(
       window.location.href,
     );
 
-    url.searchParams.delete("select");
+    url.searchParams.delete(
+      "select",
+    );
 
     window.history.replaceState(
       {},
@@ -220,7 +278,6 @@ export function useBrowsePage() {
       url.toString(),
     );
   }, [searchParams]);
-
   useEffect(() => {
     if (
       !eventDate ||
