@@ -11,6 +11,9 @@ import {
 } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
+import {
+  isPublishedPartner,
+} from "@/components/partner/dashboard/dashboardUtils";
 
 import {
   isPartnerRouteActive,
@@ -20,13 +23,20 @@ import {
 type PartnerHeaderProfile = {
   company: string;
   status: string | null;
+  verified: boolean | null;
+  profile_completed:
+    | boolean
+    | null;
+  published_at: string | null;
   logoUrl: string | null;
   slug: string | null;
 };
-
 const DEFAULT_PROFILE: PartnerHeaderProfile = {
   company: "Partneriyritys",
   status: null,
+  verified: false,
+  profile_completed: false,
+  published_at: null,
   logoUrl: null,
   slug: null,
 };
@@ -70,9 +80,12 @@ export default function PartnerHeader() {
       const { data, error } =
         await supabase
           .from("partners")
-          .select(`
+                    .select(`
             company,
             status,
+            verified,
+            profile_completed,
+            published_at,
             logo_url,
             slug
           `)
@@ -93,11 +106,16 @@ export default function PartnerHeader() {
       }
 
       if (data) {
-        setProfile({
+                setProfile({
           company:
             data.company ||
             "Partneriyritys",
           status: data.status,
+          verified: data.verified,
+          profile_completed:
+            data.profile_completed,
+          published_at:
+            data.published_at,
           logoUrl: data.logo_url,
           slug: data.slug,
         });
@@ -109,7 +127,7 @@ export default function PartnerHeader() {
     return () => {
       active = false;
     };
-  }, []);
+    }, [pathname]);
 
   async function handleLogout() {
     if (loggingOut) {
@@ -139,10 +157,13 @@ export default function PartnerHeader() {
     router.refresh();
   }
 
-  const profileInitial =
+    const profileInitial =
     profile.company
       .charAt(0)
       .toUpperCase() || "P";
+
+  const profilePublished =
+    isPublishedPartner(profile);
 
   return (
     <>
@@ -169,7 +190,8 @@ export default function PartnerHeader() {
               Julkinen sivusto ↗
             </Link>
 
-            {profile.slug && (
+                        {profilePublished &&
+              profile.slug && (
               <Link
                 href={`/partner/${encodeURIComponent(
                   profile.slug,
@@ -200,7 +222,10 @@ export default function PartnerHeader() {
                   {profile.company}
                 </p>
 
-                <StatusLabel
+                                <StatusLabel
+                  published={
+                    profilePublished
+                  }
                   status={profile.status}
                 />
               </div>
@@ -268,11 +293,18 @@ export default function PartnerHeader() {
 }
 
 function StatusLabel({
+  published,
   status,
 }: {
+  published: boolean;
   status: string | null;
 }) {
-  if (status === "approved") {
+  const normalizedStatus =
+    status
+      ?.trim()
+      .toLowerCase() ?? "";
+
+  if (published) {
     return (
       <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#168365]">
         <span
@@ -285,7 +317,10 @@ function StatusLabel({
     );
   }
 
-  if (status === "pending") {
+  if (
+    normalizedStatus ===
+    "pending"
+  ) {
     return (
       <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#98743b]">
         <span
@@ -298,8 +333,29 @@ function StatusLabel({
     );
   }
 
+  if (
+    normalizedStatus ===
+    "rejected"
+  ) {
+    return (
+      <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#a33d3d]">
+        <span
+          aria-hidden="true"
+          className="h-1.5 w-1.5 rounded-full bg-[#c85b5b]"
+        />
+
+        Vaatii korjauksia
+      </p>
+    );
+  }
+
   return (
-    <p className="mt-0.5 text-xs font-semibold text-[#91877d]">
+    <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-[#91877d]">
+      <span
+        aria-hidden="true"
+        className="h-1.5 w-1.5 rounded-full bg-[#b8aa9d]"
+      />
+
       Ei julkaistu
     </p>
   );

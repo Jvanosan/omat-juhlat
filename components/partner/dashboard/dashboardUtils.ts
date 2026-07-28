@@ -84,26 +84,29 @@ export function isSubmittedDirectOffer(
 }
 
 export function isPublishedPartner(
-  partner: PartnerDashboardProfile | null,
+  partner:
+    | Pick<
+        PartnerDashboardProfile,
+        | "status"
+        | "verified"
+        | "profile_completed"
+        | "published_at"
+      >
+    | null
+    | undefined,
 ): boolean {
   if (!partner) {
     return false;
   }
 
-  const status = normalizeStatus(
-    partner.status,
-  );
-
   return (
-    partner.verified === true ||
-    Boolean(partner.published_at) ||
-    [
-      "active",
-      "approved",
-      "published",
-      "hyväksytty",
-      "hyvaksytty",
-    ].includes(status)
+    normalizeStatus(
+      partner.status,
+    ) === "approved" &&
+    partner.verified === true &&
+    partner.profile_completed ===
+      true &&
+    Boolean(partner.published_at)
   );
 }
 
