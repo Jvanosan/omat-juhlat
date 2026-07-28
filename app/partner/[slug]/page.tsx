@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -25,7 +26,112 @@ type PartnerPageProps = {
     slug: string;
   }>;
 };
+const SITE_URL = "https://www.omatjuhlat.fi";
 
+export async function generateMetadata({
+  params,
+}: PartnerPageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const { data } = await supabase
+    .from("public_partners")
+    .select(`
+      company,
+      description,
+      category,
+      area,
+      logo_url,
+      cover_image_url,
+      slug
+    `)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!data) {
+    return {
+      title: "Palveluntarjoajaa ei löytynyt",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const company =
+    toText(data.company) ||
+    "Palveluntarjoaja";
+
+  const category =
+    toText(data.category) ||
+    "Juhlapalvelut";
+
+  const area = toText(data.area);
+
+  const description =
+    createMetaDescription(
+      data.description,
+      `Tutustu yrityksen ${company} juhlapalveluihin${
+        area
+          ? ` alueella ${area}`
+          : ""
+      } ja pyydä tarjous OmatJuhlat-palvelussa.`,
+    );
+
+  const profileUrl =
+    `${SITE_URL}/partner/${encodeURIComponent(
+      slug,
+    )}`;
+
+  const imageUrl =
+    toAbsoluteUrl(
+      data.cover_image_url,
+    ) ||
+    toAbsoluteUrl(data.logo_url);
+
+  return {
+    title: `${company} – ${category}${
+      area ? `, ${area}` : ""
+    }`,
+    description,
+
+    alternates: {
+      canonical: profileUrl,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+    },
+
+    openGraph: {
+      title: company,
+      description,
+      url: profileUrl,
+      siteName: "OmatJuhlat",
+      locale: "fi_FI",
+      type: "website",
+      images: imageUrl
+        ? [
+            {
+              url: imageUrl,
+              alt: `${company} – juhlapalvelut`,
+            },
+          ]
+        : undefined,
+    },
+
+    twitter: {
+      card: imageUrl
+        ? "summary_large_image"
+        : "summary",
+      title: company,
+      description,
+      images: imageUrl
+        ? [imageUrl]
+        : undefined,
+    },
+  };
+}
 export default async function PartnerPage({
   params,
 }: PartnerPageProps) {
@@ -123,9 +229,123 @@ export default async function PartnerPage({
 
   const averageRating =
     calculateAverageRating(reviews);
+  const profileUrl =
+    `${SITE_URL}/partner/${encodeURIComponent(
+      slug,
+    )}`;
 
+  const ratingValue =
+    Number(averageRating);
+
+  const sameAs = [
+    externalUrl(partner.website),
+    externalUrl(
+      partner.instagram_url,
+    ),
+    externalUrl(
+      partner.facebook_url,
+    ),
+    externalUrl(
+      partner.tiktok_url,
+    ),
+  ].filter(
+    (url): url is string =>
+      Boolean(url),
+  );
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": `${profileUrl}#business`,
+
+    name: partner.company,
+
+    description:
+      createMetaDescription(
+        partner.description,
+        `Tutustu yrityksen ${partner.company} juhlapalveluihin OmatJuhlat-palvelussa.`,
+      ),
+
+    url: profileUrl,
+
+    image:
+      toAbsoluteUrl(mainImage),
+
+    logo:
+      toAbsoluteUrl(
+        partner.logo_url,
+      ),
+
+    areaServed:
+      toText(partner.area) ||
+      undefined,
+
+    address: toText(
+      partner.address,
+    )
+      ? {
+          "@type":
+            "PostalAddress",
+          streetAddress: toText(
+            partner.address,
+          ),
+          addressCountry: "FI",
+        }
+      : undefined,
+
+    priceRange:
+      toText(
+        partner.avg_price_level,
+      ) || undefined,
+
+    sameAs:
+      sameAs.length > 0
+        ? sameAs
+        : undefined,
+
+    makesOffer:
+      services.length > 0
+        ? services.map(
+            (service) => ({
+              "@type": "Offer",
+              itemOffered: {
+                "@type":
+                  "Service",
+                name: service,
+              },
+            }),
+          )
+        : undefined,
+
+    aggregateRating:
+      reviews.length > 0 &&
+      Number.isFinite(
+        ratingValue,
+      )
+        ? {
+            "@type":
+              "AggregateRating",
+            ratingValue,
+            reviewCount:
+              reviews.length,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
+  };
   return (
     <>
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            structuredData,
+          ).replace(
+            /</g,
+            "\\u003c",
+          ),
+        }}
+      />
       <PublicHeader />
 
       <main className="min-h-screen bg-[#fbf8f2] text-[#211b16]">
@@ -182,4 +402,77 @@ export default async function PartnerPage({
       <PublicFooter />
     </>
   );
+}
+function toText(
+  value: unknown,
+): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter(
+        (item): item is string =>
+          typeof item === "string",
+      )
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return "";
+}
+
+function createMetaDescription(
+  value: unknown,
+  fallback: string,
+): string {
+  const text =
+    toText(value)
+      .replace(/\s+/g, " ")
+      .trim() || fallback;
+
+  if (text.length <= 160) {
+    return text;
+  }
+
+  return `${text
+    .slice(0, 157)
+    .trimEnd()}…`;
+}
+
+function toAbsoluteUrl(
+  value: unknown,
+): string | undefined {
+  const url = toText(value);
+
+  if (!url) {
+    return undefined;
+  }
+
+  try {
+    return new URL(
+      url,
+      SITE_URL,
+    ).toString();
+  } catch {
+    return undefined;
+  }
+}
+
+function externalUrl(
+  value: unknown,
+): string | undefined {
+  const url = toText(value);
+
+  if (!url) {
+    return undefined;
+  }
+
+  try {
+    return new URL(url).toString();
+  } catch {
+    return undefined;
+  }
 }
