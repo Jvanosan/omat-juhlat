@@ -5,6 +5,7 @@ import { DEFAULT_FORM, TOTAL_STEPS } from "../constants";
 import {
   calculateCompletion,
   createSlug,
+  getMissingRequiredFields,
   normalizeWebsite,
   validateStep,
 } from "../utils";
@@ -37,14 +38,23 @@ export function useOnboarding() {
   const [form, setForm] =
     useState<OnboardingForm>(DEFAULT_FORM);
 
-  const [submitState, setSubmitState] =
+    const [submitState, setSubmitState] =
     useState<SubmitState>({
       loading: false,
       error: "",
     });
 
-  const [validationError, setValidationError] =
-    useState("");
+  const [
+    validationError,
+    setValidationError,
+  ] = useState("");
+
+  const [
+    validationStep,
+    setValidationStep,
+  ] = useState<number | null>(
+    null,
+  );
 
     const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -365,20 +375,27 @@ export function useOnboarding() {
   function nextStep() {
     const result = validateStep(step, form);
 
-    if (!result.valid) {
-      setValidationError(result.message ?? "");
+       if (!result.valid) {
+      setValidationStep(step);
+
+      setValidationError(
+        result.message ?? "",
+      );
+
       return;
     }
 
     setValidationError("");
+    setValidationStep(null);
 
     setStep((prev) =>
       Math.min(prev + 1, TOTAL_STEPS - 1)
     );
   }
 
-  function previousStep() {
+    function previousStep() {
     setValidationError("");
+    setValidationStep(null);
 
     setStep((prev) => Math.max(prev - 1, 0));
   }
@@ -388,20 +405,52 @@ async function submit(
     validateAllSteps?: boolean;
     updateOnboardingTimestamp?: boolean;
   } = {},
+
 ) {
   setValidationError("");
+  setValidationStep(null);
 
-  const stepsToValidate = options.validateAllSteps
-    ? [0, 1, 2, 3]
-    : [3];
+  if (options.validateAllSteps) {
+    const missingFields =
+      getMissingRequiredFields(
+        form,
+      );
 
+    if (
+      missingFields.length > 0
+    ) {
+      setValidationStep(
+        missingFields[0].step,
+      );
+
+      setValidationError(
+        `Täytä pakolliset tiedot: ${missingFields
+          .map(
+            (field) =>
+              field.label,
+          )
+          .join(", ")}.`,
+      );
+
+      return false;
+    }
+  }
+
+  const stepsToValidate =
+    options.validateAllSteps
+      ? [0, 1, 2, 3]
+      : [3];
   for (const stepNumber of stepsToValidate) {
     const validationResult = validateStep(
       stepNumber,
       form,
     );
 
-    if (!validationResult.valid) {
+        if (!validationResult.valid) {
+      setValidationStep(
+        stepNumber,
+      );
+
       setValidationError(
         validationResult.message ??
           "Tarkista lomakkeen tiedot.",
@@ -598,6 +647,8 @@ profile_completed:
     completion,
 
     validationError,
+
+    validationStep,
 
     submitState,
 

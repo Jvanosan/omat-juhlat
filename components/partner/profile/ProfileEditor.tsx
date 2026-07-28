@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import CompanyDetailsStep from "@/app/partner/onboarding/components/CompanyDetailsStep";
 import ImagesStep from "@/app/partner/onboarding/components/ImagesStep";
@@ -9,12 +12,23 @@ import ServicesStep from "@/app/partner/onboarding/components/ServicesStep";
 
 import { useOnboarding } from "@/app/partner/onboarding/hooks/useOnboarding";
 
+const PROFILE_SECTION_IDS: Record<
+  number,
+  string
+> = {
+  0: "profile-company",
+  1: "profile-images",
+  2: "profile-services",
+  3: "profile-pricing",
+};
+
 export default function ProfileEditor() {
   const {
     form,
     completion,
     loadingProfile,
     validationError,
+    validationStep,
     submitState,
 
     updateCompany,
@@ -39,7 +53,53 @@ export default function ProfileEditor() {
       ),
     ),
   );
+  const validationSectionId =
+    validationStep === null
+      ? null
+      : PROFILE_SECTION_IDS[
+          validationStep
+        ] ?? null;
+  useEffect(() => {
+    if (
+      !validationError ||
+      !validationSectionId
+    ) {
+      return;
+    }
 
+    const timeoutId =
+      window.setTimeout(() => {
+        document
+          .getElementById(
+            validationSectionId,
+          )
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+      }, 100);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    validationError,
+    validationSectionId,
+  ]);
+    function scrollToValidationSection() {
+    if (!validationSectionId) {
+      return;
+    }
+
+    document
+      .getElementById(
+        validationSectionId,
+      )
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+  }
   async function handleSave() {
     setSaved(false);
 
@@ -154,23 +214,47 @@ export default function ProfileEditor() {
         </div>
       )}
 
-      {(validationError ||
+            {(validationError ||
         submitState.error) && (
         <div
           role="alert"
-          className="rounded-2xl border border-[#edcaca] bg-[#fff3f3] p-5 text-[#a33d3d]"
+          className="fixed bottom-28 left-4 right-4 z-50 mx-auto max-w-xl rounded-2xl border border-[#edcaca] bg-[#fff3f3]/95 p-5 text-[#a33d3d] shadow-[0_18px_50px_rgba(93,45,45,0.20)] backdrop-blur sm:left-auto sm:right-6 sm:mx-0 sm:w-[32rem]"
         >
-          <p className="font-bold">
-            Tarkista profiilin tiedot
-          </p>
+          <div className="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              className="text-xl"
+            >
+              ⚠️
+            </span>
 
-          <p className="mt-1 text-sm leading-6">
-            {validationError ||
-              submitState.error}
-          </p>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold">
+                Tarkista profiilin tiedot
+              </p>
+
+              <p className="mt-1 text-sm leading-6">
+                {validationError ||
+                  submitState.error}
+              </p>
+
+              {validationError &&
+                validationSectionId && (
+                  <button
+                    type="button"
+                    onClick={
+                      scrollToValidationSection
+                    }
+                    className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl border border-[#d99e9e] bg-white px-4 text-sm font-bold text-[#a33d3d] transition hover:bg-[#fffafa]"
+                  >
+                    Siirry puuttuviin
+                    tietoihin
+                  </button>
+                )}
+            </div>
+          </div>
         </div>
       )}
-
       <EditorSection
         id="profile-company"
         icon="🏢"

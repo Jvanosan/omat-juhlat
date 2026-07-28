@@ -31,16 +31,28 @@ export default function ServicesStep({
             marginBottom: 6,
           }}
         >
-          Palvelut
+          Palvelukategoria
+          <span
+            aria-hidden="true"
+            style={{
+              marginLeft: 4,
+              color: "#a33d3d",
+            }}
+          >
+            *
+          </span>
         </h2>
 
         <p
           style={{
             marginTop: 0,
             color: "#666",
+            lineHeight: 1.6,
           }}
         >
-          Valitse kaikki palvelut, joita yrityksesi tarjoaa.
+          Valitse vähintään yksi
+          yrityksesi tarjoama
+          palvelukategoria.
         </p>
       </div>
 
@@ -106,7 +118,48 @@ export default function ServicesStep({
           );
         })}
       </div>
+      <div
+        role="note"
+        style={{
+          padding: 16,
+          borderRadius: 12,
+          border:
+            "1px solid #ead29d",
+          backgroundColor:
+            "#fff8e8",
+          color: "#795a28",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontWeight: 700,
+          }}
+        >
+          Vähintään yksi palvelu
+          <span
+            aria-hidden="true"
+            style={{
+              marginLeft: 4,
+              color: "#a33d3d",
+            }}
+          >
+            *
+          </span>
+        </p>
 
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: 14,
+            lineHeight: 1.6,
+          }}
+        >
+          Valitse vähintään yksi
+          palvelu valitsemastasi
+          kategoriasta.
+        </p>
+      </div>
       {selectedCategories.map((categoryId) => {
         const category = SERVICE_OPTIONS.find(
           (service) => service.id === categoryId

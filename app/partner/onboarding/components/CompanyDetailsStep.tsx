@@ -69,7 +69,6 @@ export default function CompanyDetailsStep({
                 value,
               )
             }
-            required
             placeholder="Etunimi Sukunimi"
           />
 
@@ -93,6 +92,7 @@ export default function CompanyDetailsStep({
             onChange={(value) =>
               onChange("phone", value)
             }
+            required
             placeholder="+358 40 123 4567"
           />
 

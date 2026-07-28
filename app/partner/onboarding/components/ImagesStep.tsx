@@ -74,17 +74,62 @@ export default function ImagesStep({
           Yrityksen kuvat
         </h2>
 
-        <p
+                <p
           style={{
             color: "#666",
             marginTop: 0,
+            lineHeight: 1.6,
           }}
         >
-          Lisää kuvat linkkeinä tässä vaiheessa. Varsinainen kuvien lataaminen
-          Supabase Storageen lisätään myöhemmin.
+          Lisää yrityksesi kuvat
+          suorina https-linkkeinä.
+          Laadukkaat kuvat auttavat
+          asiakasta tutustumaan
+          palveluihisi.
         </p>
       </div>
+      <div
+        role="note"
+        style={{
+          padding: 16,
+          borderRadius: 12,
+          border:
+            "1px solid #ead29d",
+          backgroundColor:
+            "#fff8e8",
+          color: "#795a28",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontWeight: 700,
+          }}
+        >
+          Pakollinen kuva
+          <span
+            aria-hidden="true"
+            style={{
+              marginLeft: 4,
+              color: "#a33d3d",
+            }}
+          >
+            *
+          </span>
+        </p>
 
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: 14,
+            lineHeight: 1.6,
+          }}
+        >
+          Lisää kansikuva tai
+          vähintään yksi galleriakuva.
+          Logo on valinnainen.
+        </p>
+      </div>
       <section
         style={{
           display: "grid",
@@ -134,8 +179,20 @@ export default function ImagesStep({
         }}
       >
         <div>
-          <label htmlFor="partner-cover-image" style={labelStyle}>
+                    <label
+            htmlFor="partner-cover-image"
+            style={labelStyle}
+          >
             Kansikuvan URL
+            <span
+              style={{
+                marginLeft: 6,
+                color: "#70675e",
+                fontWeight: 400,
+              }}
+            >
+              (vaihtoehto 1)
+            </span>
           </label>
 
           <input
@@ -164,12 +221,22 @@ export default function ImagesStep({
         }}
       >
         <div>
-          <h3
+                    <h3
             style={{
               margin: "0 0 6px",
             }}
           >
             Galleriakuvat
+            <span
+              style={{
+                marginLeft: 6,
+                color: "#70675e",
+                fontSize: 14,
+                fontWeight: 400,
+              }}
+            >
+              (vaihtoehto 2)
+            </span>
           </h3>
 
           <p

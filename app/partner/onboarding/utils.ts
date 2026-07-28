@@ -2,7 +2,10 @@ import type {
   OnboardingForm,
   ValidationResult,
 } from "./types";
-
+export type MissingRequiredField = {
+  label: string;
+  step: number;
+};
 export function normalizeWebsite(
   url: string,
 ) {
@@ -70,7 +73,63 @@ function hasSelectedService(
       ).length > 0,
   );
 }
+export function getMissingRequiredFields(
+  form: OnboardingForm,
+): MissingRequiredField[] {
+  const missingFields:
+    MissingRequiredField[] = [];
 
+  if (
+    !form.company.companyName.trim()
+  ) {
+    missingFields.push({
+      label: "Yrityksen nimi",
+      step: 0,
+    });
+  }
+
+  if (!form.company.email.trim()) {
+    missingFields.push({
+      label: "Sähköposti",
+      step: 0,
+    });
+  }
+
+  if (!form.company.phone.trim()) {
+    missingFields.push({
+      label: "Puhelinnumero",
+      step: 0,
+    });
+  }
+
+  if (!hasProfileImage(form)) {
+    missingFields.push({
+      label:
+        "Kansikuva tai galleriakuva",
+      step: 1,
+    });
+  }
+
+  if (
+    form.selectedCategories
+      .length === 0
+  ) {
+    missingFields.push({
+      label: "Palvelukategoria",
+      step: 2,
+    });
+  }
+
+  if (!hasSelectedService(form)) {
+    missingFields.push({
+      label:
+        "Vähintään yksi palvelu",
+      step: 2,
+    });
+  }
+
+  return missingFields;
+}
 function isValidEmail(
   email: string,
 ) {
