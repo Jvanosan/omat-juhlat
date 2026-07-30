@@ -1,6 +1,78 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+const PARTNER_IMAGES_BUCKET = "partner-images";
+const MAX_GALLERY_IMAGES = 8;
+
+type PersistedImages = {
+  logoUrl: string;
+  coverImageUrl: string;
+  galleryUrls: string[];
+};
+
+function getPartnerImagePath(url: string) {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const pathMarker =
+      `/storage/v1/object/public/${PARTNER_IMAGES_BUCKET}/`;
+
+    const markerIndex =
+      parsedUrl.pathname.indexOf(pathMarker);
+
+    if (markerIndex === -1) {
+      return null;
+    }
+
+    const encodedPath = parsedUrl.pathname.slice(
+      markerIndex + pathMarker.length
+    );
+
+    return encodedPath
+      ? decodeURIComponent(encodedPath)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function getRemovedPartnerImagePaths(
+  previousImages: PersistedImages,
+  nextImages: PersistedImages
+) {
+  const nextUrls = new Set([
+    nextImages.logoUrl,
+    nextImages.coverImageUrl,
+    ...nextImages.galleryUrls,
+  ]);
+
+  const previousUrls = [
+    previousImages.logoUrl,
+    previousImages.coverImageUrl,
+    ...previousImages.galleryUrls,
+  ];
+
+  const removedPaths = previousUrls
+    .filter(
+      (url) =>
+        Boolean(url) && !nextUrls.has(url)
+    )
+    .map(getPartnerImagePath)
+    .filter(
+      (path): path is string =>
+        path !== null
+    );
+
+  return Array.from(new Set(removedPaths));
+}
 import { DEFAULT_FORM, TOTAL_STEPS } from "../constants";
 import {
   calculateCompletion,
@@ -57,7 +129,12 @@ export function useOnboarding() {
   );
 
     const [loadingProfile, setLoadingProfile] = useState(true);
-
+const persistedImagesRef =
+  useRef<PersistedImages>({
+    logoUrl: "",
+    coverImageUrl: "",
+    galleryUrls: [],
+  });
     useEffect(() => {
   let cancelled = false;
 
@@ -171,7 +248,33 @@ export function useOnboarding() {
             unit: item.unit,
           }))
         : [];
+const loadedLogoUrl =
+  typeof partner.logo_url === "string"
+    ? partner.logo_url.trim()
+    : "";
 
+const loadedCoverImageUrl =
+  typeof partner.cover_image_url === "string"
+    ? partner.cover_image_url.trim()
+    : "";
+
+const loadedGalleryUrls = Array.isArray(
+  partner.gallery
+)
+  ? partner.gallery
+      .filter(
+        (url): url is string =>
+          typeof url === "string"
+      )
+      .map((url) => url.trim())
+      .filter(Boolean)
+  : [];
+
+persistedImagesRef.current = {
+  logoUrl: loadedLogoUrl,
+  coverImageUrl: loadedCoverImageUrl,
+  galleryUrls: loadedGalleryUrls,
+};
       setForm({
         company: {
   companyName: partner.company ?? "",
@@ -217,15 +320,9 @@ export function useOnboarding() {
   description: partner.description ?? "",
 },
 
-        logoUrl: partner.logo_url ?? "",
-        coverImageUrl: partner.cover_image_url ?? "",
-
-        galleryUrls: Array.isArray(partner.gallery)
-          ? partner.gallery.filter(
-              (url): url is string =>
-                typeof url === "string"
-            )
-          : [],
+logoUrl: loadedLogoUrl,
+coverImageUrl: loadedCoverImageUrl,
+galleryUrls: loadedGalleryUrls,
 
         selectedCategories: categories,
         selectedOptions: options,
@@ -485,8 +582,16 @@ async function submit(
       calculateCompletion(form);
 
     const cleanGallery = form.galleryUrls
-      .map((url) => url.trim())
-      .filter(Boolean);
+  .map((url) => url.trim())
+  .filter(Boolean)
+  .slice(0, MAX_GALLERY_IMAGES);
+
+const nextPersistedImages: PersistedImages = {
+  logoUrl: form.logoUrl.trim(),
+  coverImageUrl:
+    form.coverImageUrl.trim(),
+  galleryUrls: cleanGallery,
+};
 
     const serviceOptions = {
       categories: form.selectedCategories,
@@ -610,7 +715,35 @@ profile_completed:
         "Partneriprofiilia ei löytynyt."
       );
     }
+const removedImagePaths =
+  getRemovedPartnerImagePaths(
+    persistedImagesRef.current,
+    nextPersistedImages
+  );
 
+if (removedImagePaths.length > 0) {
+  try {
+    const { error: removeImagesError } =
+      await supabase.storage
+        .from(PARTNER_IMAGES_BUCKET)
+        .remove(removedImagePaths);
+
+    if (removeImagesError) {
+      console.error(
+        "Old partner images removal error:",
+        removeImagesError
+      );
+    }
+  } catch (removeImagesError) {
+    console.error(
+      "Old partner images removal error:",
+      removeImagesError
+    );
+  }
+}
+
+persistedImagesRef.current =
+  nextPersistedImages;
     setSubmitState({
       loading: false,
       error: "",
