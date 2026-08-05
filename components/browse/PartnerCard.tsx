@@ -13,6 +13,8 @@ type Partner = {
   area: string;
   services: unknown;
   images?: string | null;
+  cover_image_url?: string | null;
+  logo_url?: string | null;
   slug: string | null;
 };
 
@@ -45,7 +47,12 @@ export default function PartnerCard({
       .map((image) => image.trim())
       .filter(Boolean) ?? [];
 
-  const primaryImage = images[0] ?? null;
+const primaryImage =
+  company.cover_image_url?.trim() ||
+  images[0] ||
+  company.logo_url?.trim() ||
+  null;
+
   const unavailable =
     availability === "unavailable";
   const checking =
