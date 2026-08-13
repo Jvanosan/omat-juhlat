@@ -9,6 +9,7 @@ import {
 } from "next/font/google";
 
 import "./globals.css";
+import GoogleAnalyticsConsent from "./components/GoogleAnalyticsConsent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -110,6 +111,7 @@ export default function RootLayout({
   className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
 >
       <body className="flex min-h-full flex-col">
+        <GoogleAnalyticsConsent />
         {children}
       </body>
     </html>

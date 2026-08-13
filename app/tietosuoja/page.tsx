@@ -483,31 +483,68 @@ export default function PrivacyPage() {
               </p>
             </PrivacySection>
 
-            <PrivacySection title="10. Evästeet ja paikallinen tallennus">
-              <p>
-                OmatJuhlat käyttää vain
-                palvelun toiminnan ja
-                turvallisen kirjautumisen
-                kannalta välttämättömiä
-                evästeitä tai selaimen
-                paikallista tallennusta.
-              </p>
+            <PrivacySection title="10. Evästeet, paikallinen tallennus ja analytiikka">
+  <p>
+    OmatJuhlat käyttää palvelun toiminnan, turvallisuuden ja
+    kirjautumisen kannalta välttämättömiä evästeitä sekä selaimen
+    paikallista tallennusta. Näiden käyttö ei edellytä erillistä
+    suostumusta.
+  </p>
 
-              <p className="mt-4">
-                Palvelussa ei tällä hetkellä
-                käytetä mainonnan
-                seurantakeinoja tai
-                tarpeettomia
-                markkinointievästeitä. Jos
-                tällaisia ominaisuuksia
-                otetaan myöhemmin käyttöön,
-                käyttäjälle annetaan
-                tarvittavat tiedot ja
-                suostumusvalinnat ennen
-                niiden käyttöä.
-              </p>
-            </PrivacySection>
+  <p className="mt-4">
+    Käyttäjän evästevalinta tallennetaan selaimen paikalliseen
+    tallennukseen nimellä{" "}
+    <code className="rounded bg-[#f4eee5] px-1.5 py-0.5">
+      omatjuhlat-analytics-consent
+    </code>
+    . Tallennettu arvo kertoo, onko käyttäjä sallinut vai kieltänyt
+    analytiikan.
+  </p>
 
+  <p className="mt-4">
+    Käytämme käyttäjän suostumuksella Google Analytics 4 -palvelua
+    ymmärtääksemme, miten OmatJuhlat-verkkosivustoa käytetään.
+    Analytiikan avulla voimme käsitellä esimerkiksi tietoja
+    katsotuista sivuista, vierityksistä, sivustolta poistuvien
+    linkkien klikkauksista, laite- ja selaintyypistä sekä
+    sivustolle saapumisen lähteestä.
+  </p>
+
+  <p className="mt-4">
+    Google Analytics käynnistyy vasta, kun käyttäjä valitsee
+    “Salli analytiikka”. Analytiikan käsittelyperusteena on
+    käyttäjän suostumus. Mainontaan liittyvä tallennus,
+    mainoskäyttäjätiedot ja personoitu mainonta on asetettu
+    pois käytöstä.
+  </p>
+
+  <p className="mt-4">
+    Google Analytics -palvelun tarjoaa Google Ireland Limited.
+    Palvelun käytön yhteydessä tietoja voidaan käsitellä myös
+    Euroopan unionin ja Euroopan talousalueen ulkopuolella
+    asianmukaisia suojatoimia käyttäen.
+  </p>
+
+  <p className="mt-4">
+    Käyttäjä voi muuttaa valintaansa milloin tahansa sivun
+    vasemmassa alakulmassa olevasta “Evästeasetukset”-painikkeesta.
+    Suostumuksen peruuttaminen estää uuden analytiikkatiedon
+    keräämisen kyseisessä selaimessa.
+  </p>
+
+  <p className="mt-4">
+    Lisätietoja Googlen tietojen käsittelystä löytyy{" "}
+    <a
+      href="https://policies.google.com/privacy"
+      target="_blank"
+      rel="noreferrer"
+      className="font-semibold text-[#87652f] underline hover:text-[#5f451f]"
+    >
+      Googlen tietosuojakäytännöstä
+    </a>
+    .
+  </p>
+</PrivacySection>
             <PrivacySection title="11. Rekisteröidyn oikeudet">
               <p>
                 Sinulla voi tilanteesta ja
