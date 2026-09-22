@@ -53,22 +53,22 @@ export default function ProfileHero({
       </div>
 
       <div className="border-b border-[#eee5d9] px-5 pb-8 sm:px-8 lg:px-10">
-        <div className="relative -mt-14 flex flex-col gap-5 sm:-mt-16 sm:flex-row sm:items-end">
+        <div className="relative flex flex-col sm:flex-row sm:items-end gap-5">
           {partner.logo_url ? (
             <img
               src={partner.logo_url}
               alt={`${companyName} logo`}
-              className="relative h-24 w-24 shrink-0 rounded-2xl border-4 border-white bg-white object-contain p-2 shadow-xl sm:h-28 sm:w-28"
+              className="relative -mt-12 sm:-mt-16 h-24 w-24 shrink-0 rounded-2xl border-4 border-white bg-white object-contain p-2 shadow-xl sm:h-28 sm:w-28"
             />
           ) : (
-            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-[#f4eadb] text-3xl font-black text-[#8a672f] shadow-xl sm:h-28 sm:w-28">
+            <div className="relative -mt-12 sm:-mt-16 flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-[#f4eadb] text-3xl font-black text-[#8a672f] shadow-xl sm:h-28 sm:w-28">
               {companyName
                 .charAt(0)
                 .toUpperCase()}
             </div>
           )}
 
-          <div className="min-w-0 flex-1 sm:pb-1">
+          <div className="min-w-0 flex-1 pt-2 sm:pt-4 sm:pb-1">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9a773b]">
               OmatJuhlat-palveluntarjoaja
             </p>
