@@ -98,8 +98,8 @@ export default function CompanyDetailsStep({
 
           <TextField
             label="Verkkosivu"
-            type="url"
-            inputMode="url"
+            type="text"
+            inputMode="text"
             value={form.website}
             onChange={(value) =>
               onChange(
@@ -107,7 +107,8 @@ export default function CompanyDetailsStep({
                 value,
               )
             }
-            placeholder="https://yritys.fi"
+            placeholder="yritys.fi tai www.yritys.fi"
+            helpText="Voit kirjoittaa osoitteen ilman https://-alkua."
           />
         </div>
       </FormSection>
@@ -121,7 +122,6 @@ export default function CompanyDetailsStep({
           onChange={(value) =>
             onChange("city", value)
           }
-          required
         />
 
         <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -283,8 +283,8 @@ export default function CompanyDetailsStep({
         <div className="grid gap-5 md:grid-cols-2">
           <TextField
             label="Instagram"
-            type="url"
-            inputMode="url"
+            type="text"
+            inputMode="text"
             value={
               form.instagramUrl
             }
@@ -294,13 +294,14 @@ export default function CompanyDetailsStep({
                 value,
               )
             }
-            placeholder="https://instagram.com/..."
+            placeholder="instagram.com/yritys tai @yritys"
+            helpText="Voit kirjoittaa ilman https://-alkua."
           />
 
           <TextField
             label="Facebook"
-            type="url"
-            inputMode="url"
+            type="text"
+            inputMode="text"
             value={
               form.facebookUrl
             }
@@ -310,13 +311,14 @@ export default function CompanyDetailsStep({
                 value,
               )
             }
-            placeholder="https://facebook.com/..."
+            placeholder="facebook.com/yritys"
+            helpText="Voit kirjoittaa ilman https://-alkua."
           />
 
           <TextField
             label="TikTok"
-            type="url"
-            inputMode="url"
+            type="text"
+            inputMode="text"
             value={form.tiktokUrl}
             onChange={(value) =>
               onChange(
@@ -324,7 +326,8 @@ export default function CompanyDetailsStep({
                 value,
               )
             }
-            placeholder="https://tiktok.com/@..."
+            placeholder="tiktok.com/@yritys"
+            helpText="Voit kirjoittaa ilman https://-alkua."
           />
         </div>
       </FormSection>
@@ -344,7 +347,6 @@ export default function CompanyDetailsStep({
               )
             }
             rows={7}
-            required
             maxLength={3000}
             placeholder="Kerro yrityksestä, palveluista, kokemuksesta ja siitä, miksi asiakkaan kannattaa valita teidät..."
             helpText="Hyvä kuvaus kertoo asiakkaalle palvelun sisällöstä ja yrityksen vahvuuksista."

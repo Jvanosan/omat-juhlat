@@ -51,6 +51,11 @@ export function TextField({
         onChange={(event) =>
           onChange(event.target.value)
         }
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+          }
+        }}
         className="min-h-13 w-full rounded-2xl border border-[#ded3c4] bg-white px-4 py-3 text-[#211b16] outline-none transition placeholder:text-[#aaa096] focus:border-[#b48a45] focus:ring-4 focus:ring-[#ead8b8]/35"
       />
 

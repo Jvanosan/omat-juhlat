@@ -98,16 +98,7 @@ export function isPublishedPartner(
   if (!partner) {
     return false;
   }
-
-  return (
-    normalizeStatus(
-      partner.status,
-    ) === "approved" &&
-    partner.verified === true &&
-    partner.profile_completed ===
-      true &&
-    Boolean(partner.published_at)
-  );
+  return Boolean(partner.profile_completed);
 }
 
 export function getProfileCompletion(

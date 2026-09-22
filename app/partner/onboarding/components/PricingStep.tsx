@@ -329,6 +329,11 @@ export default function PricingStep({
                             event.target.value
                           )
                         }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                          }
+                        }}
                       />
                     </div>
 
@@ -350,6 +355,11 @@ export default function PricingStep({
                             event.target.value
                           )
                         }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                          }
+                        }}
                       />
                     </div>
 

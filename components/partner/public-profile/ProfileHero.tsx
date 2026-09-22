@@ -53,15 +53,15 @@ export default function ProfileHero({
       </div>
 
       <div className="border-b border-[#eee5d9] px-5 pb-8 sm:px-8 lg:px-10">
-        <div className="relative -mt-12 flex flex-col gap-5 sm:-mt-14 sm:flex-row sm:items-end">
+        <div className="relative -mt-14 flex flex-col gap-5 sm:-mt-16 sm:flex-row sm:items-end">
           {partner.logo_url ? (
             <img
               src={partner.logo_url}
               alt={`${companyName} logo`}
-              className="relative h-24 w-24 shrink-0 rounded-2xl border-4 border-white bg-white object-contain p-2 shadow-lg sm:h-28 sm:w-28"
+              className="relative h-24 w-24 shrink-0 rounded-2xl border-4 border-white bg-white object-contain p-2 shadow-xl sm:h-28 sm:w-28"
             />
           ) : (
-            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-[#f4eadb] text-3xl font-black text-[#8a672f] shadow-lg sm:h-28 sm:w-28">
+            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-[#f4eadb] text-3xl font-black text-[#8a672f] shadow-xl sm:h-28 sm:w-28">
               {companyName
                 .charAt(0)
                 .toUpperCase()}
@@ -73,7 +73,7 @@ export default function ProfileHero({
               OmatJuhlat-palveluntarjoaja
             </p>
 
-            <h1 className="mt-2 break-words text-3xl font-bold tracking-tight text-[#211b16] sm:text-4xl lg:text-5xl">
+            <h1 className="mt-2 break-words text-3xl font-extrabold tracking-tight text-[#211b16] sm:text-4xl lg:text-5xl">
               {companyName}
             </h1>
 

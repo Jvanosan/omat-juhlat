@@ -59,15 +59,13 @@ export default function ServiceAreaSelector({
       return;
     }
 
-    // Koko Suomi korvaa yksittäiset
-    // paikkakunnat.
+   
     if (area === "Koko Suomi") {
       onChange("Koko Suomi");
       return;
     }
 
-    // Yksittäisen paikkakunnan valinta
-    // poistaa Koko Suomi -valinnan.
+    
     const withoutWholeCountry =
       selectedAreas.filter(
         (selected) =>
@@ -152,6 +150,11 @@ export default function ServiceAreaSelector({
               event.target.value,
             )
           }
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+            }
+          }}
           placeholder="Hae paikkakuntaa..."
           className="min-h-12 w-full rounded-xl border border-[#ded3c4] bg-white px-4 text-[#211b16] outline-none transition placeholder:text-[#aaa096] focus:border-[#b48a45] focus:ring-4 focus:ring-[#ead8b8]/35"
         />

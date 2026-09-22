@@ -127,8 +127,20 @@ export function useOnboarding() {
   ] = useState<number | null>(
     null,
   );
+   const [loadingProfile, setLoadingProfile] = useState(true);
+  const initialFormRef = useRef<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    const [loadingProfile, setLoadingProfile] = useState(true);
+  useEffect(() => {
+    if (!loadingProfile && !initialFormRef.current) {
+      // Asetetaan alkuperäinen tila heti kun profiili on ladattu tietokannasta
+      initialFormRef.current = JSON.stringify(form);
+    } else if (initialFormRef.current) {
+      // Verrataan muuttunutta tilaa alkuperäiseen reaaliajassa
+      setHasUnsavedChanges(JSON.stringify(form) !== initialFormRef.current);
+    }
+  }, [form, loadingProfile]);
+
 const persistedImagesRef =
   useRef<PersistedImages>({
     logoUrl: "",
@@ -749,6 +761,10 @@ persistedImagesRef.current =
       error: "",
     });
 
+    // Päivitetään vertailutila tallennuksen jälkeen
+    initialFormRef.current = JSON.stringify(form);
+    setHasUnsavedChanges(false);
+
     return true;
   } catch (error) {
     console.error(
@@ -772,6 +788,8 @@ persistedImagesRef.current =
 
   return {
     loadingProfile,
+    
+    hasUnsavedChanges,
     
     step,
 

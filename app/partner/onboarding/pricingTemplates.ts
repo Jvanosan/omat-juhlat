@@ -33,7 +33,7 @@ export const PRICING_UNIT_LABELS: Record<PricingUnit, string> = {
 export const PRICING_TEMPLATES: PricingTemplate[] = [
   {
     categoryId: "venue",
-    categoryLabel: "Juhlatila",
+    categoryLabel: "Juhlatilat",
     items: [
       {
         id: "weekday",
@@ -71,7 +71,7 @@ export const PRICING_TEMPLATES: PricingTemplate[] = [
   },
   {
     categoryId: "catering",
-    categoryLabel: "Catering",
+    categoryLabel: "Ruoka & juoma",
     items: [
       {
         id: "basic_buffet",
@@ -106,8 +106,61 @@ export const PRICING_TEMPLATES: PricingTemplate[] = [
     ],
   },
   {
+    categoryId: "music_and_performers",
+    categoryLabel: "Musiikki & esiintyjät",
+    items: [
+      {
+        id: "short_event",
+        label: "Lyhyt esitys / keikka",
+        description: "Esimerkiksi enintään 1–2 tuntia",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "evening_package",
+        label: "Iltapaketti",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "full_event",
+        label: "Koko juhlan paketti",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "hourly",
+        label: "Tuntihinta",
+        defaultUnit: "per_hour",
+      },
+      {
+        id: "sound_equipment",
+        label: "Äänentoistolaitteet",
+        defaultUnit: "fixed",
+      },
+    ],
+  },
+  {
+    categoryId: "entertainment",
+    categoryLabel: "Ohjelma & elämykset",
+    items: [
+      {
+        id: "program_package",
+        label: "Ohjelmanumero / esitys",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "hourly_hosting",
+        label: "Juontu / ohjaus tunneittain",
+        defaultUnit: "per_hour",
+      },
+      {
+        id: "full_day_entertainment",
+        label: "Koko päivän ohjelmapaketti",
+        defaultUnit: "fixed",
+      },
+    ],
+  },
+  {
     categoryId: "photography",
-    categoryLabel: "Valokuvaus",
+    categoryLabel: "Kuvaus & media",
     items: [
       {
         id: "short_session",
@@ -143,45 +196,8 @@ export const PRICING_TEMPLATES: PricingTemplate[] = [
     ],
   },
   {
-    categoryId: "dj",
-    categoryLabel: "DJ",
-    items: [
-      {
-        id: "short_event",
-        label: "Lyhyt tapahtuma",
-        description: "Esimerkiksi enintään 3 tuntia",
-        defaultUnit: "fixed",
-      },
-      {
-        id: "evening_package",
-        label: "Iltapaketti",
-        defaultUnit: "fixed",
-      },
-      {
-        id: "full_event",
-        label: "Koko tapahtuman paketti",
-        defaultUnit: "fixed",
-      },
-      {
-        id: "hourly",
-        label: "Tuntihinta",
-        defaultUnit: "per_hour",
-      },
-      {
-        id: "sound_equipment",
-        label: "Äänentoistolaitteet",
-        defaultUnit: "fixed",
-      },
-      {
-        id: "lighting_package",
-        label: "Valotekniikkapaketti",
-        defaultUnit: "fixed",
-      },
-    ],
-  },
-  {
     categoryId: "decoration",
-    categoryLabel: "Koristelu",
+    categoryLabel: "Somistus & kukat",
     items: [
       {
         id: "basic_package",
@@ -199,11 +215,6 @@ export const PRICING_TEMPLATES: PricingTemplate[] = [
         defaultUnit: "starting_from",
       },
       {
-        id: "balloon_decoration",
-        label: "Ilmapallokoristelu",
-        defaultUnit: "starting_from",
-      },
-      {
         id: "flower_arrangements",
         label: "Kukka-asetelmat",
         defaultUnit: "starting_from",
@@ -211,6 +222,27 @@ export const PRICING_TEMPLATES: PricingTemplate[] = [
       {
         id: "setup_and_teardown",
         label: "Asennus ja purku",
+        defaultUnit: "fixed",
+      },
+    ],
+  },
+  {
+    categoryId: "equipment",
+    categoryLabel: "Tekniikka & kalusto",
+    items: [
+      {
+        id: "equipment_package",
+        label: "Vuokrapaketti",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "daily_rental",
+        label: "Päivävuokra",
+        defaultUnit: "per_day",
+      },
+      {
+        id: "delivery_and_setup",
+        label: "Toimitus ja pystytys",
         defaultUnit: "fixed",
       },
     ],
@@ -248,6 +280,48 @@ export const PRICING_TEMPLATES: PricingTemplate[] = [
         id: "per_kilometer",
         label: "Kilometrihinta",
         defaultUnit: "per_kilometer",
+      },
+    ],
+  },
+  {
+    categoryId: "beauty_and_wellness",
+    categoryLabel: "Kauneus & hyvinvointi",
+    items: [
+      {
+        id: "makeup_and_hair",
+        label: "Meikki ja kampaus paketti",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "trial_session",
+        label: "Koeajo / harjoituskerta",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "hourly_service",
+        label: "Palvelu tunneittain",
+        defaultUnit: "per_hour",
+      },
+    ],
+  },
+  {
+    categoryId: "planning_and_production",
+    categoryLabel: "Suunnittelu & tuotanto",
+    items: [
+      {
+        id: "full_planning",
+        label: "Kokonaisvaltainen suunnittelu",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "coordination_day",
+        label: "Hääpäivän / tapahtuman koordinointi",
+        defaultUnit: "fixed",
+      },
+      {
+        id: "consultation_hour",
+        label: "Konsultaatio",
+        defaultUnit: "per_hour",
       },
     ],
   },

@@ -27,6 +27,7 @@ export default function ProfileEditor() {
     form,
     completion,
     loadingProfile,
+    hasUnsavedChanges,
     validationError,
     validationStep,
     submitState,
@@ -86,7 +87,13 @@ export default function ProfileEditor() {
     validationError,
     validationSectionId,
   ]);
-    function scrollToValidationSection() {
+    useEffect(() => {
+    if (hasUnsavedChanges) {
+      setSaved(false);
+    }
+  }, [hasUnsavedChanges]);
+
+  function scrollToValidationSection() {
     if (!validationSectionId) {
       return;
     }
@@ -332,13 +339,21 @@ export default function ProfileEditor() {
         />
       </EditorSection>
 
-      <div className="sticky bottom-4 z-20 rounded-2xl border border-[#dfcfb6] bg-white/95 p-4 shadow-[0_18px_50px_rgba(73,53,31,0.18)] backdrop-blur">
+      <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-7xl rounded-2xl border border-[#dfcfb6] bg-white/95 p-4 shadow-[0_18px_50px_rgba(73,53,31,0.18)] backdrop-blur">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-[#70675e]">
-            Tarkista tiedot ennen
-            tallentamista. Pakolliset kentät
-            on merkitty tähdellä.
-          </p>
+          <div>
+            {hasUnsavedChanges && (
+              <p className="mb-1 flex items-center gap-2 text-sm font-bold text-[#b87a17]">
+                <span aria-hidden="true" className="text-base">⚠️</span>
+                Sinulla on tallentamattomia muutoksia
+              </p>
+            )}
+            <p className="text-sm leading-6 text-[#70675e]">
+              Tarkista tiedot ennen
+              tallentamista. Pakolliset kentät
+              on merkitty tähdellä.
+            </p>
+          </div>
 
           <button
             type="button"
@@ -356,6 +371,9 @@ export default function ProfileEditor() {
           </button>
         </div>
       </div>
+      
+      {/* Tyhjä tila, joka estää kelluvaa palkkia peittämästä sivun alinta sisältöä */}
+      <div className="h-24" />
     </div>
   );
 }

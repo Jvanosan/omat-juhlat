@@ -464,14 +464,19 @@ function toAbsoluteUrl(
 function externalUrl(
   value: unknown,
 ): string | undefined {
-  const url = toText(value);
+  const rawUrl = toText(value);
 
-  if (!url) {
+  if (!rawUrl) {
     return undefined;
   }
 
+  const urlWithProtocol =
+    /^https?:\/\//i.test(rawUrl)
+      ? rawUrl
+      : `https://${rawUrl}`;
+
   try {
-    return new URL(url).toString();
+    return new URL(urlWithProtocol).toString();
   } catch {
     return undefined;
   }
