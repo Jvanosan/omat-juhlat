@@ -12,7 +12,6 @@ export const LOCATIONS = [
   ...FINNISH_LOCATIONS,
 ];
 
-
 export const CANONICAL_SERVICE_LABELS =
   SERVICE_OPTIONS.map(
     (category) =>
@@ -24,31 +23,29 @@ export const SERVICE_NAMES: Record<
   string
 > = {
   /*
-   * Viralliset tunnisteet
+   * Viralliset kategoriatunnisteet (lib/services.ts)
    */
-  venue: "Juhlatila",
-  catering: "Catering",
-  photography: "Valokuvaus",
-  dj: "DJ",
-  decoration: "Koristelu",
+  venue: "Juhlatilat",
+  catering: "Ruoka & juoma",
+  music_and_performers: "Musiikki & esiintyjät",
+  entertainment: "Ohjelma & elämykset",
+  photography: "Kuvaus & media",
+  decoration: "Somistus & kukat",
+  equipment: "Tekniikka & kalusto",
   transport: "Kuljetus",
+  beauty_and_wellness: "Kauneus & hyvinvointi",
+  planning_and_production: "Suunnittelu & tuotanto",
 
   /*
-   * Virallisten kategorioiden
-   * suomenkieliset nimet
+   * Vanhat / vaihtoehtoiset tunnisteet taaksepäin yhteensopivuutta varten
    */
-  juhlatila: "Juhlatila",
-  valokuvaus: "Valokuvaus",
-  koristelu: "Koristelu",
+  dj: "Musiikki & esiintyjät",
+  valokuvaus: "Kuvaus & media",
+  juhlatila: "Juhlatilat",
+  koristelu: "Somistus & kukat",
   kuljetus: "Kuljetus",
-
-  /*
-   * Vanhat tekniset nimet samoille
-   * kuudelle kategorialle. Nämä voidaan
-   * poistaa demodatan siivouksen jälkeen.
-   */
-  photographer: "Valokuvaus",
-  decor: "Koristelu",
+  photographer: "Kuvaus & media",
+  decor: "Somistus & kukat",
 };
 
 export const TOAST_DURATION_MS =
